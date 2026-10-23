@@ -1,4 +1,4 @@
-// Jornada (aba): o caminho das fases, o plano de corrida e as Revisões da semana (jornada.md › Jornada).
+// Jornada (aba): o caminho das fases, um cartão por treino guiado e as Revisões da semana (jornada.md › Jornada).
 // É o plano: o que passou, a fase de agora e o que pode vir. Os números ficam em Progresso.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -7,7 +7,6 @@ import { Card, EmptyState, ListGroup, ListItem, PillarBubble, SectionLabel } fro
 import { Icon } from '@/icons';
 import { useFirstMount } from '@/motion';
 import {
-  RUN_PLAN,
   capitalize,
   formatDayHeader,
   formatDayMonth,
@@ -18,19 +17,19 @@ import {
   usePillars,
   useReview,
   useReviewWindow,
-  useRunPlan,
   weekdayName,
   type PhaseView,
   type ReviewListItem,
+  type TrainingSummary,
 } from '@/data';
 import type { Pillar } from '@/types';
+import { trainingPlanPath } from '@/screens/run/paths';
 import { PhasePath } from './PhasePath';
 import { countsInTheDay } from './shared';
 import './journey.css';
 
 export default function JourneyScreen() {
   const j = useJourney();
-  const plan = useRunPlan();
   const { today } = useNow();
   const win = useReviewWindow();
   const pillars = usePillars({ includeArchived: true });
@@ -80,11 +79,6 @@ export default function JourneyScreen() {
     return r?.day ?? p.end ?? p.start ?? today;
   };
 
-  const runHabit = j.run.habit;
-  const runPillar = runHabit ? pillarById.get(runHabit.pillarId) : undefined;
-  const runPhase = runHabit?.phase ?? null;
-  const maxRun = Math.max(...RUN_PLAN.map((w) => w.runSeconds));
-
   const nextLabel = win.open
     ? 'aberta agora'
     : `próxima: ${weekdayName(win.day)}, ${formatDayShort(win.day)}`;
@@ -115,44 +109,16 @@ export default function JourneyScreen() {
         onOpenPhase={(p) => void navigate(`/jornada/fases#fase-${p.number}`)}
       />
 
-      {runHabit && (
-        <div className="jr-pad" style={{ marginTop: 24 }}>
-          <Card padded pillar={runPillar?.color} className="jr-runcard" role="button" tabIndex={0}
-            onClick={() => void navigate('/jornada/corrida')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                void navigate('/jornada/corrida');
-              }
-            }}
-            aria-label={`Plano de corrida, ${runHabit.description ?? ''}. ${
-              plan.available
-                ? `Semana ${plan.next.week}, treino ${plan.next.session} de ${j.run.perWeek}`
-                : `Entra com a fase ${runPhase ?? ''}`
-            }, ${j.run.weeks} semanas, ${j.run.perWeek} treinos por semana`}
-          >
-            <span className="jr-row">
-              <PillarBubble icon="person-simple-run" pillar={runPillar?.color} />
-              <span>
-                <b className="jr-t">Plano de corrida</b>
-                {runHabit.description && <span className="cap">{capitalize(runHabit.description)}</span>}
-              </span>
-              <Icon name="caret-right" weight="bold" className="jr-caret" />
-            </span>
-            <span className="jr-spark" aria-hidden="true">
-              {RUN_PLAN.map((w) => {
-                const on = plan.available ? w.week === plan.next.week : w.week === RUN_PLAN.length;
-                return (
-                  <i key={w.week} className={on ? 'on' : undefined} style={{ height: `${(w.runSeconds / maxRun) * 100}%` }} />
-                );
-              })}
-            </span>
-            <p className="cap">
-              {plan.available
-                ? `Semana ${plan.next.week} · treino ${plan.next.session} de ${j.run.perWeek} · ${j.run.weeks} semanas`
-                : `Entra com a fase ${runPhase ?? ''} · ${j.run.weeks} semanas · ${j.run.perWeek} treinos por semana`}
-            </p>
-          </Card>
+      {j.trainings.length > 0 && (
+        <div className="jr-pad jr-trainings" style={{ marginTop: 24 }}>
+          {j.trainings.map((t) => (
+            <TrainingCard
+              key={t.habit.id}
+              t={t}
+              pillar={pillarById.get(t.habit.pillarId)}
+              onOpen={() => void navigate(trainingPlanPath(t.habit.id))}
+            />
+          ))}
         </div>
       )}
 
@@ -192,6 +158,61 @@ export default function JourneyScreen() {
       </div>
       <div style={{ height: 24 }} />
     </>
+  );
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * O cartão de um treino guiado: o nome do hábito, o que ele é, as barrinhas das semanas (a de agora em destaque;
+ * antes de começar, a última, que é onde o plano chega) e onde a pessoa está.
+ */
+function TrainingCard({ t, pillar, onOpen }: { t: TrainingSummary; pillar?: Pillar; onOpen: () => void }) {
+  const h = t.habit;
+  const max = Math.max(1, ...t.effortByWeek);
+  const what = h.description?.trim()
+    ? capitalize(h.description.trim())
+    : `${t.names.effort} e ${t.names.rest.toLocaleLowerCase('pt-BR')}`;
+  const size = `${plural(t.weeks, 'semana', 'semanas')} · ${plural(t.perWeek, 'treino', 'treinos')} por semana`;
+  const waiting = h.phase ? `Entra com a fase ${h.phase}` : t.startsOn ? `Começa em ${formatDayShort(t.startsOn)}` : 'Ainda não começou';
+  const where = t.available
+    ? `Semana ${t.next.week} · treino ${t.next.session} de ${t.perWeek} · ${plural(t.weeks, 'semana', 'semanas')}`
+    : `${waiting} · ${size}`;
+  return (
+    <Card
+      padded
+      pillar={pillar?.color}
+      className="jr-runcard"
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      aria-label={`${h.name}, plano de treino. ${what}. ${
+        t.available ? `Semana ${t.next.week}, treino ${t.next.session} de ${t.perWeek}` : waiting
+      }, ${size.replace(' · ', ', ')}`}
+    >
+      <span className="jr-row">
+        <PillarBubble icon={h.icon} pillar={pillar?.color} />
+        <span>
+          <b className="jr-t">{h.name}</b>
+          <span className="cap">{what}</span>
+        </span>
+        <Icon name="caret-right" weight="bold" className="jr-caret" />
+      </span>
+      <span className="jr-spark" aria-hidden="true">
+        {t.effortByWeek.map((s, i) => {
+          const week = i + 1;
+          const on = t.available ? week === t.next.week : week === t.weeks;
+          return <i key={week} className={on ? 'on' : undefined} style={{ height: `${(s / max) * 100}%` }} />;
+        })}
+      </span>
+      <p className="cap">{where}</p>
+    </Card>
   );
 }
 

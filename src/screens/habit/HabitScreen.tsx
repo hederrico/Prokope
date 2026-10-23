@@ -34,6 +34,7 @@ import {
   formatDayMonth,
   formatDayShort,
   formatNumber,
+  isWeeklyKind,
   monthName,
   parseDay,
   useDomain,
@@ -150,7 +151,7 @@ function statItems(habit: Habit, st: HabitStatsView, today: DayKey): { items: St
         ),
     };
   };
-  const weekTotal = habit.type === 'weekly' ? st.week.target : Math.max(st.week.scheduled, st.week.done);
+  const weekTotal = isWeeklyKind(habit) ? st.week.target : Math.max(st.week.scheduled, st.week.done);
   const weekItem: StatItem = {
     key: 'semana',
     label: 'Nesta semana',

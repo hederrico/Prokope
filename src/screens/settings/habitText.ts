@@ -25,6 +25,7 @@ export const TYPE_LABELS: Record<HabitType, string> = {
   rating: 'Nota de 1 a 5',
   daysSince: 'Dias sem',
   budget: 'Limite por semana',
+  guided: 'Treino guiado',
 };
 
 /** O tipo como a pessoa vê (o check-in é um registro de nota e texto). */
@@ -77,6 +78,13 @@ export function goalText(h: Habit, profile: Profile | null): string | null {
     case 'weekly':
       if (s.days.length && s.days.length < 7) return daysLabel(s.days, { long: s.days.length === 1 });
       return g.perWeek ? `${g.perWeek} por semana` : null;
+    case 'guided': {
+      // "seg e qua, 7h10" ou "2 por semana"
+      const when = s.days.length && s.days.length < 7 ? daysLabel(s.days, { long: s.days.length === 1 }) : null;
+      const at = s.time ? formatTime(s.time) : null;
+      if (when) return at ? `${when}, ${at}` : when;
+      return g.perWeek ? `${g.perWeek} por semana` : at;
+    }
     case 'number':
       if (s.days.length === 7 || !s.days.length) return 'diário';
       return `semanal, ${daysLabel(s.days, { long: true })}`;

@@ -226,7 +226,12 @@
   color: var(--ink);
 }
 
-/* cartão do plano de corrida */
+/* cartões dos treinos guiados (um por treino, empilhados) */
+.jr-trainings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .jr-runcard {
   display: flex;
   flex-direction: column;
@@ -270,6 +275,8 @@
 }
 .jr-spark i {
   flex: 1;
+  /* um plano curto (2 semanas) não vira dois blocos largos */
+  max-width: 28px;
   border-radius: 3px;
   background: var(--fill);
 }

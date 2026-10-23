@@ -337,7 +337,8 @@ function TodayReady() {
 }
 
 function runPillar(live: TodayView): string | undefined {
-  for (const item of indexItems(live.layout).values()) if (item.habit.role === 'run') return item.pillar?.color;
+  for (const item of indexItems(live.layout).values())
+    if (item.habit.id === live.activeRun?.habitId) return item.pillar?.color;
   return 'corpo';
 }
 

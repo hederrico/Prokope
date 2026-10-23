@@ -35,6 +35,7 @@ import {
   saveCheckin,
   saveReviewStep,
   setMark,
+  setRunSchedule,
   setScheduleTime,
   setupPlan,
   skipToday,
@@ -339,6 +340,65 @@ describe('corrida', () => {
     expect(r).toMatchObject({ status: 'done', seconds: 30 * 60, intervalsDone: 8 });
     const corrida = habitBy('Corrida');
     expect(marks()[markId(THU, corrida.id)]).toMatchObject({ status: 'done', value: 30 });
+  });
+
+  it('um treino guiado de pedalar usa os blocos do plano dele e conta pelo plano', async () => {
+    await openStory('07:10');
+    const corpo = pillarBy('Corpo');
+    const created = await createHabit({
+      name: 'Bicicleta',
+      type: 'guided',
+      pillarId: corpo.id,
+      icon: 'person-simple-bike',
+      goal: { perWeek: 3 },
+      schedule: { days: [1, 3, 5], moment: 'morning', time: '06:30' },
+      training: {
+        effort: 'Pedalar',
+        rest: 'Pedalar leve',
+        warmupMin: 2,
+        cooldownMin: 2,
+        weeks: [
+          { kind: 'repeat', repeat: 2, effort: 1, rest: 1 },
+          { kind: 'continuous', minutes: 5 },
+        ],
+      },
+      start: THU,
+    });
+    const bike = useDataStore.getState().habits[created.id!];
+    expect(bike).toMatchObject({ type: 'guided', training: { effort: 'Pedalar' } });
+    const t0 = instantAt(THU, '07:10', DEFAULT_CLOCK);
+    const run = await startRun({ week: 1, session: 1, habitId: bike.id });
+    // 2 + 2 × (1 + 1) + 2 = 8 min; encerrado com 5 min, conta como parcial (a partir da metade)
+    setFixedNow(t0 + 5 * 60_000);
+    await finishRun(run.id!);
+    expect(useDataStore.getState().runs[run.id!]).toMatchObject({ status: 'done', seconds: 300, intervalsDone: 2 });
+    expect(marks()[markId(THU, bike.id)]).toMatchObject({ status: 'partial', value: 5, goal: { value: 8 } });
+  });
+
+  it('a corrida de antes chega como Treino guiado e a próxima gravação já sai no formato novo', async () => {
+    const source = await openStory('12:41');
+    const corrida = habitBy('Corrida');
+    // o documento como ele está no Firestore de quem já usa o app (sem plano, 'weekly')
+    const old: Record<string, unknown> = {
+      ...corrida,
+      type: 'weekly',
+      goal: { perWeek: 2, value: 30, unit: 'min', partialMin: 15 },
+    };
+    delete old.training;
+    await source.write([{ op: 'set', col: 'habits', id: corrida.id, data: old }]);
+    expect(source.get('habits', corrida.id)).toMatchObject({ type: 'weekly' });
+    expect(source.get('habits', corrida.id)).not.toHaveProperty('training');
+    // na leitura, já é Treino guiado com o plano de 13 semanas
+    const read = useDataStore.getState().habits[corrida.id];
+    expect(read.type).toBe('guided');
+    expect(read.training?.weeks).toHaveLength(13);
+    // um merge só dos dias grava junto o formato novo
+    await setRunSchedule({ days: [1, 3], time: '06:30' }, corrida.id);
+    const saved = source.get('habits', corrida.id) as unknown as typeof corrida;
+    expect(saved.type).toBe('guided');
+    expect(saved.training?.effort).toBe('Correr');
+    expect(saved.training?.weeks).toHaveLength(13);
+    expect(saved.schedule).toMatchObject({ days: [1, 3], time: '06:30' });
   });
 });
 

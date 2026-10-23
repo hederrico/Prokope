@@ -12,6 +12,7 @@ import {
   habitDay,
   isCountable,
   isDoneLike,
+  isWeeklyKind,
   scheduleTimeOn,
   type HabitDay,
 } from './habitState';
@@ -120,7 +121,7 @@ export function todayItems(data: DomainData, day: DayKey, today: DayKey): TodayI
     if (hd.state === 'paused' && !appPauseOn(data, day)) continue;
     const time = habitTime(habit, day, data);
     const moment = habit.schedule.moment;
-    const isWeekly = habit.type === 'weekly' || (habit.type === 'check' && habit.goal.perWeek !== undefined);
+    const isWeekly = isWeeklyKind(habit) || (habit.type === 'check' && habit.goal.perWeek !== undefined);
     items.push({
       ...hd,
       habit,

@@ -26,13 +26,20 @@ describe('plano de corrida', () => {
 
   it('monta a legenda do treino da semana 1', () => {
     expect(runLegend(RUN_PLAN[0]).map((r) => `${r.label}: ${r.value}`)).toEqual([
-      'Aquecimento caminhando: 5 min',
-      'Trote: 8 × 1 min',
-      'Caminhada: 8 × 1,5 min',
+      'Aquecimento: 5 min',
+      'Correr: 8 × 1 min',
+      'Caminhar: 8 × 1,5 min',
       'Volta à calma: 5 min',
     ]);
-    // semana contínua: sem caminhada no meio
-    expect(runLegend(RUN_PLAN[12]).map((r) => r.label)).toEqual(['Aquecimento caminhando', 'Trote', 'Volta à calma']);
+    // semana contínua: sem descanso no meio
+    expect(runLegend(RUN_PLAN[12]).map((r) => r.label)).toEqual(['Aquecimento', 'Correr', 'Volta à calma']);
+    // os nomes do plano do hábito
+    expect(runLegend(RUN_PLAN[0], { effort: 'Pedalar', rest: 'Pedalar leve' }).map((r) => r.label)).toEqual([
+      'Aquecimento',
+      'Pedalar',
+      'Pedalar leve',
+      'Volta à calma',
+    ]);
   });
 
   it('escreve os dias de treino', () => {

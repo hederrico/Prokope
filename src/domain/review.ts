@@ -128,6 +128,7 @@ function lineFor(h: Habit, data: DomainData, days: DayKey[], today: DayKey): Rev
       amount = ` em ${done} de ${of} dias`;
       break;
     case 'weekly':
+    case 'guided':
       amount = `: ${done} de ${of} na semana`;
       break;
     default:

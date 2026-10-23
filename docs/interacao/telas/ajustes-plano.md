@@ -122,7 +122,7 @@ Como se comportam as telas onde a pessoa monta o próprio plano: a lista de Ajus
 | Linha | Toque | Abre o hábito (`/ajustes/habitos/:id`, "‹ Hábitos"), que tem Editar | Empurrar com `calma` | — | — |
 | + e Novo hábito | Toque | Abre Novo hábito · tipo | Tela cheia sobe | — | — |
 
-**Estados desta tela:** hábito pausado ganha o selo "Pausado até 5 nov" ([estados.md](../estados.md)); aba vazia diz "Nenhum hábito arquivado."; hábito recém-criado entra no grupo com `fadeUp` quando a lista volta à frente. Numa conta sem fases, o controle fica com Ativos e Arquivados, e as linhas perdem o "· fase N".
+**Estados desta tela:** hábito pausado ganha o selo "Pausado até 5 nov" ([estados.md](../estados.md)); aba vazia diz "Nenhum hábito arquivado."; hábito recém-criado entra no grupo com `fadeUp` quando a lista volta à frente. Numa conta sem fases, o controle fica com Ativos e Arquivados, e as linhas perdem o "· fase N". O Treino guiado diz os dias e o horário: "Treino guiado · seg e qua, 7h10 · fase 3". Arquivar um treino guiado (na tela do hábito, como qualquer hábito) tira o cartão da Jornada e a linha do Hoje; os treinos feitos ficam.
 
 **Acessibilidade:** "Acordar. Horário, meta 6h50, fase 1. Botão." O selo é lido junto: "principal em Família". O rótulo de grupo diz "Mente, 5 hábitos". Com letra grande, a linha de baixo quebra, e o selo vai para uma linha própria.
 **Implementação:** o seletor agrupa pela ordem dos pilares. A caminhada aparece no grupo do principal e no do `alsoIn`, com a chave `${pillarId}-${habitId}` e sempre na cor do principal.
@@ -142,6 +142,8 @@ Como se comportam as telas onde a pessoa monta o próprio plano: a lista de Ajus
 - Os tipos saem para a esquerda (−24 px com opacidade em `micro`) e os detalhes entram da direita (+24 px com opacidade em `base`, `--ease-out`). Na barra, "Cancelar" vira "‹ Tipo" e "Criar" aparece com opacidade em `micro`, ainda desabilitado. O título fica parado.
 - "‹ Tipo" faz o inverso. No rascunho ficam nome, pilar, ícone, momento, dias e início. Meta, unidade e botões só voltam ao padrão se o tipo mudar. O tipo escolhido aparece com ✓ e "escolhido".
 - Reduzido: a troca é só de opacidade, em `micro`.
+
+**Os 10 tipos:** Fazer algo (Sim ou não, Vezes por semana, Horário, Lista de passos e **Treino guiado**, "Corrida do zero aos 30 min, em semanas"), Medir algo (Contador, Número, Nota de 1 a 5) e Deixar ou diminuir algo (Dias sem, Limite por semana).
 
 **Acessibilidade:** "Sim ou não. Louça feita. Mais simples. Botão." Os rótulos de grupo são `h2`. Depois do passo, o foco vai para o campo Nome, e o VoiceOver anuncia "Novo hábito, Contador".
 
@@ -169,6 +171,39 @@ Como se comportam as telas onde a pessoa monta o próprio plano: a lista de Ajus
 | Criar | Toque | `createHabit(draft)` | A tela cheia desce. Na origem, a linha nova entra com `fadeUp` | `habits` | Hoje: a linha entra no momento do dia ao abrir, com o selo "novo" no primeiro dia. Se começa numa fase futura, vai para Próximas fases, e o toast "Proteína entra na fase 3, em 2 nov" traz Desfazer |
 
 **Estados desta tela:** Criar fica desabilitado sem nome, e "Subir aos poucos" só existe no Contador. Os outros tipos trocam o cartão da meta pelo deles: horário com `TimeValue`, vezes e limite por semana com o `GoalStepper`; Sim ou não e Dias sem não têm meta. Numa conta sem fases, Começa oferece "Hoje" ou uma data.
+
+**Treino guiado:** a prévia mostra a pílula "Começar" do Hoje, e o nome sugere "Corrida, Bicicleta, Natação…". No lugar da Meta entra **Treino**: os treinos por semana com o `GoalStepper` (1 a 7, 2 no padrão) e as linhas Esforço ("Correr") e Descanso ("Caminhar"), que abrem uma folha com o nome livre ("Pedalar", "Pedalar leve"; até 24 letras). Depois vem **Plano**, com a linha "Plano · 13 semanas ›" (a legenda diz o modelo, "Corrida do zero aos 30 minutos", ou o formato, "2 semanas · de 5 × (2 + 1) a 15 min contínuos") e o rodapé com o aquecimento e a volta à calma. Em Onde e quando, a linha vira "Dias de treino" ("Seg e qua · 7h"), e a folha tem o `DayPicker` e o horário (`TimeValue`). O padrão do tipo é o modelo pronto, a manhã e segunda e quarta às 7h. Criar grava o plano no hábito (`training`), junto com o resto.
+
+| Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
+|---|---|---|---|---|---|
+| Esforço, Descanso | Toque | Folha com o nome (`TextField`) e "Pronto" | Folha | Rascunho | — |
+| Plano · 13 semanas | Toque | Empurra o editor do plano dentro da mesma tela cheia: a barra vira "‹ Novo hábito" · Plano, e o formulário sai 24 px para a esquerda | O conteúdo faz o passo (24 px e opacidade em `base`; reduzido, opacidade em `micro`); a rolagem começa no topo e volta ao lugar do formulário no "‹" | Rascunho | — |
+| Dias de treino | Toque | Folha com `DayPicker` e o horário | Folha | Rascunho | Hoje dos dias escolhidos |
+
+## Plano do treino  (dentro de Novo hábito e de Editar hábito; e em Editar plano, `/jornada/treino/:id/plano`)
+
+**Como chega:** pela linha "Plano · 13 semanas" do formulário (a parte empurrada, com "‹ Novo hábito" ou "‹ Editar hábito"), ou pela linha "Editar o plano" do plano na Jornada (tela cheia com Cancelar · Plano · Salvar). É o mesmo editor nos dois lugares; no formulário, as mudanças vão com Criar ou Salvar.
+**Ao aparecer:** o foco vai para o título "Plano". Nada anima além da passagem.
+
+Do topo para baixo: a frase "Bicicleta · 3 treinos por semana. Toque numa semana para mudar os blocos, duplicar ou remover."; o resumo num cartão (uma barrinha por semana, a altura é o tempo de esforço, e o nome do modelo ou "Seu plano" com "13 semanas · de 8 × (1 + 1,5) a 30 min contínuos"); **Em todo treino** (Aquecimento e Volta à calma, em minutos); **As 13 semanas** (a mesma lista do plano da Jornada: número, blocos, "30 min no total", a barra do esforço e os minutos de esforço), com a linha tracejada "Adicionar semana" e o rodapé "Todo treino começa com 5 min de aquecimento e termina com 5 min de volta à calma."; e **Modelo**, com "Começar de um modelo".
+
+| Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
+|---|---|---|---|---|---|
+| Aquecimento, Volta à calma | Toque | Folha com o `GoalStepper` (0 a 30 min; 0 = sem) | Folha | `training.warmupMin`, `cooldownMin` | Os blocos de todo treino |
+| Linha de uma semana | Toque | Folha "Semana 3" (abaixo) | Folha | — | — |
+| Adicionar semana | Toque | Uma semana igual à última entra no fim, e a folha dela abre | A linha entra; folha | `training.weeks` | — |
+| Começar de um modelo | Toque | Folha de escolha única: "Corrida do zero aos 30 minutos" (13 semanas) e "Montar do zero" (1 semana, 5 × (2 + 1)). Troca as semanas e os minutos de antes e depois; os nomes do esforço e do descanso ficam. Toast "Plano trocado" com Desfazer | Folha; toast | `training` | — |
+
+**A folha da semana:** em cima, a fileira de blocos da semana (`IntervalStrip`) com "22 min no total · 10 min pedalando". Depois, o formato num `SegmentedControl` (Repetições · Sequência · Contínuo) e os minutos com o `GoalStepper` (meio em meio minuto):
+- **Repetições:** quantas vezes, o esforço ("pedalar, a cada vez") e o descanso ("pedalar leve, a cada vez"). É o "8 × (1 + 1,5)".
+- **Sequência:** um `GoalStepper` por bloco, alternando esforço e descanso ("1º · correr", "2º · caminhar"), com "Mais um bloco de caminhar" e "Tirar o último bloco". É o "15 + 2 + 8".
+- **Contínuo:** os minutos sem parar ("pedalar sem parar"). É o "20 min contínuos".
+- Trocar de formato mantém perto o tempo de esforço: 8 × (1 + 1,5) vira a sequência 1 + 1,5 + 1 e o contínuo de 8 min; 20 contínuos viram 4 × (5 + 1) e 12 + 2 + 8.
+- **Duplicar** põe uma cópia logo depois (toast "Semana 3 duplicada · A cópia é a semana 4", com Desfazer). **Remover** tira a semana (toast "Semana 3 removida", com Desfazer); com uma semana só, Remover fica desabilitado e o rodapé diz "O plano precisa de pelo menos uma semana." "Pronto" fecha; as mudanças já valem.
+
+**Estados desta tela:** a coluna das semanas diz o tempo de esforço com o nome ("tempo pedalando"; um nome que não é verbo vira "tempo de trote"). Editar um plano em curso não mexe nos treinos feitos; a semana atual sai da contagem deles.
+**Acessibilidade:** cada semana é um botão lido como "Semana 3: 6 vezes correr 1 minuto e meio e caminhar 1 minuto e meio. 9 minutos correndo no total. Editar". A lista se chama "Semanas do plano". Na folha, os `GoalStepper` são ajustáveis ("Pedalar, 2 minutos pedalar, a cada vez"), e a fileira de blocos é decorativa (a frase da semana vai para o leitor de tela).
+**Implementação:** `TrainingPlanEditor` (`src/screens/settings`) é controlado (`plan`, `onChange`); as contas puras ficam em `trainingEdit.ts` (adicionar, duplicar, remover, trocar formato, modelos) e os blocos em `src/domain/runPlan.ts`. Dados: `training: { effort, rest, warmupMin, cooldownMin, weeks: [{ kind: 'repeat', repeat, effort, rest } | { kind: 'sequence', steps } | { kind: 'continuous', minutes }] }`.
 
 **Como sai:** "‹ Tipo" (o passo, ao contrário), Criar, ou Cancelar no passo do tipo.
 **Também conta em:** fica logo abaixo de Pilar, em "Onde e quando", com o título, a linha "Entra na constância de cada um. A cor é a do principal." e os chips. Vale para Novo hábito e para Editar hábito: o rascunho guarda os extras junto com o pilar, e Salvar só acende quando o conjunto muda (desmarcar e marcar de novo não conta). Um pilar extra arquivado não aparece como chip, mas continua no hábito.

@@ -5,6 +5,7 @@ import { addDays } from '@/domain/day';
 import { appPauseOn, scheduleTimeOn, stopDayOf } from '@/domain/habitState';
 import { ALL_DAYS } from '@/domain/planTemplate';
 import { pillarExitPlan } from '@/domain/pillars';
+import { runTemplatePlan } from '@/domain/runPlan';
 import { timeToMinutes } from '@/domain/day';
 import { useClockStore } from '@/stores/clock';
 import { useDataStore } from '@/stores/data';
@@ -209,6 +210,7 @@ export async function createHabit(draft: HabitDraft): Promise<Undo> {
     quickAdds: (draft.quickAdds ?? []).map((q) => ({ ...q, id: q.id || newId() })),
     checklist: (draft.checklist ?? []).map((c) => ({ ...c, id: c.id || newId() })),
     ...(draft.planned ? { planned: draft.planned } : {}),
+    ...(draft.type === 'guided' ? { training: draft.training ?? runTemplatePlan() } : {}),
     order: draft.order ?? sameMoment.reduce((m, h) => Math.max(m, h.order), -1) + 1,
     archived: false,
     archivedAt: null,

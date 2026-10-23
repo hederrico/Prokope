@@ -40,6 +40,9 @@ const habit = () => import('@/screens/habit/HabitScreen');
 const pastReview = () => import('@/screens/journey/PastReviewScreen');
 const pillarForm = () => import('@/screens/settings/PillarFormScreen');
 const habitForm = () => import('@/screens/settings/HabitFormScreen');
+const trainingPlan = () => import('@/screens/journey/RunPlanScreen');
+const runScreen = () => import('@/screens/run/RunScreen');
+const runDone = () => import('@/screens/run/RunDoneScreen');
 
 export const SCREENS: ScreenDef[] = [
   // entrada
@@ -103,12 +106,14 @@ export const SCREENS: ScreenDef[] = [
     title: 'Jornada',
     load: () => import('@/screens/journey/JourneyScreen'),
   },
+  // o plano de cada treino guiado; a rota antiga da corrida leva ao primeiro
+  { path: '/jornada/treino/:id', kind: 'push', tab: 'jornada', title: 'Treino', load: trainingPlan },
+  { path: '/jornada/corrida', kind: 'push', tab: 'jornada', title: 'Treino', load: trainingPlan },
   {
-    path: '/jornada/corrida',
-    kind: 'push',
-    tab: 'jornada',
-    title: 'Corrida',
-    load: () => import('@/screens/journey/RunPlanScreen'),
+    path: '/jornada/treino/:id/plano',
+    kind: 'full',
+    title: 'Plano',
+    load: () => import('@/screens/journey/TrainingPlanEditScreen'),
   },
   {
     path: '/jornada/fases',
@@ -118,13 +123,11 @@ export const SCREENS: ScreenDef[] = [
     load: () => import('@/screens/journey/EditPhasesScreen'),
   },
   { path: '/jornada/revisoes/:semana', kind: 'push', tab: 'jornada', title: 'Revisão', load: pastReview },
-  { path: '/corrida/:semana/:treino', kind: 'full', title: 'Corrida', load: () => import('@/screens/run/RunScreen') },
-  {
-    path: '/corrida/:semana/:treino/feito',
-    kind: 'full',
-    title: 'Treino feito',
-    load: () => import('@/screens/run/RunDoneScreen'),
-  },
+  // o treino em andamento e o treino feito, de cada treino guiado; as rotas antigas são as do primeiro
+  { path: '/treino/:habito/:semana/:treino', kind: 'full', title: 'Treino', load: runScreen },
+  { path: '/treino/:habito/:semana/:treino/feito', kind: 'full', title: 'Treino feito', load: runDone },
+  { path: '/corrida/:semana/:treino', kind: 'full', title: 'Treino', load: runScreen },
+  { path: '/corrida/:semana/:treino/feito', kind: 'full', title: 'Treino feito', load: runDone },
   {
     path: '/revisao/:semana/fim',
     kind: 'full',

@@ -85,6 +85,7 @@ export function sheetForDay(habit: Habit, day: DayKey): { name: string; args: Re
   switch (habit.type) {
     case 'check':
     case 'weekly':
+    case 'guided':
     case 'checklist':
     case 'time':
       return { name: 'corrigir', args: { habito: habit.id, dia: day } };

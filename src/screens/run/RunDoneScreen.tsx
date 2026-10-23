@@ -1,6 +1,6 @@
 // Treino feito (jornada.md › Treino feito). O anel fecha uma vez e o check se desenha com a mola toque, com uma
-// vibração bônus (nível 1 da escada). Sem confete. Encerrado antes, mostra o que foi feito e conta pelo que o
-// hábito define: a partir da meta é feito, a partir do mínimo é parcial, abaixo fica registrado sem contar.
+// vibração bônus (nível 1 da escada). Sem confete. Encerrado antes, mostra o que foi feito e conta pelo plano do
+// hábito: o treino inteiro é feito, a partir da metade é parcial, abaixo fica registrado sem contar.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { m } from 'motion/react';
@@ -10,9 +10,10 @@ import { Icon } from '@/icons';
 import { finishRun } from '@/actions';
 import {
   addDays,
+  effortSecondsDone,
   formatDayCompact,
   formatTime,
-  runWeek,
+  planWeek,
   useDataStatus,
   usePillars,
   useRunPlan,
@@ -24,19 +25,9 @@ import type { Run } from '@/types';
 import { RunScheduleSheet } from '@/screens/journey/RunScheduleSheet';
 import { nextScheduledDay } from '@/screens/journey/shared';
 import { IntervalStrip } from './IntervalStrip';
-import { positionOf, releaseWakeLock } from './engine';
+import { positionOf, releaseWakeLock, weekOf } from './engine';
+import { blockIcon } from './words';
 import './run.css';
-
-/** Segundos de trote feitos em `seconds` de treino. */
-function runSecondsDone(w: RunWeek, seconds: number): number {
-  let acc = 0;
-  let total = 0;
-  for (const b of w.blocks) {
-    if (b.kind === 'run') total += Math.min(b.seconds, Math.max(0, seconds - acc));
-    acc += b.seconds;
-  }
-  return total;
-}
 
 /** Blocos começados até `seconds` (para pintar a fileira de um treino encerrado antes). */
 function blocksStarted(w: RunWeek, seconds: number): number {
@@ -52,14 +43,15 @@ function blocksStarted(w: RunWeek, seconds: number): number {
 /** Fim previsto de um treino que terminou com o app escondido: começo + pausas + duração. */
 function predictedEnd(run: Run): number {
   const paused = run.pauses.reduce((n, p) => n + Math.max(0, (p.to ?? p.from) - p.from), 0);
-  return run.startedAt + paused + runWeek(run.week).totalSeconds * 1000;
+  return run.startedAt + paused + weekOf(run).totalSeconds * 1000;
 }
 
 export default function RunDoneScreen() {
   const params = useParams();
   const week = Number(params.semana) || 1;
   const session = Number(params.treino) || 1;
-  const plan = useRunPlan();
+  // o treino guiado da rota (sem :habito, a rota antiga da corrida: o primeiro treino guiado)
+  const plan = useRunPlan(params.habito ?? null);
   const { status } = useDataStatus();
   const pillars = usePillars({ includeArchived: true });
   const goBack = useGoBack();
@@ -71,11 +63,12 @@ export default function RunDoneScreen() {
   const active = plan.activeRun;
   useEffect(() => {
     if (!active || finishing.current || active.week !== week || active.session !== session) return;
+    if (plan.habit && active.habitId !== plan.habit.id) return;
     finishing.current = true;
     const pos = positionOf(active);
     void finishRun(active.id, pos.done && active.status === 'running' ? { endedAt: Math.min(nowMs(), predictedEnd(active)) } : {});
     releaseWakeLock();
-  }, [active, week, session]);
+  }, [active, week, session, plan.habit]);
 
   const run = useMemo(
     () => plan.history.find((r) => r.week === week && r.session === session) ?? null,
@@ -83,16 +76,17 @@ export default function RunDoneScreen() {
   );
 
   const habit = plan.habit;
-  const pillar = pillars.find((p) => p.pillar.id === (habit?.pillarId ?? run?.habitId))?.pillar;
+  const names = plan.names;
+  const pillar = pillars.find((p) => p.pillar.id === habit?.pillarId)?.pillar;
   const color = pillar?.color ?? 'damasco';
-  const w = runWeek(run?.week ?? week);
+  const w: RunWeek = planWeek(plan.plan, run?.week ?? week);
   const seconds = run?.seconds ?? 0;
   const complete = seconds >= w.totalSeconds - 1;
   const target = Math.min(1, seconds / w.totalSeconds);
-  const trot = runSecondsDone(w, seconds);
+  const effort = effortSecondsDone(w, seconds);
   const minutes = Math.round(seconds / 60);
   const intervals = run?.intervalsDone ?? 0;
-  const perWeek = habit?.goal.perWeek ?? 2;
+  const perWeek = plan.perWeek;
 
   // o anel fecha do último valor até o fim; o check entra com a mola toque; uma vibração bônus
   const fresh = !!run?.endedAt && nowMs() - run.endedAt < 15_000;
@@ -194,8 +188,18 @@ export default function RunDoneScreen() {
             pillar={color}
             items={[
               { label: 'Intervalos', icon: 'repeat', value: intervals, unit: `de ${w.intervals}` },
-              { label: 'Trote', icon: 'person-simple-run', value: Math.round(trot / 60), unit: 'min' },
-              { label: 'Caminhada', icon: 'person-simple-walk', value: Math.max(0, minutes - Math.round(trot / 60)), unit: 'min' },
+              {
+                label: names.effort,
+                icon: blockIcon('effort', names, habit?.icon),
+                value: Math.round(effort / 60),
+                unit: 'min',
+              },
+              {
+                label: names.rest,
+                icon: blockIcon('rest', names, habit?.icon),
+                value: Math.max(0, minutes - Math.round(effort / 60)),
+                unit: 'min',
+              },
             ]}
           />
           <Card className="rn-dstrip">
@@ -210,6 +214,7 @@ export default function RunDoneScreen() {
         time={plan.schedule.time}
         perWeek={perWeek}
         pillar={color}
+        habitId={habit?.id ?? null}
       />
     </FullScreen>
   );

@@ -158,6 +158,10 @@ export function habitSubtitle(habit: Habit, goal: ResolvedGoal): string {
       parts.push(`${goal.perWeek ?? 1} ${goal.perWeek === 1 ? 'vez' : 'vezes'} por semana`);
       if (habit.description) parts.push(habit.description);
       break;
+    case 'guided':
+      parts.push(`${goal.perWeek ?? 1} ${goal.perWeek === 1 ? 'treino' : 'treinos'} por semana`);
+      if (habit.description) parts.push(habit.description);
+      break;
     case 'number':
       if (habit.description) parts.push(habit.description);
       parts.push(goal.measuring ? 'só medindo' : g ? `meta ${g}` : '');

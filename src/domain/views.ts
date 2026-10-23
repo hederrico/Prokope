@@ -1,5 +1,5 @@
 // Leituras prontas para as telas (puras): o Hoje, a semana, o hábito, o Progresso, a Jornada,
-// o plano de corrida e a revisão. Os hooks de '@/data' só chamam estas funções com os dados atuais.
+// o plano de cada treino guiado e a revisão. Os hooks de '@/data' só chamam estas funções com os dados atuais.
 import type {
   Checkin,
   DayKey,
@@ -12,6 +12,7 @@ import type {
   QuickAdd,
   Review,
   Run,
+  TrainingPlan,
   WeekKey,
 } from '@/types';
 import type { DomainData } from './context';
@@ -38,6 +39,7 @@ import {
   goalOn,
   habitDay,
   inPillar,
+  isActiveOn,
   isDoneLike,
   isInPlan,
   isStoppedOn,
@@ -63,7 +65,15 @@ import {
   type ReviewSummary,
   type ReviewWindow,
 } from './review';
-import { nextSession, RUN_PLAN, RUN_SESSIONS_PER_WEEK, type RunWeek } from './runPlan';
+import {
+  namesOf,
+  nextSession,
+  planWeeks,
+  sessionsPerWeek,
+  trainingOf,
+  type RunWeek,
+  type TrainingNames,
+} from './runPlan';
 import {
   constancy,
   dayCount,
@@ -192,7 +202,7 @@ export interface TodayView {
   quickAdds: Record<string, QuickAdd[]>;
   /** "Amanhã cedo", no dia fechado */
   tomorrowMorning: TodayItem[];
-  /** treino em andamento (faixa da corrida) */
+  /** treino em andamento (a faixa do treino guiado) */
   activeRun: Run | null;
 }
 
@@ -773,11 +783,28 @@ export interface ReviewListItem {
   endOfPhase: boolean;
 }
 
+/** Um treino guiado no cartão da Jornada. */
+export interface TrainingSummary {
+  habit: Habit;
+  names: TrainingNames;
+  /** quando começa (a fase dele, se ainda não começou) */
+  startsOn: DayKey | null;
+  /** já começou (dá para treinar) */
+  available: boolean;
+  weeks: number;
+  perWeek: number;
+  /** o próximo treino */
+  next: { week: number; session: number };
+  /** segundos de esforço de cada semana (as barrinhas do cartão) */
+  effortByWeek: number[];
+}
+
 export interface JourneyView {
   phases: PhaseView[];
   current: PhaseView | null;
   next: PhaseView | null;
-  run: { habit: Habit | null; startsOn: DayKey | null; available: boolean; weeks: number; perWeek: number };
+  /** os treinos guiados ativos ou à espera da fase (sem os arquivados e os que já pararam), na ordem dos hábitos */
+  trainings: TrainingSummary[];
   reviews: ReviewListItem[];
   /** a primeira revisão (estado vazio "A primeira Revisão da semana é no domingo, 27 set.") */
   firstReviewDay: DayKey | null;
@@ -790,11 +817,42 @@ function reviewDayOf(data: DomainData, week: WeekKey): DayKey {
   return addDays(week, data.profile.weeklyReview?.weekday ?? 6);
 }
 
+/**
+ * Os treinos guiados que aparecem (Jornada, Hoje): fora os arquivados e os que já pararam (começaram e não estão
+ * mais ativos hoje); os que esperam a fase deles continuam, com "entra com a fase 3".
+ */
+export function guidedHabits(data: DomainData, today: DayKey): Habit[] {
+  return data.habits.filter(
+    (h) => h.type === 'guided' && !h.archived && (!h.startDay || h.startDay > today || isActiveOn(h, today, data)),
+  );
+}
+
+function doneRunsOf(data: DomainData, habitId: string): Run[] {
+  return data.runs.filter((r) => r.status === 'done' && r.habitId === habitId);
+}
+
+function startsOnOf(habit: Habit, phases: PhaseView[]): DayKey | null {
+  return habit.startDay ?? (habit.phase ? (phases.find((p) => p.number === habit.phase)?.start ?? null) : null);
+}
+
 export function journeyView(data: DomainData, now: Millis): JourneyView {
   const today = logicalDay(now, data.clock);
   const phases = phaseTimeline(data, today);
-  const runHabit = data.habits.find((h) => h.role === 'run' && !h.archived) ?? null;
-  const runPhase = runHabit?.phase ? phases.find((p) => p.number === runHabit.phase) : null;
+  const trainings: TrainingSummary[] = guidedHabits(data, today).map((habit) => {
+    const plan = trainingOf(habit);
+    const weeks = planWeeks(plan);
+    const perWeek = sessionsPerWeek(habit);
+    return {
+      habit,
+      names: namesOf(plan),
+      startsOn: startsOnOf(habit, phases),
+      available: !!habit.startDay && habit.startDay <= today,
+      weeks: weeks.length,
+      perWeek,
+      next: nextSession(doneRunsOf(data, habit.id).length, weeks.length, perWeek),
+      effortByWeek: weeks.map((w) => w.effortSeconds),
+    };
+  });
   const reviews: ReviewListItem[] = [];
   const done = [...data.reviews.values()].filter((r) => r.status === 'done').sort((a, b) => (a.week < b.week ? 1 : -1));
   const pending = pendingReview(data, now);
@@ -839,13 +897,7 @@ export function journeyView(data: DomainData, now: Millis): JourneyView {
     phases,
     current: phases.find((p) => p.status === 'current') ?? null,
     next: phases.find((p) => p.status === 'future') ?? null,
-    run: {
-      habit: runHabit,
-      startsOn: runHabit?.startDay ?? runPhase?.start ?? null,
-      available: !!runHabit?.startDay && runHabit.startDay <= today,
-      weeks: RUN_PLAN.length,
-      perWeek: RUN_SESSIONS_PER_WEEK,
-    },
+    trainings,
     reviews,
     firstReviewDay: start ? reviewDayOf(data, weekStart(start)) : null,
     pause: currentOrNextPause(data, today),
@@ -853,38 +905,50 @@ export function journeyView(data: DomainData, now: Millis): JourneyView {
   };
 }
 
-// ---------- plano de corrida ----------
+// ---------- plano de um treino guiado ----------
 
 export interface RunPlanView {
+  /** o treino guiado (o do id, ou o primeiro que aparece na Jornada) */
   habit: Habit | null;
-  /** o plano já começou (fase da corrida em curso) */
+  /** o plano do hábito, sempre válido (sem plano gravado, o modelo da corrida) */
+  plan: TrainingPlan;
+  names: TrainingNames;
+  /** o plano já começou (a fase do hábito está em curso) */
   available: boolean;
   startsOn: DayKey | null;
   weeks: (RunWeek & { current: boolean; sessionsDone: number })[];
+  perWeek: number;
   /** o próximo treino */
   next: { week: number; session: number };
   sessionsDone: number;
   schedule: { days: number[]; time: string | null };
+  /** o treino em andamento, de qualquer treino guiado (só um por vez) */
   activeRun: Run | null;
-  /** treinos feitos, do mais recente para o mais antigo */
+  /** treinos feitos deste hábito, do mais recente para o mais antigo */
   history: Run[];
 }
 
-export function runPlanView(data: DomainData, now: Millis): RunPlanView {
+export function runPlanView(data: DomainData, now: Millis, habitId?: string | null): RunPlanView {
   const today = logicalDay(now, data.clock);
-  const habit = data.habits.find((h) => h.role === 'run' && !h.archived) ?? null;
-  const done = data.runs.filter((r) => r.status === 'done' && (!habit || r.habitId === habit.id));
-  const next = nextSession(done.length);
-  const ph = habit?.phase ? phaseTimeline(data, today).find((p) => p.number === habit.phase) : null;
+  const byId = habitId ? data.habitById.get(habitId) : undefined;
+  const habit = byId?.type === 'guided' ? byId : habitId ? null : (guidedHabits(data, today)[0] ?? null);
+  const plan = trainingOf(habit);
+  const weeks = planWeeks(plan);
+  const perWeek = sessionsPerWeek(habit);
+  const done = habit ? doneRunsOf(data, habit.id) : [];
+  const next = nextSession(done.length, weeks.length, perWeek);
   return {
     habit,
+    plan,
+    names: namesOf(plan),
     available: !!habit?.startDay && habit.startDay <= today,
-    startsOn: habit?.startDay ?? ph?.start ?? null,
-    weeks: RUN_PLAN.map((w) => ({
+    startsOn: habit ? startsOnOf(habit, phaseTimeline(data, today)) : null,
+    weeks: weeks.map((w) => ({
       ...w,
       current: w.week === next.week,
       sessionsDone: done.filter((r) => r.week === w.week).length,
     })),
+    perWeek,
     next,
     sessionsDone: done.length,
     schedule: { days: habit?.schedule.days ?? [], time: habit?.schedule.time ?? null },

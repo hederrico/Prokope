@@ -1,5 +1,7 @@
-// Corrida em andamento (jornada.md › Corrida em andamento). Usada na rua, sem olhar, com o celular no braço:
-// trote em cor cheia, caminhada em tom claro, e o número grande é o que falta para a troca.
+// Treino em andamento (jornada.md › Treino em andamento). Usado na rua, sem olhar, com o celular no braço:
+// esforço em cor cheia, descanso em tom claro, e o número grande é o que falta para a troca. Os blocos e os nomes
+// (correr e caminhar, pedalar e pedalar leve) vêm do plano do hábito da rota (/treino/:habito/:semana/:treino; a rota
+// antiga /corrida/:semana/:treino é a do primeiro treino guiado).
 // O tempo vem sempre da hora de início e das pausas (sobrevive a recarregar e à tela bloqueada). O som das trocas,
 // a contagem e a vibração ficam no motor (engine.ts), que segue rodando com o treino minimizado.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -11,10 +13,9 @@ import { Button, PillarBubble, pillarAttrs } from '@/components/ui';
 import { Icon, type IconName } from '@/icons';
 import { discardRun, finishRun, pauseRun, readRunCopy, resumeRun, setRunSound, startRun } from '@/actions';
 import {
-  RUN_WEEKS,
   formatClockSeconds,
   intervalsCompleted,
-  runWeek,
+  planWeek,
   useDataStatus,
   usePillars,
   usePrefs,
@@ -22,34 +23,18 @@ import {
   useRunPlan,
   type RunBlock,
   type RunPosition,
+  type TrainingNames,
 } from '@/data';
 import { distance, dur, fadeUp, tween, usePrefersReducedMotion } from '@/motion';
 import { nowMs } from '@/stores/clock';
 import type { Run } from '@/types';
 import { IntervalStrip } from './IntervalStrip';
-import { onRunEvent, positionOf, releaseWakeLock, requestWakeLock, startRunEngine, useWakeLock } from './engine';
+import { onRunEvent, positionOf, releaseWakeLock, requestWakeLock, startRunEngine, useWakeLock, weekOf } from './engine';
+import { runDonePath, runPath } from './paths';
+import { blockIcon, blockWord, blockWordLower } from './words';
 import './run.css';
 
 // ---------- textos ----------
-
-const WORD: Record<RunBlock['kind'], string> = {
-  run: 'Trote',
-  walk: 'Caminhada',
-  warmup: 'Aquecimento',
-  cooldown: 'Volta à calma',
-};
-const WITH_ARTICLE: Record<RunBlock['kind'], string> = {
-  run: 'O trote',
-  walk: 'A caminhada',
-  warmup: 'O aquecimento',
-  cooldown: 'A volta à calma',
-};
-const ICON: Record<RunBlock['kind'], IconName> = {
-  run: 'person-simple-run',
-  walk: 'person-simple-walk',
-  warmup: 'person-simple-walk',
-  cooldown: 'person-simple-walk',
-};
 
 /** "1 minuto e 30 segundos", "40 segundos", "5 minutos" (para o leitor de tela). */
 function spokenDuration(seconds: number): string {
@@ -73,21 +58,25 @@ function progressText(pos: RunPosition): string {
   return `intervalo ${pos.interval} de ${pos.intervals}`;
 }
 
-function blockAnnouncement(pos: RunPosition): string {
-  const base = `${WORD[pos.block.kind]}, ${spokenDuration(pos.block.seconds)}.`;
-  return pos.block.kind === 'run' || pos.block.kind === 'walk' ? `${base} Intervalo ${pos.interval} de ${pos.intervals}.` : base;
+function blockAnnouncement(pos: RunPosition, names: TrainingNames): string {
+  const base = `${blockWord(pos.block.kind, names)}, ${spokenDuration(pos.block.seconds)}.`;
+  return pos.block.kind === 'effort' || pos.block.kind === 'rest'
+    ? `${base} Intervalo ${pos.interval} de ${pos.intervals}.`
+    : base;
 }
 
 // ---------- a tela ----------
 
 export default function RunScreen() {
   const params = useParams();
-  const week = Math.min(RUN_WEEKS, Math.max(1, Number(params.semana) || 1));
-  const session = Math.max(1, Number(params.treino) || 1);
   const navigate = useNavigate();
   const goBack = useGoBack();
   const { status } = useDataStatus();
-  const plan = useRunPlan();
+  // o treino guiado da rota (sem :habito, a rota antiga da corrida: o primeiro treino guiado)
+  const plan = useRunPlan(params.habito ?? null);
+  const week = Math.min(plan.weeks.length, Math.max(1, Number(params.semana) || 1));
+  const session = Math.max(1, Number(params.treino) || 1);
+  const habitId = plan.habit?.id ?? null;
   const pillars = usePillars({ includeArchived: true });
   const prefs = usePrefs();
   const reduced = usePrefersReducedMotion();
@@ -96,17 +85,24 @@ export default function RunScreen() {
   // ---------- o treino: retoma o que está em andamento ou começa um novo ----------
   const [startedId, setStartedId] = useState<string | null>(null);
   const starting = useRef(false);
+  // esta tela já teve um treino (retomado ou começado): salvar ou descartar não pode começar outro sozinho
+  const hadRun = useRef(false);
   const [waitedCopy, setWaitedCopy] = useState(false);
   const active = plan.activeRun;
   const runId = active?.id ?? startedId;
   useEffect(() => {
     if (status !== 'ready') return undefined;
     if (active) {
-      if (active.week !== week || active.session !== session)
-        void navigate(`/corrida/${active.week}/${active.session}`, { replace: true, state: { transition: 'none' } });
+      hadRun.current = true;
+      // um treino de cada vez: o que está em andamento (deste ou de outro treino guiado) é o que abre
+      if (active.habitId !== habitId || active.week !== week || active.session !== session)
+        void navigate(runPath(active.habitId, active.week, active.session), {
+          replace: true,
+          state: { transition: 'none' },
+        });
       return undefined;
     }
-    if (startedId || starting.current) return undefined;
+    if (!habitId || startedId || starting.current || hadRun.current) return undefined;
     // a cópia local diz que há um treino que ainda não chegou dos dados: espera um pouco
     const copy = readRunCopy();
     if (!waitedCopy && copy && nowMs() - copy.startedAt < 2 * 3_600_000) {
@@ -114,9 +110,9 @@ export default function RunScreen() {
       return () => clearTimeout(t);
     }
     starting.current = true;
-    void startRun({ week, session }).then((u) => u.id && setStartedId(u.id));
+    void startRun({ week, session, habitId }).then((u) => u.id && setStartedId(u.id));
     return undefined;
-  }, [status, active, startedId, week, session, navigate, waitedCopy]);
+  }, [status, active, startedId, week, session, navigate, waitedCopy, habitId]);
 
   const live = useRunLive(runId ?? undefined, 4);
   const run = live?.run ?? null;
@@ -133,17 +129,24 @@ export default function RunScreen() {
     if (run?.status === 'running') void requestWakeLock();
   }, [run?.id, run?.status]);
 
-  const habit = plan.habit;
-  const pillar = pillars.find((p) => p.pillar.id === (habit?.pillarId ?? run?.habitId))?.pillar;
+  const habit = live?.habit ?? plan.habit;
+  const names = live?.names ?? plan.names;
+  const pillar = pillars.find((p) => p.pillar.id === habit?.pillarId)?.pillar;
   const color = pillar?.color ?? 'damasco';
   const attrs = pillarAttrs(color);
+  const word = (kind: RunBlock['kind']) => blockWord(kind, names);
+  const icon = (kind: RunBlock['kind']): IconName => blockIcon(kind, names, habit?.icon);
 
   const pos = live?.position ?? null;
   const paused = run?.status === 'paused';
-  const blocks = useMemo(() => runWeek(run?.week ?? week).blocks, [run?.week, week]);
+  const planBlocks = useMemo(() => planWeek(plan.plan, week).blocks, [plan.plan, week]);
+  const blocks = live?.week.blocks ?? planBlocks;
 
   // ---------- fim do treino ----------
-  const doneRoute = `/corrida/${run?.week ?? week}/${run?.session ?? session}/feito`;
+  // a rota antiga (/corrida/:semana/:treino) termina na antiga; a de cada treino guiado, na dele
+  const doneRoute = params.habito
+    ? runDonePath(run?.habitId ?? habitId ?? '', run?.week ?? week, run?.session ?? session)
+    : `/corrida/${run?.week ?? week}/${run?.session ?? session}/feito`;
   const goDone = useCallback(() => {
     void navigate(doneRoute, { replace: true, state: { transition: 'none' } });
   }, [navigate, doneRoute]);
@@ -152,6 +155,10 @@ export default function RunScreen() {
   }, [pos?.done, run?.status, goDone]);
 
   // ---------- região viva ----------
+  const namesRef = useRef(names);
+  useLayoutEffect(() => {
+    namesRef.current = names;
+  });
   const [said, setSaid] = useState('');
   const say = useCallback((text: string) => {
     setSaid('');
@@ -161,7 +168,7 @@ export default function RunScreen() {
     () =>
       onRunEvent((e) => {
         if (e.run.id !== runRef.current?.id || e.type !== 'block') return;
-        say(blockAnnouncement(e.position));
+        say(blockAnnouncement(e.position, namesRef.current));
       }),
     [say],
   );
@@ -185,7 +192,7 @@ export default function RunScreen() {
       if (p.index !== was.index) {
         setBack({ key: nowMs(), kind: p.block.kind, ago: p.inBlock });
         say(
-          `O treino seguiu com a tela bloqueada. Agora: ${WORD[p.block.kind].toLocaleLowerCase('pt-BR')}, faltam ${spokenDuration(p.remaining)}.`,
+          `O treino seguiu com a tela bloqueada. Agora: ${blockWordLower(p.block.kind, namesRef.current)}, faltam ${spokenDuration(p.remaining)}.`,
         );
       }
     };
@@ -256,18 +263,30 @@ export default function RunScreen() {
     showUndo({ title: 'Treino descartado', icon: 'person-simple-run', pillar: 'accent' }, () => void undo());
   };
 
-  const kind = pos?.block.kind ?? 'warmup';
-  const trot = kind === 'run';
+  const kind = pos?.block.kind ?? blocks[0]?.kind ?? 'warmup';
+  const trot = kind === 'effort';
   const remaining = pos ? Math.ceil(pos.remaining - 1e-6) : 0;
   const counting = !!pos && !paused && !pos.done && remaining >= 1 && remaining <= 3;
   const clockText = counting ? String(remaining) : formatClockSeconds(remaining);
   const next = pos?.next ?? null;
   const title = `Semana ${run?.week ?? week} · treino ${run?.session ?? session}`;
   const timerLabel = pos
-    ? `${WORD[kind]}, faltam ${spokenDuration(pos.remaining)}${paused ? ', pausado' : ''}. ${
-        next ? `Depois: ${WORD[next.kind].toLocaleLowerCase('pt-BR')}, ${spokenDuration(next.seconds)}.` : 'Último bloco.'
+    ? `${word(kind)}, faltam ${spokenDuration(pos.remaining)}${paused ? ', pausado' : ''}. ${
+        next ? `Depois: ${blockWordLower(next.kind, names)}, ${spokenDuration(next.seconds)}.` : 'Último bloco.'
       } Tempo total ${spokenDuration(pos.elapsed)}, ${progressText(pos)}.`
     : 'Preparando o treino';
+
+  // a rota aponta para um treino guiado que não existe mais (e nada está em andamento)
+  if (status === 'ready' && !habit && !active && !run) {
+    return (
+      <FullScreen footer={<Button wide onClick={() => goBack('/hoje')}>Voltar ao dia</Button>}>
+        <div className="rn-done">
+          <h1 className="lt">Treino</h1>
+          <p className="sub muted">Este treino não está mais por aqui.</p>
+        </div>
+      </FullScreen>
+    );
+  }
 
   return (
     <FullScreen top={<></>}>
@@ -326,7 +345,7 @@ export default function RunScreen() {
                 <span>
                   <b>O treino seguiu com a tela bloqueada</b>
                   <small>
-                    {WITH_ARTICLE[back.kind]} começou há {agoText(back.ago)}. Os avisos voltaram.
+                    Agora: {blockWordLower(back.kind, names)}, há {agoText(back.ago)}. Os avisos voltaram.
                   </small>
                 </span>
               </m.div>
@@ -337,13 +356,13 @@ export default function RunScreen() {
             <AnimatePresence mode="wait" initial={false}>
               <m.span
                 key={pos ? `${pos.index}` : 'x'}
-                className={clsx('rn-state', WORD[kind].length > 10 && 'long')}
+                className={clsx('rn-state', word(kind).length > 10 && 'long')}
                 initial={reduced ? { opacity: 0 } : fadeUp.initial}
                 animate={reduced ? { opacity: 1, transition: tween.micro } : fadeUp.animate}
                 exit={{ opacity: 0, transition: tween.micro }}
               >
-                <Icon name={ICON[kind]} weight="bold" />
-                {WORD[kind]}
+                <Icon name={icon(kind)} weight="bold" />
+                {word(kind)}
               </m.span>
             </AnimatePresence>
 
@@ -386,8 +405,8 @@ export default function RunScreen() {
             <span className={clsx('rn-next', counting && 'soon')}>
               {next ? (
                 <>
-                  <Icon name={ICON[next.kind]} weight="bold" />
-                  Depois: {WORD[next.kind].toLocaleLowerCase('pt-BR')} <b>{formatClockSeconds(next.seconds)}</b>
+                  <Icon name={icon(next.kind)} weight="bold" />
+                  Depois: {blockWordLower(next.kind, names)} <b>{formatClockSeconds(next.seconds)}</b>
                 </>
               ) : (
                 <>
@@ -558,7 +577,7 @@ function EndSheet({
   onDiscard: () => void;
 }) {
   const pos = run ? positionOf(run) : null;
-  const done = run && pos ? intervalsCompleted(runWeek(run.week), pos.elapsed) : 0;
+  const done = run && pos ? intervalsCompleted(weekOf(run), pos.elapsed) : 0;
   return (
     <Sheet
       open={open}
@@ -578,7 +597,7 @@ function EndSheet({
       {pos && (
         <p className="rn-sheet-p">
           Até aqui: {Math.max(0, Math.floor(pos.elapsed / 60))} min e {done} de {pos.intervals}{' '}
-          {pos.intervals === 1 ? 'intervalo' : 'intervalos'} de trote. Salvar guarda o que você fez.
+          {pos.intervals === 1 ? 'intervalo' : 'intervalos'}. Salvar guarda o que você fez.
         </p>
       )}
     </Sheet>

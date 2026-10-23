@@ -32,7 +32,7 @@ export interface ProfilePrefs {
   motion: boolean;
   /** som suave ao marcar */
   sound: boolean;
-  /** som nas trocas da corrida */
+  /** som nas trocas do treino guiado (corrida, bicicleta...) */
   runSound: boolean;
   /** "Mostrar só a tendência" do peso */
   weightTrendOnly: boolean;
@@ -103,7 +103,8 @@ export type HabitType =
   | 'weekly' // vezes por semana
   | 'budget' // limite por semana
   | 'daysSince' // dias sem
-  | 'checklist'; // lista de passos
+  | 'checklist' // lista de passos
+  | 'guided'; // treino guiado: um plano em semanas, com blocos de esforço e descanso (a corrida do zero aos 30 min)
 
 /** Momento do dia: manhã, ao longo do dia, noite ou livre (sem hora: limites e dias sem). */
 export type DayMoment = 'morning' | 'day' | 'evening' | 'free';
@@ -125,7 +126,7 @@ export type HabitRole =
   | 'lunch' // nota do almoço
   | 'dinner' // nota do jantar
   | 'trash' // lixo: dias vêm de profile.collectionDays
-  | 'run' // corrida (plano de 13 semanas)
+  | 'run' // a corrida do modelo (antes um 'weekly'; na leitura vira Treino guiado, src/domain/normalize.ts)
   | 'together'; // programa a dois
 
 export interface GoalRamp {
@@ -198,6 +199,31 @@ export interface HabitPlannedDay {
   note?: string;
 }
 
+// ---------- Treino guiado ----------
+
+/**
+ * O treino de uma semana do plano, num dos três formatos (minutos; aceita meio minuto):
+ * repetições de esforço + descanso ("8 × (1 + 1,5)"), uma sequência que começa e termina no esforço
+ * ("15 + 2 + 8") ou um bloco contínuo ("20 min contínuos").
+ */
+export type TrainingWeek =
+  | { kind: 'repeat'; repeat: number; effort: number; rest: number }
+  | { kind: 'sequence'; steps: number[] }
+  | { kind: 'continuous'; minutes: number };
+
+/** O plano de um Treino guiado (type 'guided'). Os treinos por semana ficam em goal.perWeek e os dias em schedule. */
+export interface TrainingPlan {
+  /** nome do esforço, no infinitivo ("Correr", "Pedalar", "Nadar") */
+  effort: string;
+  /** nome do descanso ("Caminhar", "Pedalar leve", "Descansar") */
+  rest: string;
+  /** minutos de aquecimento e de volta à calma, em todo treino (0 = sem) */
+  warmupMin: number;
+  cooldownMin: number;
+  /** as semanas, em ordem (pelo menos uma) */
+  weeks: TrainingWeek[];
+}
+
 export interface Habit {
   id: string;
   name: string;
@@ -232,6 +258,8 @@ export interface Habit {
   checklist: ChecklistItem[];
   /** dias planejados (scheduleHabit) */
   planned?: HabitPlannedDay[];
+  /** o plano do Treino guiado (só type 'guided') */
+  training?: TrainingPlan | null;
   /** ordem dentro do momento do dia */
   order: number;
   archived: boolean;
@@ -272,7 +300,7 @@ export interface Mark {
   /** meta da época (um horário mudado depois não muda este registro) */
   goal?: { value?: number; time?: TimeHM; toleranceMin?: number };
   note?: string;
-  /** treino de corrida */
+  /** treino guiado (semana e treino do plano, segundos feitos) */
   run?: { week: number; session: number; seconds: number; runId?: string };
   /** instante do registro */
   at: Millis;
@@ -343,7 +371,7 @@ export interface Pause {
   updatedAt: Millis;
 }
 
-// ---------- Fases, revisões e corrida ----------
+// ---------- Fases, revisões e treinos ----------
 
 export interface Phase {
   /** = String(number) */
@@ -399,14 +427,14 @@ export interface Run {
   id: string;
   habitId: string;
   day: DayKey;
-  /** semana do plano (1 a 13) e treino da semana (1 ou 2) */
+  /** semana do plano do hábito (1 a N) e treino da semana (1 a goal.perWeek) */
   week: number;
   session: number;
   startedAt: Millis;
   pauses: { from: Millis; to: Millis | null }[];
   status: RunStatus;
   endedAt?: Millis | null;
-  /** segundos feitos e intervalos de trote completos, no fim */
+  /** segundos feitos e intervalos de esforço completos, no fim */
   seconds?: number | null;
   intervalsDone?: number | null;
 }

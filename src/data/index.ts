@@ -29,6 +29,7 @@ export type {
   JourneyView,
   ReviewListItem,
   RunPlanView,
+  TrainingSummary,
   ReviewView,
   EntryLine,
 } from '@/domain/views';
@@ -40,11 +41,11 @@ export type { Correlation } from '@/domain/correlation';
 export type { WeightTrend, WeightPoint } from '@/domain/weight';
 export type { PhaseHabit, PhaseView, PhaseWeek } from '@/domain/phases';
 export type { WeekProgress, Strength } from '@/domain/stats';
-export type { RunWeek, RunBlock, RunPosition } from '@/domain/runPlan';
+export type { RunWeek, RunBlock, RunBlockKind, RunPosition, TrainingNames, TrainingTemplate } from '@/domain/runPlan';
 export type { ReviewSummary, ReviewLine, ReviewWindow } from '@/domain/review';
 export type { PillarHabitFate } from '@/domain/pillars';
 
-// Ajudantes puros do domínio que as telas costumam usar (textos, datas, plano base, corrida)
+// Ajudantes puros do domínio que as telas costumam usar (textos, datas, plano base, treino guiado)
 export * from '@/domain/format';
 export {
   addDays,
@@ -78,12 +79,35 @@ export type { PlanDraft, DraftPillar, PlanChip, TemplateHabit, TemplatePillar } 
 export {
   RUN_PLAN,
   RUN_WEEKS,
+  RUN_TEMPLATE,
+  TRAINING_TEMPLATES,
+  DEFAULT_EFFORT,
+  DEFAULT_REST,
+  BLANK_WEEK,
   runWeek,
   runPosition,
   runElapsed,
   intervalsCompleted,
+  effortSecondsDone,
   nextSession,
+  trainingOf,
+  namesOf,
+  planWeeks,
+  planWeek,
+  weekOfHabit,
+  buildWeek,
+  weekLabel,
+  weekPhrase,
+  gerund,
+  effortTimeLabel,
+  effortMinutesText,
+  sessionsPerWeek,
+  templateOf,
+  runTemplatePlan,
+  blankPlan,
+  clonePlan,
 } from '@/domain/runPlan';
+export { normalizeHabit } from '@/domain/normalize';
 export {
   quickAddsFor,
   quickAddSlot,
@@ -96,7 +120,7 @@ export {
   dayStripRange,
 } from '@/domain/today';
 export { groupEntries, insightText } from '@/domain/views';
-export { isDoneLike, isCountable, goalOn, nextRampStep, timeMeetsGoal } from '@/domain/habitState';
+export { isDoneLike, isCountable, isWeeklyKind, goalOn, nextRampStep, timeMeetsGoal } from '@/domain/habitState';
 export { pillarUsingColor, duplicatePillarName, firstFreeColor, pillarExitPlan } from '@/domain/pillars';
 export { CORRELATION_NEEDED } from '@/domain/correlation';
 export { WEIGHT_NEEDED } from '@/domain/weight';

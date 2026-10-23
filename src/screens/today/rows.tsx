@@ -43,6 +43,7 @@ import {
 import { useNavigate } from 'react-router';
 import { tween } from '@/motion/tokens';
 import { prepareRun } from '@/screens/run/engine';
+import { runPath } from '@/screens/run/paths';
 import { shortOf, timeCaption } from './copy';
 import { useTodayCtx } from './context';
 import { weekLen } from './useTodayActions';
@@ -65,6 +66,10 @@ function subtitleFor(
     const what = h.shortName?.trim() || shortOf(h);
     const t = `${n} ${n === 1 ? 'dia' : 'dias'} sem ${what}`;
     return { node: t, text: t };
+  }
+  // treino guiado: a semana e o treino do plano ("semana 3, treino 1 · 7h10"), no lugar das bolinhas da semana
+  if (h.type === 'guided') {
+    return { node: <RunCaption item={item} />, text: h.description ?? '' };
   }
   if (h.type === 'budget' && item.budget) {
     const b = item.budget;
@@ -143,9 +148,6 @@ function subtitleFor(
     const s = [formatTime(item.time), h.description].filter(Boolean).join(' · ');
     return { node: s, text: s };
   }
-  if (h.role === 'run') {
-    return { node: <RunCaption item={item} />, text: h.description ?? '' };
-  }
   if (item.time && (h.type === 'check' || h.type === 'checklist')) {
     const caption = timeCaption(h, item.time, ctx.minutes, done || ctx.isPast);
     const s = h.schedule.useCollectionDays || h.role === 'trash' ? `coleta hoje · ${caption}` : caption;
@@ -156,23 +158,33 @@ function subtitleFor(
 }
 
 function RunCaption({ item }: { item: TodayItem }) {
-  const plan = useRunPlan();
+  const plan = useRunPlan(item.habit.id);
   const time = item.time ? ` · ${formatTime(item.time)}` : '';
+  // feito no dia: o treino que foi feito; senão, o próximo do plano
+  const at = item.mark?.run ?? plan.next;
   return (
     <>
-      semana {plan.next.week}, treino {plan.next.session}
+      semana {at.week}, treino {at.session}
       {time}
     </>
   );
 }
 
+/** O controle do treino guiado: "Começar" abre o próximo treino do plano do hábito; feito, os minutos. */
 function RunControl({ item }: { item: TodayItem }) {
-  const plan = useRunPlan();
+  const plan = useRunPlan(item.habit.id);
   const navigate = useNavigate();
   if (isDoneLike(item.state) || item.registered) {
     const minutes = item.mark?.run ? Math.round(item.mark.run.seconds / 60) : (item.value ?? 0);
+    // o ✓ só quando o treino contou (inteiro ou a partir da metade); abaixo disso, só os minutos
+    const counted = isDoneLike(item.state);
     return (
-      <ValuePill value={`${minutes} min`} label={`${item.habit.name}, ${minutes} minutos`} pillar={pillarColor(item)} />
+      <ValuePill
+        value={`${minutes} min`}
+        icon={counted ? 'check' : null}
+        label={`${item.habit.name}, ${minutes} minutos${counted ? ', feito' : ''}`}
+        pillar={pillarColor(item)}
+      />
     );
   }
   return (
@@ -181,7 +193,7 @@ function RunControl({ item }: { item: TodayItem }) {
       onClick={() => {
         // dentro do toque: o iPhone só libera o áudio e a trava da tela depois de um gesto
         prepareRun();
-        void navigate(`/corrida/${plan.next.week}/${plan.next.session}`);
+        void navigate(runPath(item.habit.id, plan.next.week, plan.next.session));
       }}
     >
       Começar
@@ -208,7 +220,7 @@ function controlFor(item: TodayItem, ctx: ReturnType<typeof useTodayCtx>): React
       />
     );
   }
-  if (h.role === 'run') return <RunControl item={item} />;
+  if (h.type === 'guided') return <RunControl item={item} />;
 
   switch (h.type) {
     case 'time': {

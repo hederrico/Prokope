@@ -34,10 +34,12 @@ flowchart LR
   PROG -. folha .-> F1
   PROG -->|semana passada| RP
 
-  JOR -->|empurra| PLANO[Plano de corrida]
+  JOR -->|empurra| PLANO[Plano do treino]
   JOR -->|empurra| EF[Editar jornada]
   JOR -->|empurra| RP[Revisão passada]
-  PLANO ==> CORR[Corrida em andamento] ==> TF[Treino feito] ==> HOJE
+  PLANO ==> EPL[Editar plano]
+  PLANO ==> CORR[Treino em andamento] ==> TF[Treino feito] ==> HOJE
+  HOJE ==>|Começar| CORR
   JOR ==> REV
   REV ==> FASE[Fase desbloqueada] ==> HOJE
 
@@ -55,7 +57,7 @@ Legenda: seta cheia é tela empurrada, pontilhada é folha, dupla é tela cheia.
 | **Aba** | As quatro áreas do app | Fica | Outra aba |
 | **Tela empurrada** | Detalhe de algo da lista (hábito, plano, um item de Ajustes) | Fica | "Voltar" no topo ou arrasto da borda esquerda |
 | **Folha** | Registrar ou escolher algo rápido sem perder o lugar | Coberta pelo fundo | Arrastar para baixo, tocar fora, "Fechar" ou a ação principal |
-| **Tela cheia** | Um fluxo com começo e fim, que pede foco (entrada, corrida, revisão, fase desbloqueada, criar pilar ou hábito) | Some | Depende da forma (abaixo) |
+| **Tela cheia** | Um fluxo com começo e fim, que pede foco (entrada, treino, revisão, fase desbloqueada, criar pilar ou hábito, editar o plano do treino) | Some | Depende da forma (abaixo) |
 
 Regra de escolha: se a pessoa volta ao mesmo lugar depois de uma ação de segundos, é folha. Se ela vai explorar e voltar, é tela empurrada. Se ela entra num fluxo de vários passos, é tela cheia.
 
@@ -64,8 +66,8 @@ A tela cheia tem duas formas:
 | Forma | Onde | Topo | Como sai |
 |---|---|---|---|
 | **Fluxo em passos** | Primeiro acesso, revisão da semana | `StepTop`: voltar · trechos do progresso · X | Voltar entre passos. Na revisão, o X sai e guarda o que foi preenchido, e o Hoje mostra "Continuar revisão". O primeiro acesso não tem X, porque ainda não existe um Hoje para onde voltar |
-| **Formulário** | Novo pilar, novo hábito | `NavBar`: Cancelar · título · Criar (ao criar) ou Salvar (ao editar) | Cancelar, ou a ação, que fica desabilitada até o campo obrigatório ser preenchido |
-| **Momento** | Corrida em andamento, fase desbloqueada | Corrida: "Minimizar" (seta para baixo). Fase: nenhum | A corrida minimiza e segue numa faixa no topo do Hoje; "Encerrar" pede toque longo. A fase sai pelo botão "Ver meu dia" |
+| **Formulário** | Novo pilar, novo hábito, Editar plano | `NavBar`: Cancelar · título · Criar (ao criar) ou Salvar (ao editar) | Cancelar, ou a ação, que fica desabilitada até o campo obrigatório ser preenchido. No Treino guiado, a linha "Plano · 13 semanas" empurra o editor dentro do próprio formulário ("‹ Novo hábito" volta), com o passo de 24 px |
+| **Momento** | Treino em andamento, fase desbloqueada | Treino: "Minimizar" (seta para baixo). Fase: nenhum | O treino minimiza e segue numa faixa no topo do Hoje; "Encerrar" pede toque longo. A fase sai pelo botão "Ver meu dia" |
 
 ## Animação de cada passagem
 
@@ -99,12 +101,15 @@ O primeiro trecho da rota diz qual aba está ativa. Folhas e o dia escolhido fic
 | `/progresso?periodo=semana&tema=visao` | Progresso. `periodo` é `semana`, `mes` ou `fase`; `tema` é `visao`, `humor`, `medidas` ou o id de um pilar | Aba |
 | `/progresso/habito/:id` | Hábito, aberto a partir do Progresso | Empurrada |
 | `/jornada` | Jornada | Aba |
-| `/jornada/corrida` | Plano de corrida | Empurrada |
+| `/jornada/treino/:id` | O plano de um treino guiado (a corrida, a bicicleta) | Empurrada |
+| `/jornada/treino/:id/plano` | Editar plano (as semanas do treino guiado) | Tela cheia |
+| `/jornada/corrida` | Rota antiga: leva ao plano do primeiro treino guiado | Empurrada |
 | `/jornada/revisoes/:semana` | Revisão passada, só leitura | Empurrada |
 | `/progresso/revisoes/:semana` | A mesma revisão, aberta a partir do Progresso (rota espelho) | Empurrada |
 | `/jornada/fases` | Editar jornada (sugestão aos 70%, datas e duração, os hábitos de cada fase: os que continuam, os novos, adicionar, parar nesta fase) | Empurrada |
-| `/corrida/:semana/:treino` | Corrida em andamento | Tela cheia |
-| `/corrida/:semana/:treino/feito` | Treino feito | Tela cheia |
+| `/treino/:habito/:semana/:treino` | Treino em andamento, com os blocos do plano do hábito | Tela cheia |
+| `/treino/:habito/:semana/:treino/feito` | Treino feito | Tela cheia |
+| `/corrida/:semana/:treino` e `/corrida/:semana/:treino/feito` | Rotas antigas: o treino do primeiro treino guiado (com mais de um treino guiado, as telas usam as rotas com `:habito`) | Tela cheia |
 | `/revisao/:semana/1` a `/revisao/:semana/3` | Revisão de domingo | Tela cheia |
 | `/revisao/:semana/fim` | Revisão · mais uma semana (o fim da revisão quando a pessoa fica mais uma semana na fase) | Tela cheia |
 | `/fase/:numero` | Fase desbloqueada | Tela cheia |
@@ -127,7 +132,7 @@ Abrir uma folha cria uma entrada no histórico; fechar volta. Passos de um fluxo
 - **Cada aba tem a própria pilha.** Ao sair de Ajustes › Pilares para o Hoje e voltar, a pessoa reencontra Pilares. O último caminho de cada aba fica no estado de interface (veja [comunicacao.md](comunicacao.md)).
 - **Rolagem:** cada tela guarda a posição ao sair e restaura ao voltar. Ao empurrar uma tela nova, ela começa no topo.
 - **Rascunhos:** check-in e revisão salvam o texto enquanto a pessoa digita (no aparelho). Fechar sem querer não perde nada, e por isso fechar não pede confirmação.
-- **Fluxos interrompidos:** sair da revisão no passo 2 e voltar depois abre no passo 2. A corrida em andamento sobrevive a um recarregamento, porque o tempo é calculado a partir da hora de início.
+- **Fluxos interrompidos:** sair da revisão no passo 2 e voltar depois abre no passo 2. O treino em andamento sobrevive a um recarregamento, porque o tempo é calculado a partir da hora de início.
 
 ## Voltar no app instalado
 

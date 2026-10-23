@@ -284,9 +284,9 @@ describe('fases, revisão e corrida', () => {
     const w1 = RUN_PLAN[0];
     expect(w1.totalSeconds).toBe(30 * 60);
     expect(w1.intervals).toBe(8);
-    // 10:42 de treino: aquecimento (5 min), 2 intervalos completos (5 min), 42 s no 3º trote
+    // 10:42 de treino: aquecimento (5 min), 2 intervalos completos (5 min), 42 s no 3º esforço (correr)
     const pos = runPosition(w1, 10 * 60 + 42);
-    expect(pos.block.kind).toBe('run');
+    expect(pos.block.kind).toBe('effort');
     expect(pos.interval).toBe(3);
     expect(Math.round(pos.inBlock)).toBe(42);
     expect(runElapsed({ startedAt: 0, pauses: [{ from: 60_000, to: 120_000 }], endedAt: null }, 300_000)).toBe(240);

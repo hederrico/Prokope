@@ -17,9 +17,11 @@ import type {
   QuickAdd,
   ScheduleKey,
   TimeHM,
+  TrainingPlan,
   Weekday,
 } from '@/types';
 import { addDays, instantAt, logicalDay, logicalMinutesOf, type Clock } from './day';
+import { clonePlan, RUN_TEMPLATE } from './runPlan';
 
 export const ALL_DAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
@@ -65,6 +67,8 @@ export interface TemplateHabit {
   schedule?: Partial<HabitScheduleConfig>;
   quickAdds?: Omit<QuickAdd, 'id'>[];
   checklist?: string[];
+  /** o plano do Treino guiado (type 'guided') */
+  training?: TrainingPlan;
   /** chip do passo 2 (hábitos com o mesmo chip ligam e desligam juntos: "Acordar e deitar") */
   chip?: string;
   /** rótulo do chip, quando diferente do nome */
@@ -383,17 +387,19 @@ export const TEMPLATE_HABITS: TemplateHabit[] = [
     schedule: { moment: 'day' },
   },
   {
+    // Treino guiado com o modelo pronto "Corrida do zero aos 30 minutos" (13 semanas, correr e caminhar)
     key: 'run',
     name: 'Corrida',
     short: 'corrida',
-    type: 'weekly',
+    type: 'guided',
     icon: 'person-simple-run',
     pillar: 'corpo',
     phase: 3,
     role: 'run',
     description: 'do zero aos 30 minutos',
-    goal: { perWeek: 2, value: 30, unit: 'min', partialMin: 15 },
+    goal: { perWeek: RUN_TEMPLATE.perWeek },
     schedule: { moment: 'morning', days: [0, 2], time: '07:10' },
+    training: RUN_TEMPLATE.plan,
   },
   // Família
   {
@@ -681,6 +687,7 @@ export function buildPlan(draft: PlanDraft, opts: BuildPlanOptions): BuiltPlan {
         schedule: { days: [...ALL_DAYS], moment, ...t.schedule } as HabitScheduleConfig,
         quickAdds: (t.quickAdds ?? []).map((q) => ({ ...q, id: newId() })),
         checklist: checklistItems(t.checklist, newId),
+        ...(t.training ? { training: clonePlan(t.training) } : {}),
         order: ord,
         archived,
         archivedAt: archived ? now : null,

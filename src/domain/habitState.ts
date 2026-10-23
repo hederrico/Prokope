@@ -253,10 +253,16 @@ export function countsInDay(habit: Habit, profile: Profile): boolean {
     case 'daysSince':
       return true;
     case 'weekly':
+    case 'guided': // o treino guiado conta como vezes por semana
       return hasFixedDays(habit, profile);
     default:
       return false;
   }
+}
+
+/** Vezes por semana: o 'weekly' e o Treino guiado (treinos por semana, nos dias da agenda). */
+export function isWeeklyKind(habit: Pick<Habit, 'type'>): boolean {
+  return habit.type === 'weekly' || habit.type === 'guided';
 }
 
 /** Entra na constância e na força: o que conta no dia, mais contadores e números com meta. */
@@ -264,13 +270,13 @@ export function countsInConstancy(habit: Habit, profile: Profile): boolean {
   if (countsInDay(habit, profile)) return true;
   if (habit.type === 'counter') return habit.goal.value !== undefined;
   if (habit.type === 'number') return habit.goal.value !== undefined && !habit.goal.measuring;
-  if (habit.type === 'weekly') return true; // vezes por semana sem dia fixo: conta por semana
+  if (isWeeklyKind(habit)) return true; // vezes por semana sem dia fixo: conta por semana
   return false;
 }
 
 /** Hábito de vezes por semana sem dia fixo (academia 2× em qualquer dia): conta pela semana. */
 export function isFlexibleWeekly(habit: Habit, profile: Profile): boolean {
-  return habit.type === 'weekly' && !hasFixedDays(habit, profile);
+  return isWeeklyKind(habit) && !hasFixedDays(habit, profile);
 }
 
 function markState(mark: Mark | undefined): 'done' | 'partial' | 'notDone' {

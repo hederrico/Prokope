@@ -1,0 +1,75 @@
+/* O editor do plano do Treino guiado (TrainingPlanEditor): usa as linhas das semanas do plano da Jornada (.jr-wr,
+   em journey.css, fora de camada) e acerta o que muda aqui. Fica fora de camada pelo mesmo motivo. Prefixo st-tp-. */
+.st-tp-lede {
+  margin: 0 4px 12px;
+}
+.st-tp-sum {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.st-tp-sum .cap {
+  margin: 0;
+  color: var(--text-2);
+}
+.st-tp-sum .cap b {
+  display: block;
+  margin-bottom: 2px;
+  font: 600 16px/20px var(--font-ui);
+  color: var(--text);
+}
+/* número · blocos e total · barra do esforço · minutos e a seta */
+.jr-wr.st-tp-wr {
+  grid-template-columns: 28px minmax(0, 1fr) 48px 64px;
+}
+.jr-wr .st-tp-tot {
+  color: var(--text-2);
+}
+.st-tp-min {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+.st-tp-min svg {
+  flex: none;
+  font-size: 14px;
+  color: var(--text-3);
+}
+.st-tp-prev {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.st-tp-prev .cap {
+  margin: 0;
+  color: var(--text-2);
+}
+.st-tp-seq {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.st-tp-acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* a parte do plano dentro do formulário do hábito: entra como um passo (24 px e opacidade) */
+.st-tp-host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.st-pv-pill {
+  pointer-events: none;
+}
+/* folha "Dias de treino" do formulário: o horário ao lado do rótulo */
+.st-tp-time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font: 500 16px/20px var(--font-ui);
+}

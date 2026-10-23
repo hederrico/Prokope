@@ -31,7 +31,8 @@ export function offerRow(h: Habit): { title: string; sub: string } {
   const desc = h.description?.trim();
   let title = h.name;
   let main: string;
-  if (h.type === 'weekly' || h.type === 'budget') main = g.perWeek ? `${g.perWeek}× por semana` : 'na semana';
+  if (h.type === 'weekly' || h.type === 'guided' || h.type === 'budget')
+    main = g.perWeek ? `${g.perWeek}× por semana` : 'na semana';
   else if (g.direction === 'atMost' && g.value != null) {
     title = `${h.name} até ${formatAmount(g.value, g.unit)}`;
     main = 'por dia';

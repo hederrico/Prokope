@@ -1,5 +1,5 @@
-// Folha "Dias de treino" (Plano de corrida, Treino feito e Fase desbloqueada): os dias com DayPicker e o
-// horário com TimeValue. Grava com setRunSchedule; o Hoje dos dias escolhidos ganha a linha da Corrida.
+// Folha "Dias de treino" (plano do treino guiado, Treino feito e Fase desbloqueada): os dias com DayPicker e o
+// horário com TimeValue. Grava com setRunSchedule no hábito; o Hoje dos dias escolhidos ganha a linha do treino.
 import { useState } from 'react';
 import { Sheet, showUndo } from '@/components/shell';
 import { Button, DayPicker, TimeValue, type PillarColor } from '@/components/ui';
@@ -16,9 +16,11 @@ export interface RunScheduleSheetProps {
   time: string | null;
   perWeek: number;
   pillar?: PillarColor;
+  /** o treino guiado (sem ele, o primeiro) */
+  habitId?: string | null;
 }
 
-export function RunScheduleSheet({ open, onOpenChange, days, time, perWeek, pillar }: RunScheduleSheetProps) {
+export function RunScheduleSheet({ open, onOpenChange, days, time, perWeek, pillar, habitId }: RunScheduleSheetProps) {
   const [draft, setDraft] = useState({ days, time: time ?? '07:10' });
   // ao abrir, o rascunho volta para o que está salvo
   const [wasOpen, setWasOpen] = useState(open);
@@ -29,7 +31,7 @@ export function RunScheduleSheet({ open, onOpenChange, days, time, perWeek, pill
   const save = async () => {
     const chosen = { days: draft.days as Weekday[], time: draft.time };
     onOpenChange(false);
-    const undo = await setRunSchedule(chosen);
+    const undo = await setRunSchedule(chosen, habitId ?? undefined);
     showUndo(
       { title: 'Dias de treino salvos', detail: scheduleLabel(chosen.days, chosen.time), icon: 'calendar-dots' },
       () => void undo(),
@@ -48,7 +50,8 @@ export function RunScheduleSheet({ open, onOpenChange, days, time, perWeek, pill
     >
       <div className="jr-sheet">
         <p className="jr-sheet-p">
-          {perWeek} treinos por semana. Um dia de descanso entre eles ajuda o corpo a se recuperar.
+          {perWeek === 1 ? '1 treino' : `${perWeek} treinos`} por semana. Um dia de descanso entre eles ajuda o corpo a
+          se recuperar.
         </p>
         <DayPicker
           value={draft.days}
