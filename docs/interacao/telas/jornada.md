@@ -11,9 +11,9 @@ Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (mot
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|---|
-| "Editar fases" | Toque | Empurra Editar fases | `calma` | — | — |
+| "Editar jornada" | Toque | Empurra Editar jornada | `calma` | — | — |
 | Fase 1 (concluída) | Toque | Empurra a revisão do fim da fase, só leitura (`/jornada/revisoes/2026-10-11`) | `calma` | — | — |
-| Cartão da fase 2, fase 3 e fase 4 | Toque | Empurra Editar fases com a fase rolada até o topo | `calma` | — | — |
+| Cartão da fase 2, fase 3 e fase 4 | Toque | Empurra Editar jornada com a fase rolada até o topo | `calma` | — | — |
 | Chips de hábito no cartão | — | Não são tocáveis (só descrevem) | — | — | — |
 | Plano de corrida | Toque | Empurra o Plano de corrida | `calma` | — | — |
 | Revisão passada | Toque | Empurra a revisão só para leitura | `calma` | — | — |
@@ -26,25 +26,53 @@ Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (mot
 - **Pausa do app:** o cartão "Agora" mostra "Pausado até 2 jan" no lugar de "semana 2 de 3", e a barra da semana fica hachurada.
 
 **Como sai:** pelas telas empurradas da tabela, ou por outra aba.
-**Acessibilidade:** `PhasePath` é uma lista. Cada fase é um item com o nome completo: "Fase 2, Alimentação, agora, semana 2 de 3, 76% na semana, 5 hábitos novos". A linha do caminho e as barras das semanas são decorativas. Ordem de foco: Editar fases, título, fases, plano, revisões. Com letra grande, os chips do cartão quebram linha e as barras das semanas viram texto ("semana 1 · 74%") empilhado.
+**Acessibilidade:** `PhasePath` é uma lista. Cada fase é um item com o nome completo: "Fase 2, Alimentação, agora, semana 2 de 3, 76% na semana, 5 hábitos novos". A linha do caminho e as barras das semanas são decorativas. Ordem de foco: Editar jornada, título, fases, plano, revisões. Com letra grande, os chips do cartão quebram linha e as barras das semanas viram texto ("semana 1 · 74%") empilhado.
 **Implementação:** `PhasePath` lê `phases` e a constância calculada no domínio. A porcentagem da semana em curso é a mesma do `WeekCard` do Hoje (um seletor só). Não guarde datas de início das fases futuras: elas são previsões calculadas a partir do fim da fase atual e da duração de cada uma.
 
-## Editar fases  (rota: `/jornada/fases`)
+## Editar jornada  (rota: `/jornada/fases`)
 
-**Como chega:** empurrada a partir da Jornada (`calma`). Com `#fase-3`, rola até a fase sem animação antes da primeira pintura.
+As fases se somam: um hábito entra numa fase (`phase`) e segue nas próximas, até a fase em que para (`untilPhase`, sem ela). Esta tela mostra cada fase em duas partes, o que continua das anteriores e o que é novo nela, e deixa adicionar, mover, tirar da fase, arquivar e parar um hábito numa fase. Tudo tem Desfazer.
+
+**Como chega:** empurrada a partir da Jornada, pelo botão "Editar jornada" ou pelo cartão de uma fase (`calma`). Com `#fase-3`, rola até a fase sem animação antes da primeira pintura.
 **Ao aparecer:** nada anima além da passagem.
+
+**Cada fase:**
+- **Concluída:** só o resumo ("7 hábitos", com os ícones). O passado não muda: sem datas, sem menus.
+- **Atual e futuras:** duas partes, cada uma com o rótulo e a contagem.
+  - **Continuam das fases anteriores**, com "Os hábitos das fases anteriores seguem com você." e a fase de origem em cada linha ("da fase 1"). Com mais de 4, a parte chega recolhida numa linha com os ícones e a contagem ("10 hábitos · da fase 1 · ver e mudar"), que abre no lugar.
+  - **Novos nesta fase** (na primeira fase, ou numa sem nada das anteriores, "Hábitos desta fase").
+  - "Adicionar hábito" no fim, e a data de fim (atual) ou a duração (futura).
+- **Sem fase:** um cartão no fim, só quando há hábitos sem fase ("Seguem no seu dia a dia em todas as fases.").
+- As medições (peso, cintura, tempo de tela) aparecem nas listas desta tela, para poderem parar numa fase. "Acordar e deitar" é uma linha só, como no plano, e o que se faz nela vale para os dois.
+- A linha diz a parada: "para na fase 3" antes da fase de parada; nela, "para nesta fase" (mais quieta, sem sumir) e, quando a parada já vale, "sai do dia a dia hoje" ou "fora do dia a dia desde 23 out".
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|---|
 | Sugerir a próxima fase | Toque | Folha com `OptionCard`: 60%, 70%, 80%, "Não sugerir" | `folha` | `setPhaseThreshold(0.7)` | Revisão 3: ordem das opções e texto |
 | "Termina em 1 nov" (fase atual) | Toque | `<input type="date">` nativo, a partir de amanhã | — | `updatePhase(2, { end })` | Datas previstas das fases 3 e 4 trocam com opacidade em `micro`; o domingo da revisão de fim de fase muda |
 | "Duração" (fases futuras) | Toque | Folha com − e + (1 a 8 semanas) e "Sem fim" | `folha` | `updatePhase(n, { weeks })` | Datas das fases seguintes |
-| Chip de hábito | Toque | Folha "Mover para" com as fases em `OptionCard` | `folha` | `moveHabitToPhase(habitId, n)` | O chip sai de um cartão e entra no outro com layout `calma`; toast "Proteína movida para a fase 3" com Desfazer |
+| "10 hábitos · da fase 1" (recolhida) | Toque | Abre ou recolhe a lista no lugar | altura com `calma`, a seta gira em `micro` | — | — |
+| Linha de "Novos nesta fase" | Toque | Folha do hábito: "Mover para outra fase", "Tirar da fase" e "Arquivar", cada uma dizendo o que acontece | `folha` | — | — |
+| › Mover para outra fase | Toque | A folha "Mover para", com as fases que não acabaram em `OptionCard` | `folha` depois da outra sair | `moveHabitToPhase(habitId, n)` | A linha muda de cartão; toast "Proteína movida para a fase 3" com Desfazer |
+| › Tirar da fase | Toque | A linha vai para o cartão Sem fase | layout `calma` | `removeHabitFromPhase(ids)` | O hábito segue no Hoje (um que esperava a fase entra hoje); toast "Proteína segue sem fase" com Desfazer |
+| › Arquivar | Toque | A linha sai | opacidade em `micro` | `archiveHabit(id)` | Sai do Hoje; o histórico fica (Ajustes › Hábitos › Arquivados); toast "Proteína arquivada" com Desfazer |
+| Linha de "Continuam" | Toque | Folha do hábito: "Parar nesta fase" ou, se já para nela, "Voltar a seguir" | `folha` | — | — |
+| › Parar nesta fase (futura) | Toque | A linha fica no lugar e diz "para nesta fase"; some das fases seguintes | `micro` | `stopHabitAtPhase(ids, 3)` | Nada muda até a fase 3 começar; a partir do primeiro dia dela, o hábito é como um arquivado daquela data (Hoje, contas, constância, força, padrões, revisão, calendário). Toast "Peso para na fase 3 · Até lá, tudo segue igual" com Desfazer |
+| › Parar nesta fase (atual) | Toque | A linha diz "sai do dia a dia hoje" | `micro` | `stopHabitAtPhase(ids, 2)` (grava `untilDay` = hoje) | Sai do Hoje a partir de hoje; os dias antes ficam no histórico. Em Ajustes, aparece entre os arquivados. Toast "Louça sai do dia a dia hoje" com Desfazer |
+| › Voltar a seguir | Toque | A linha volta a "da fase 1" | `micro` | `keepHabitFollowing(ids)` | Segue nesta fase e nas próximas. Se ele já tinha saído, os dias fora viram pausa do hábito (como ao desarquivar). Toast "Peso volta a seguir" com Desfazer |
+| Linha de Sem fase | Toque | Folha: "Pôr numa fase" e "Arquivar" | `folha` | `moveHabitToPhase` ou `archiveHabit` | Um hábito que já está no dia a dia só entra na fase atual (numa futura, sairia do Hoje até lá) |
+| "Adicionar hábito" | Toque | Folha "Adicionar à fase 3": "Criar hábito novo nesta fase" e "Trazer um que você já tem" | `folha` | — | — |
+| › Criar hábito novo nesta fase | Toque | Novo hábito (`/ajustes/habitos/novo/tipo?fase=3`) com "Começa: na fase 3"; Criar e Cancelar voltam para cá | tela cheia | `createHabit({ start: 3 })` | Toast "Alongar entra na fase 3, em 2 nov" com Desfazer (fase futura) |
+| › Um hábito da lista | Toque | A folha fecha; a linha entra em "Novos" | opacidade em `micro` | `moveHabitToPhase(habitId, 3)` | Toast "Ritual do sono movido para a fase 3" com Desfazer |
 | "Nova fase" | Toque | Formulário modal com o nome e a duração | tela cheia | `addPhase({ name, weeks })` | Novo nó no fim do caminho da Jornada |
 
-**Estados desta tela:** a fase concluída não tem datas nem chips tocáveis (o passado não muda). Mover um hábito para a fase atual faz ele entrar no Hoje no mesmo dia, com o selo "novo". Mover para uma fase futura tira o hábito do Hoje a partir de amanhã, e os registros ficam.
-**Acessibilidade:** cada cartão é um grupo com o nome da fase. Os chips dizem "Proteína, na fase 2. Toque para mudar de fase". O valor de cada `TimeValue` é lido com a ação ("Termina em 1 de novembro, alterar").
-**Implementação:** os chips usam `layoutId` por hábito dentro de um `LayoutGroup`, para atravessar de um cartão para o outro. A data mínima do campo é amanhã, e nenhuma data passada fica editável.
+**Quem pode ser trazido (Adicionar hábito):** os hábitos de outras fases ou sem fase que ainda não seguem nela. Na fase atual: os sem fase (ficam nesta fase, sem mudar o dia) e os que esperam fases seguintes (entram hoje). Numa fase futura: só os que ainda esperam ("da fase 4 · entra mais cedo"); os que já estão no dia a dia já seguem nela. Arquivados e os que param numa fase ficam fora.
+
+**Estados desta tela:** a fase concluída não tem datas nem menus (o passado não muda). Mover um hábito para a fase atual faz ele entrar no Hoje no mesmo dia, com o selo "novo". Mover para uma fase futura tira o hábito do Hoje até ela começar, e os registros ficam. Mover para a fase de parada (ou depois dela) desfaz a parada.
+**Acessibilidade:** cada cartão é um grupo com o nome da fase; cada parte é uma lista com o rótulo ("Continuam das fases anteriores", "Novos nesta fase", "Hábitos sem fase"), e a contagem é lida como "10 hábitos". Cada linha é um botão: "Peso, da fase 1 · para nesta fase. Abre as opções". A linha recolhida diz quantos são e se abre ou recolhe ("10 hábitos da fase 1, mostrar a lista"), com `aria-expanded`. Cada opção do menu é um botão com o nome e o que acontece ("Parar nesta fase. Sai do dia a dia quando a fase 3 começar..."). O valor de cada `TimeValue` é lido com a ação ("Termina em 1 de novembro, alterar").
+**Implementação:** as linhas usam `layoutId` por fase do cartão e hábito, dentro de um `LayoutGroup`: a linha que muda de parte no mesmo cartão atravessa com layout `calma`, a que entra aparece com opacidade em `micro` e a que sai deixa o lugar (`popLayout`). Cartões e linhas só medem o layout quando o plano muda (`layoutDependency`), para nada andar sozinho durante a passagem da tela. As folhas saem antes de o toast entrar (240 ms). A data mínima do campo é amanhã, e nenhuma data passada fica editável. O domínio dá as duas partes (`PhaseView.entering`, `PhaseView.carried`) e os sem fase (`JourneyView.loose`).
+
+**Parar nesta fase, no domínio:** o hábito vale de `startDay` até antes do primeiro dia fora: o começo da fase `untilPhase` (enquanto ela não começa, nada muda) ou o `untilDay` gravado quando a parada foi escolhida com a fase em curso. `isActiveOn` usa o que vier antes entre o arquivamento e essa parada, então o Hoje, a conta do dia, a constância, a força, as correlações, a revisão, o calendário e os dias sem respeitam a data. Depois dela, `useHabit` e `useHabits` dizem `status: 'archived'`, e Desarquivar (`restoreHabit`) também faz o hábito voltar a seguir. Documentos sem os campos valem como `null`.
 
 ## Plano de corrida  (rota: `/jornada/corrida`)
 
@@ -147,7 +175,7 @@ A faixa `RunStrip` é do Hoje ([hoje.md](hoje.md)). Daqui ela recebe o estado do
 | 3 | "Ficar mais uma semana" | Toque | Revisão · mais uma semana | `stayInPhase(2)` e `finishReview` | Fase 2 até 8 nov; datas previstas das fases 3 e 4 |
 
 **Estados desta tela:**
-- **Abaixo do limite** (70% em Editar fases): no passo 3, "Ficar mais uma semana" vem primeiro, e o texto sugere firmar a fase. As duas opções continuam com o mesmo peso.
+- **Abaixo do limite** (70% em Editar jornada): no passo 3, "Ficar mais uma semana" vem primeiro, e o texto sugere firmar a fase. As duas opções continuam com o mesmo peso.
 - **Semana do meio da fase:** são 2 passos, sem convite. O passo 2 termina em "Concluir", que volta ao Hoje com o toast "Revisão da semana feita".
 - **Sem programa a dois ativo, ou sem cintura medida nesta conta:** o bloco correspondente não aparece.
 - **Mudar de ideia:** até o fim do domingo, o cartão "Amanhã começa a fase 3" do Hoje tem "Mudar de ideia", que chama `undoPhaseChoice`.

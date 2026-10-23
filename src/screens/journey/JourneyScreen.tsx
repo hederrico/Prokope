@@ -60,7 +60,16 @@ export default function JourneyScreen() {
     if (!current) return { count: 0, phases: [] as number[] };
     const before = j.phases.filter((p) => p.number < current.number);
     const count = before.reduce(
-      (n, p) => n + p.habits.filter((h) => h.startDay && h.startDay <= today && countsInTheDay(h)).length,
+      (n, p) =>
+        n +
+        p.habits.filter(
+          // os que pararam nesta fase ou antes dela não seguem com você
+          (h) =>
+            h.startDay &&
+            h.startDay <= today &&
+            countsInTheDay(h) &&
+            (h.untilPhase == null || h.untilPhase > current.number),
+        ).length,
       0,
     );
     return { count, phases: before.map((p) => p.number) };
@@ -88,7 +97,7 @@ export default function JourneyScreen() {
         trailing={
           <button type="button" className="jr-hdact hit" onClick={() => void navigate('/jornada/fases')}>
             <Icon name="pencil-simple" weight="bold" />
-            Editar fases
+            Editar jornada
           </button>
         }
       />

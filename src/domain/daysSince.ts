@@ -1,9 +1,10 @@
 // Dias sem: a contagem atual (desde o último deslize, contando hoje), o recorde e o total.
 // O dia de um deslize sai do total, e os dias pausados não contam nem quebram a contagem (ela fica parada).
+// Arquivado ou parado numa fase, a contagem fica no último dia em que o hábito valia.
 import type { DayKey, Habit, Slip } from '@/types';
 import type { DomainData } from './context';
 import { addDays, daysBetween } from './day';
-import { pauseOn } from './habitState';
+import { endDayOf, pauseOn } from './habitState';
 
 export interface DaysSincePeriod {
   /** primeiro dia sem (depois do deslize anterior ou do começo) */
@@ -35,8 +36,11 @@ export interface DaysSince {
   ifSlipToday: { current: number; record: number; total: number };
 }
 
-export function daysSince(habit: Habit, data: DomainData, today: DayKey): DaysSince {
+export function daysSince(habit: Habit, data: DomainData, now: DayKey): DaysSince {
   const start = habit.startDay;
+  // o último dia que conta: hoje, ou a véspera do dia em que o hábito saiu do dia a dia
+  const end = endDayOf(habit, data);
+  const today = end && end <= now ? addDays(end, -1) : now;
   const slips: Slip[] = (data.slipsByHabit.get(habit.id) ?? []).filter((s) => !start || s.day >= start);
   const slipDays = new Map<DayKey, Slip>();
   for (const s of slips) if (s.day <= today) slipDays.set(s.day, s);

@@ -77,7 +77,7 @@ export async function stayInPhase(number: number, weeks = 1): Promise<Undo> {
   return commit([mergeOp('phases', p.id, { end: addDays(end, weeks * 7) })]);
 }
 
-/** Muda nome, duração ou o fim planejado de uma fase (Editar fases). */
+/** Muda nome, duração ou o fim planejado de uma fase (Editar jornada). */
 export async function updatePhase(
   number: number,
   patch: Partial<Pick<Phase, 'name' | 'weeks' | 'end' | 'description'>>,

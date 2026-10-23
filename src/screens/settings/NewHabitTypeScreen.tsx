@@ -27,11 +27,14 @@ export default function NewHabitTypeScreen() {
 
   const chosen = fromDetails ? draft?.type : undefined;
   const pillar = search.get('pilar');
+  // vindo de Editar jornada (?fase=3): a fase segue para os detalhes, e Cancelar volta para lá
+  const phase = search.get('fase');
 
   const choose = (type: HabitType) => {
     const params = new URLSearchParams();
     params.set('tipo', type);
     if (pillar) params.set('pilar', pillar);
+    if (phase) params.set('fase', phase);
     void navigate(`/ajustes/habitos/novo/detalhes?${params}`, { replace: true, state: { transition: 'push' } });
   };
 
@@ -43,7 +46,9 @@ export default function NewHabitTypeScreen() {
           title="Novo hábito"
           onBack={() => {
             setDraft(null);
-            goBack(pillar ? `/ajustes/pilares/${encodeURIComponent(pillar)}` : '/ajustes/habitos');
+            goBack(
+              phase ? '/jornada/fases' : pillar ? `/ajustes/pilares/${encodeURIComponent(pillar)}` : '/ajustes/habitos',
+            );
           }}
         />
       }

@@ -211,6 +211,16 @@ export interface Habit {
   phase: number | null;
   /** primeiro dia que conta (posto quando a fase começa); null = ainda não começou */
   startDay: DayKey | null;
+  /**
+   * fase em que sai do dia a dia ("o peso diário para na fase 3"): vale da fase `phase` até antes desta.
+   * null (ou sem o campo, nos documentos antigos) = segue em todas as fases seguintes
+   */
+  untilPhase?: number | null;
+  /**
+   * primeiro dia fora, quando a parada foi escolhida com a fase de parada já em curso (hoje); sem ele, a parada
+   * vale a partir do começo da fase `untilPhase`, quando ela começar
+   */
+  untilDay?: DayKey | null;
   role?: HabitRole | null;
   /** texto curto da linha de baixo ("20 min ou mais") */
   description?: string;

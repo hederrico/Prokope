@@ -677,7 +677,7 @@ export function ControlsSection() {
         <SectionLabel inset>Botões</SectionLabel>
         <Button wide>Começar revisão</Button>
         <Button variant="secondary" wide icon="pencil-simple">
-          Editar fases
+          Editar jornada
         </Button>
         <Button variant="tint" pillar="familia" wide icon="salsicha" iconWeight="fill">
           Caminhar agora

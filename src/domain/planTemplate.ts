@@ -713,7 +713,7 @@ export function buildPlan(draft: PlanDraft, opts: BuildPlanOptions): BuiltPlan {
     }
   } else {
     // do zero: uma fase só, sem fim, a partir do começo do plano. A pessoa dá nome, duração e as próximas
-    // fases em Editar fases (sem ela, a Jornada e a revisão ficam sem fase atual)
+    // fases em Editar jornada (sem ela, a Jornada e a revisão ficam sem fase atual)
     const first = TEMPLATE_PHASES[0];
     phases.push({
       id: '1',

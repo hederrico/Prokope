@@ -3,7 +3,7 @@
 import type { Checkin, DayKey, Entry, Habit, Mark, MarkStatus, MeasurementKind, Slip, TimeHM } from '@/types';
 import { markId, measurementId } from '@/domain/context';
 import { addDays, instantAt, logicalDay, timeOf } from '@/domain/day';
-import { goalOn, timeMeetsGoal, valueStatus } from '@/domain/habitState';
+import { goalOn, stopDayOf, timeMeetsGoal, valueStatus } from '@/domain/habitState';
 import { useDataStore } from '@/stores/data';
 import { commit, deleteOp, mergeOp, newId, noUndo, now, setOp, snapshot, today, withId, type Undo } from './core';
 import { shareMoodIfLinked } from './together';
@@ -354,21 +354,35 @@ export async function archiveHabit(habitId: string): Promise<Undo> {
   return commit([mergeOp('habits', habitId, { archived: true, archivedAt: t, archivedDay: today(), updatedAt: t })]);
 }
 
-/** Desarquiva. Os dias em que ficou arquivado entram como pausa do hábito (fora das contas). */
+/**
+ * Desarquiva. Os dias em que ficou arquivado entram como pausa do hábito (fora das contas). Um hábito que parou
+ * numa fase que já começou (em Ajustes, ele aparece entre os arquivados) volta a seguir do mesmo jeito.
+ */
 export async function restoreHabit(habitId: string): Promise<Undo> {
   const habit = habitOrThrow(habitId);
+  const data = snapshot();
   const t = now();
   const d = today();
+  const stop = stopDayOf(habit, data);
+  const stopped = !!stop && stop <= d;
   const ops = [
     mergeOp('habits', habitId, {
       archived: false,
       archivedAt: null,
       archivedDay: null,
       archivedWith: null,
+      ...(stopped ? { untilPhase: null, untilDay: null } : {}),
       updatedAt: t,
     }),
   ];
-  const from = habit.archivedDay ?? (habit.archivedAt ? logicalDay(habit.archivedAt, snapshot().clock) : null);
+  const archivedFrom = habit.archivedDay ?? (habit.archivedAt ? logicalDay(habit.archivedAt, data.clock) : null);
+  const stoppedFrom = stopped ? stop : null;
+  const from =
+    archivedFrom && stoppedFrom
+      ? archivedFrom < stoppedFrom
+        ? archivedFrom
+        : stoppedFrom
+      : (archivedFrom ?? stoppedFrom);
   if (habit.startDay && from && from < d) {
     const id = newId();
     ops.push(

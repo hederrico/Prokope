@@ -3,7 +3,7 @@
 import type { DayKey, Habit } from '@/types';
 import type { DomainData } from './context';
 import { daysBetween } from './day';
-import { habitDay, isDoneLike } from './habitState';
+import { habitDay, isDoneLike, isInPlan } from './habitState';
 
 export const CORRELATION_NEEDED = 7;
 
@@ -81,11 +81,14 @@ export function correlationProgress(habit: Habit, data: DomainData, today: DayKe
   return { withDays: c.withDays, withoutDays: c.withoutDays, needed: c.needed, ready: c.ready };
 }
 
-/** Correlações prontas dos hábitos ativos em que os dias com o hábito foram melhores, da maior diferença para a menor. */
+/**
+ * Correlações prontas dos hábitos ativos em que os dias com o hábito foram melhores, da maior diferença para a menor.
+ * Arquivado ou parado numa fase que já começou, o hábito sai daqui.
+ */
 export function topCorrelations(data: DomainData, today: DayKey, metric: CorrelationMetric = 'mood', limit = 3) {
   const out: Correlation[] = [];
   for (const h of data.habits) {
-    if (h.archived || !h.startDay) continue;
+    if (!isInPlan(h, today, data) || !h.startDay) continue;
     if (h.type === 'budget' || h.type === 'number' || h.role === 'checkin') continue;
     const c = correlation(h, data, today, metric);
     if (c.ready && c.diff !== null && c.diff >= 0.2) out.push(c);
@@ -98,8 +101,12 @@ export function nearestCorrelation(data: DomainData, today: DayKey): Correlation
   return waitingPatterns(data, today)[0] ?? null;
 }
 
-/** Hábitos que podem virar um padrão com o humor (fora limites, números e o próprio check-in). */
-export function canFormPattern(h: Habit): boolean {
+/**
+ * Hábitos que podem virar um padrão com o humor (fora limites, números e o próprio check-in). Com os dados e o dia,
+ * o que parou numa fase que já começou também fica fora (como um arquivado).
+ */
+export function canFormPattern(h: Habit, data?: DomainData, today?: DayKey): boolean {
+  if (data && today && !isInPlan(h, today, data)) return false;
   return !h.archived && !!h.startDay && h.type !== 'budget' && h.type !== 'number' && h.role !== 'checkin';
 }
 
@@ -110,7 +117,7 @@ export function canFormPattern(h: Habit): boolean {
 export function waitingPatterns(data: DomainData, today: DayKey): Correlation[] {
   const out: Correlation[] = [];
   for (const h of data.habits) {
-    if (!canFormPattern(h)) continue;
+    if (!canFormPattern(h, data, today)) continue;
     const c = correlation(h, data, today);
     if (!c.ready) out.push(c);
   }

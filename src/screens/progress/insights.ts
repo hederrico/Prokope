@@ -9,7 +9,7 @@ import type { DayKey, Habit } from '@/types';
 import type { DomainData } from '@/domain/context';
 import { addDays, daysBetween, isWeekend, weekDays, weekStart } from '@/domain/day';
 import { formatDayMonth, formatNumber, formatTime, monthName } from '@/domain/format';
-import { goalOn, habitDay, isCountable, isDoneLike } from '@/domain/habitState';
+import { goalOn, habitDay, isCountable, isDoneLike, isInPlan } from '@/domain/habitState';
 import { dayCount, habitTotals } from '@/domain/stats';
 import { CORRELATION_NEEDED } from '@/domain/correlation';
 import type { Insight } from '@/domain/views';
@@ -72,7 +72,7 @@ export function habitPatternWords(habit: Habit, data: DomainData, today: DayKey)
 export function restOfDayInsight(data: DomainData, today: DayKey): ExtraInsight | null {
   let best: { h: Habit; w: number; wo: number; wn: number; won: number; none: number } | null = null;
   for (const h of data.habits) {
-    if (h.archived || !h.startDay || h.startDay >= today) continue;
+    if (!isInPlan(h, today, data) || !h.startDay || h.startDay >= today) continue;
     if (h.type !== 'time' && h.type !== 'check') continue;
     if (h.role === 'checkin' || h.role === 'bed') continue;
     let ws = 0;
@@ -130,7 +130,7 @@ export function restOfDayInsight(data: DomainData, today: DayKey): ExtraInsight 
 /** A meta da semana de um contador, comparada com a semana passada (só na semana atual). */
 export function counterWeekInsight(data: DomainData, today: DayKey, preferPillar?: string | null): ExtraInsight | null {
   const counters = data.habits.filter(
-    (h) => !h.archived && h.startDay && h.startDay < today && h.type === 'counter' && h.goal.value !== undefined,
+    (h) => isInPlan(h, today, data) && h.startDay && h.startDay < today && h.type === 'counter' && h.goal.value !== undefined,
   );
   if (!counters.length) return null;
   counters.sort((a, b) => Number(b.pillarId === preferPillar) - Number(a.pillarId === preferPillar));
@@ -174,7 +174,7 @@ export function counterWeekInsight(data: DomainData, today: DayKey, preferPillar
 export function nextDayEnergyInsight(data: DomainData, today: DayKey): ExtraInsight | null {
   let best: { h: Habit; w: number; wo: number; wn: number; won: number; none: number } | null = null;
   for (const h of data.habits) {
-    if (h.archived || !h.startDay || h.role === 'checkin') continue;
+    if (!isInPlan(h, today, data) || !h.startDay || h.role === 'checkin') continue;
     if (h.type !== 'time' && h.type !== 'check') continue;
     if (h.schedule.moment !== 'evening' && h.role !== 'bed') continue;
     let ws = 0;

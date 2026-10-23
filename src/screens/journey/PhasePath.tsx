@@ -113,7 +113,7 @@ function FuturePhase({ p, onOpen }: { p: PhaseView; onOpen: () => void }) {
         type="button"
         className="jr-pt next"
         onClick={onOpen}
-        aria-label={`${phaseTitle(p).replace(' · ', ', ')}. ${when}. ${what}. Abre Editar fases`}
+        aria-label={`${phaseTitle(p).replace(' · ', ', ')}. ${when}. ${what}. Abre Editar jornada`}
       >
         <span>
           <b>{phaseTitle(p)}</b>
@@ -190,7 +190,7 @@ function CurrentPhase({
           <b>{p.number}</b>
         </Ring>
       </span>
-      <button type="button" className="jr-now" onClick={onOpen} aria-label={`${label}. Abre Editar fases`}>
+      <button type="button" className="jr-now" onClick={onOpen} aria-label={`${label}. Abre Editar jornada`}>
         <span className="jr-between">
           <Tag dot upper lift pillar="accent">
             Agora

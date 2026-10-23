@@ -379,6 +379,139 @@
   color: var(--text-3);
 }
 
+/* as duas partes de cada fase: "Continuam das fases anteriores" e "Novos nesta fase" */
+.jr-part {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.jr-ptl,
+.jr-loose-t {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font: var(--t-label);
+  color: var(--text-2);
+}
+.jr-loose-t {
+  font: 600 16px/20px var(--font-ui);
+  color: var(--text);
+}
+.jr-ptl .num,
+.jr-loose-t .num {
+  font: var(--t-caption);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.jr-pnote {
+  margin: 0 0 2px;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.jr-hl {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jr-hl > li + li {
+  border-top: 1px solid var(--border);
+}
+.jr-hrow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 7px 0;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+.jr-hrow:active {
+  background-image: linear-gradient(oklch(0% 0 0 / 0.04), oklch(0% 0 0 / 0.04));
+}
+.jr-hrow:focus-visible {
+  outline-offset: -2px;
+  border-radius: 10px;
+}
+.jr-hrow-t {
+  min-width: 0;
+}
+.jr-hrow-t b {
+  display: block;
+  font: 500 15px/20px var(--font-ui);
+}
+.jr-hrow-t small {
+  display: block;
+  margin-top: 1px;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.jr-hrow-i {
+  font-size: 18px;
+  color: var(--text-3);
+}
+/* o que para nesta fase: mais quieto, sem sumir */
+.jr-hrow.off b {
+  color: var(--text-2);
+}
+.jr-hrow.off .pk-bub {
+  opacity: 0.55;
+}
+.jr-fold {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 2px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--sunken);
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+.jr-fold .jr-ics .pk-bub {
+  box-shadow: 0 0 0 2px var(--sunken);
+}
+.jr-fold-t b {
+  display: block;
+  font: 500 15px/20px var(--font-ui);
+}
+.jr-fold-t small {
+  display: block;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.jr-fold-cv {
+  display: grid;
+  font-size: 16px;
+  color: var(--text-3);
+}
+.jr-fold-body {
+  overflow: hidden;
+}
+.jr-fold + .jr-fold-body {
+  margin-top: 2px;
+}
+.jr-addh {
+  min-height: 46px;
+  border-radius: 14px;
+  font-size: 15px;
+}
+.jr-addh > span {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
 /* ---------- Plano de corrida ---------- */
 .jr-hero {
   display: flex;
@@ -591,6 +724,39 @@
   margin: 0;
   font: 400 16px/23px var(--font-ui);
   color: var(--text-2);
+}
+.jr-sheet-p.jr-sheet-small {
+  font: 400 14px/20px var(--font-ui);
+  color: var(--text-3);
+}
+/* o menu de uma linha de Editar jornada (como o Menu do hábito do Hoje) */
+.jr-mh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.jr-mh b {
+  display: block;
+  font: 500 22px/26px var(--font-display);
+  font-variation-settings: var(--display-vs);
+}
+.jr-mh small {
+  display: block;
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.jr-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.jr-menu .pk-lg {
+  background: var(--surface);
+}
+.jr-menu .pk-li {
+  min-height: 56px;
 }
 .jr-stepper {
   display: flex;

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 // Jornada, corrida e Revisão da semana no tamanho do iPhone, sobre o modo demonstração.
 // A demonstração é semeada na quinta da história (22 out). A revisão de fim da fase 2 cai no domingo, 1 nov:
@@ -30,7 +31,7 @@ async function totalSeconds(page: Page): Promise<number> {
 }
 
 test.describe('jornada', () => {
-  test('caminho das fases, Editar fases, plano de corrida e revisão passada', async ({ page }) => {
+  test('caminho das fases, Editar jornada, plano de corrida e revisão passada', async ({ page }) => {
     await enterDemo(page);
     await page.getByRole('tab', { name: 'Jornada' }).click();
     await expect(page).toHaveURL(/\/jornada$/);
@@ -42,7 +43,7 @@ test.describe('jornada', () => {
     await expect(page.getByRole('button', { name: /Fase 2, Alimentação, agora, semana 2 de 3/ })).toBeVisible();
     await expect(page.getByText('12 out – 1 nov')).toBeVisible();
 
-    // uma fase futura abre Editar fases rolada até ela
+    // uma fase futura abre Editar jornada rolada até ela
     await page.getByRole('button', { name: /Fase 3, Movimento/ }).click();
     await expect(page).toHaveURL(/\/jornada\/fases#fase-3$/);
     await settle(page);
@@ -72,10 +73,12 @@ test.describe('jornada', () => {
     await expect(page.getByRole('textbox')).toHaveCount(0);
   });
 
-  test('Editar fases: sugestão para avançar e mover um hábito de fase', async ({ page }) => {
+  test('Editar jornada: sugestão para avançar, as duas partes de cada fase e mover um hábito', async ({ page }) => {
     await enterDemo(page);
-    await go(page, '/jornada/fases');
-    await expect(page.getByRole('heading', { name: 'Fases', exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: 'Jornada' }).click();
+    await page.getByRole('button', { name: 'Editar jornada', exact: true }).click();
+    await expect(page).toHaveURL(/\/jornada\/fases$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Editar jornada' })).toBeVisible();
 
     await page.getByRole('button', { name: /Sugerir a próxima fase/ }).click();
     const sheet = page.getByRole('dialog');
@@ -84,13 +87,166 @@ test.describe('jornada', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Sugerir a próxima fase.*60%/ })).toBeVisible();
 
+    // a fase 1 (a primeira, concluída) só tem o resumo; a 2 tem "Continuam" (recolhida, com a contagem) e "Novos"
+    const phase1 = page.getByRole('group', { name: 'Fase 1, Base' });
+    await expect(phase1.getByText('7 hábitos')).toBeVisible();
+    await expect(phase1.getByRole('heading', { name: /Continuam/ })).toHaveCount(0);
+    const phase2 = page.getByRole('group', { name: 'Fase 2, Alimentação' });
+    await expect(phase2.getByRole('heading', { name: /Continuam das fases anteriores/ })).toBeVisible();
+    await expect(phase2.getByText('Os hábitos das fases anteriores seguem com você.')).toBeVisible();
+    const fold = phase2.getByRole('button', { name: /10 hábitos da fase 1/ });
+    await expect(fold).toHaveAttribute('aria-expanded', 'false');
+    await expect(phase2.getByRole('list', { name: 'Novos nesta fase' }).getByRole('listitem')).toHaveCount(6);
+    await fold.click();
+    const carried = phase2.getByRole('list', { name: 'Continuam das fases anteriores' });
+    await expect(carried.getByRole('button', { name: /^Peso, da fase 1\./ })).toBeVisible();
+    // acordar e deitar são uma linha só, como no plano
+    await expect(carried.getByRole('button', { name: /^Acordar e deitar, da fase 1\./ })).toBeVisible();
+
+    // mover: o menu da linha leva ao Mover para
     const phase4 = page.getByRole('group', { name: 'Fase 4, Profundidade' });
-    await phase4.getByRole('button', { name: 'Pequeno gesto' }).click();
-    await page.getByRole('dialog').getByRole('radio', { name: /Fase 3 · Movimento/ }).click();
+    await phase4.getByRole('list', { name: 'Novos nesta fase' }).getByRole('button', { name: /^Pequeno gesto/ }).click();
+    const menu = page.getByRole('dialog', { name: 'Pequeno gesto, opções' });
+    await expect(menu.getByRole('button', { name: /Tirar da fase/ })).toBeVisible();
+    await menu.getByRole('button', { name: /Mover para outra fase/ }).click();
+    await page.getByRole('dialog', { name: 'Mover para' }).getByRole('radio', { name: /Fase 3 · Movimento/ }).click();
     await expect(page.getByText('Pequeno gesto movido para a fase 3')).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Fase 3, Movimento' }).getByRole('button', { name: 'Pequeno gesto' })).toBeVisible();
-    await expect(phase4.getByRole('button', { name: 'Pequeno gesto' })).toHaveCount(0);
+    const phase3 = page.getByRole('group', { name: 'Fase 3, Movimento' });
+    await expect(phase3.getByRole('list', { name: 'Novos nesta fase' }).getByRole('button', { name: /^Pequeno gesto/ })).toBeVisible();
+    await expect(phase4.getByRole('list', { name: 'Novos nesta fase' }).getByRole('button', { name: /^Pequeno gesto/ })).toHaveCount(0);
   });
+
+  test('Editar jornada: parar nesta fase, desfazer e voltar a seguir', async ({ page }) => {
+    await enterDemo(page);
+    await go(page, '/jornada/fases');
+    const phase3 = page.getByRole('group', { name: 'Fase 3, Movimento' });
+    await phase3.getByRole('button', { name: /16 hábitos das fases 1 e 2/ }).click();
+    const carried = phase3.getByRole('list', { name: 'Continuam das fases anteriores' });
+
+    // o peso diário para na fase 3: até lá, tudo segue igual
+    await carried.getByRole('button', { name: /^Peso, da fase 1\./ }).click();
+    const menu = page.getByRole('dialog', { name: 'Peso, opções' });
+    await expect(menu.getByRole('button', { name: /Parar nesta fase.*quando a fase 3 começar/ })).toBeVisible();
+    await menu.getByRole('button', { name: /Parar nesta fase/ }).click();
+    const toast = page.locator('.sh-toast').filter({ hasText: 'Peso para na fase 3' });
+    await expect(toast).toBeVisible();
+    await expect(carried.getByRole('button', { name: /^Peso, da fase 1 · para nesta fase\./ })).toBeVisible();
+    // na fase 4 ele não continua mais
+    const phase4 = page.getByRole('group', { name: 'Fase 4, Profundidade' });
+    await expect(phase4.getByRole('button', { name: /18 hábitos das fases 1, 2 e 3/ })).toBeVisible();
+    await toast.getByRole('button', { name: 'Desfazer' }).click();
+    await expect(carried.getByRole('button', { name: /^Peso, da fase 1\./ })).toBeVisible();
+    await expect(phase4.getByRole('button', { name: /19 hábitos/ })).toBeVisible();
+
+    // de novo, e depois "Voltar a seguir" no mesmo lugar
+    await carried.getByRole('button', { name: /^Peso, da fase 1\./ }).click();
+    await page.getByRole('dialog', { name: 'Peso, opções' }).getByRole('button', { name: /Parar nesta fase/ }).click();
+    await expect(carried.getByRole('button', { name: /para nesta fase/ })).toBeVisible();
+    await carried.getByRole('button', { name: /^Peso, da fase 1 · para nesta fase/ }).click();
+    await page.getByRole('dialog', { name: 'Peso, opções' }).getByRole('button', { name: /Voltar a seguir/ }).click();
+    await expect(page.locator('.sh-toast').filter({ hasText: 'Peso volta a seguir' })).toBeVisible();
+    await expect(carried.getByRole('button', { name: /^Peso, da fase 1\./ })).toBeVisible();
+  });
+
+  test('Editar jornada: parar na fase de agora tira do Hoje a partir de hoje', async ({ page }) => {
+    await enterDemo(page);
+    await go(page, '/jornada/fases');
+    const phase2 = page.getByRole('group', { name: 'Fase 2, Alimentação' });
+    await phase2.getByRole('button', { name: /10 hábitos da fase 1/ }).click();
+    await phase2.getByRole('button', { name: /^Louça, da fase 1\./ }).click();
+    const menu = page.getByRole('dialog', { name: 'Louça, opções' });
+    await expect(menu.getByRole('button', { name: /Parar nesta fase.*a partir de hoje/ })).toBeVisible();
+    await menu.getByRole('button', { name: /Parar nesta fase/ }).click();
+    await expect(page.locator('.sh-toast').filter({ hasText: 'Louça sai do dia a dia hoje' })).toBeVisible();
+    await expect(phase2.getByRole('button', { name: /^Louça, da fase 1 · sai do dia a dia hoje/ })).toBeVisible();
+    // o Hoje não tem mais a louça (nem na Noite recolhida)
+    await page.getByRole('tab', { name: 'Hoje' }).click();
+    await expect(page).toHaveURL(/\/hoje/);
+    const hoje = page.locator('[data-screen="/hoje"]');
+    await expect(hoje.getByText(/lixo/i).first()).toBeVisible();
+    await expect(hoje.getByText(/louça/i)).toHaveCount(0);
+    // em Ajustes, aparece com os arquivados (os dias antes ficam no histórico)
+    await go(page, '/ajustes/habitos?ver=arquivados');
+    await expect(page.getByRole('button', { name: /^Louça\./ })).toBeVisible();
+  });
+
+  test('Editar jornada: adicionar (trazer de outra fase e criar um novo nesta fase)', async ({ page }) => {
+    await enterDemo(page);
+    await go(page, '/jornada/fases');
+    const phase3 = page.getByRole('group', { name: 'Fase 3, Movimento' });
+
+    // trazer da fase 4, com Desfazer
+    await phase3.getByRole('button', { name: 'Adicionar hábito' }).click();
+    const add = page.getByRole('dialog', { name: 'Adicionar à fase 3' });
+    await expect(add.getByRole('button', { name: /Criar hábito novo nesta fase/ })).toBeVisible();
+    await add.getByRole('button', { name: /^Ritual do sono/ }).click();
+    const toast = page.locator('.sh-toast').filter({ hasText: 'Ritual do sono movido para a fase 3' });
+    await expect(toast).toBeVisible();
+    await expect(phase3.getByRole('list', { name: 'Novos nesta fase' }).getByRole('button', { name: /^Ritual do sono/ })).toBeVisible();
+    await toast.getByRole('button', { name: 'Desfazer' }).click();
+    await expect(phase3.getByRole('list', { name: 'Novos nesta fase' }).getByRole('button', { name: /^Ritual do sono/ })).toHaveCount(0);
+
+    // criar um novo: o Novo hábito já chega com a fase escolhida e volta para Editar jornada
+    await phase3.getByRole('button', { name: 'Adicionar hábito' }).click();
+    await page.getByRole('dialog', { name: 'Adicionar à fase 3' }).getByRole('button', { name: /Criar hábito novo nesta fase/ }).click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/novo\/tipo\?fase=3$/);
+    await page.getByRole('button', { name: /^Sim ou não/ }).click();
+    await expect(page).toHaveURL(/novo\/detalhes\?tipo=check&fase=3$/);
+    await expect(page.getByRole('button', { name: /Começa.*Na fase 3/ })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Nome' }).fill('Alongar');
+    await page.getByRole('button', { name: 'Criar' }).click();
+    await expect(page).toHaveURL(/\/jornada\/fases/);
+    await expect(page.getByText(/Alongar entra na fase 3/)).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Fase 3, Movimento' }).getByRole('list', { name: 'Novos nesta fase' }).getByRole('button', { name: /^Alongar/ }),
+    ).toBeVisible();
+  });
+
+  test('Editar jornada: tirar da fase e arquivar, com Desfazer', async ({ page }) => {
+    await enterDemo(page);
+    await go(page, '/jornada/fases');
+    const phase2 = page.getByRole('group', { name: 'Fase 2, Alimentação' });
+    await phase2.getByRole('button', { name: /^Refeições livres/ }).click();
+    await page.getByRole('dialog', { name: 'Refeições livres, opções' }).getByRole('button', { name: /Tirar da fase.*Continua no dia a dia/ }).click();
+    await expect(page.locator('.sh-toast').filter({ hasText: 'Refeições livres seguem sem fase' })).toBeVisible();
+    const loose = page.getByRole('list', { name: 'Hábitos sem fase' });
+    await expect(loose.getByRole('button', { name: /^Refeições livres/ })).toBeVisible();
+    await expect(phase2.getByRole('button', { name: /^Refeições livres/ })).toHaveCount(0);
+
+    await loose.getByRole('button', { name: /^Futebol/ }).click();
+    await page.getByRole('dialog', { name: 'Futebol, opções' }).getByRole('button', { name: /^Arquivar/ }).click();
+    const toast = page.locator('.sh-toast').filter({ hasText: 'Futebol arquivado' });
+    await expect(toast).toBeVisible();
+    await expect(loose.getByRole('button', { name: /^Futebol/ })).toHaveCount(0);
+    await toast.getByRole('button', { name: 'Desfazer' }).click();
+    await expect(loose.getByRole('button', { name: /^Futebol/ })).toBeVisible();
+  });
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`Editar jornada: acessibilidade no tema ${colorScheme === 'light' ? 'claro' : 'escuro'}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme });
+      await enterDemo(page);
+      await go(page, '/jornada/fases');
+      const phase2 = page.getByRole('group', { name: 'Fase 2, Alimentação' });
+      await phase2.getByRole('button', { name: /10 hábitos da fase 1/ }).click();
+      await settle(page);
+      const axe = () => new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']);
+      const screen = await axe().include('[data-screen="/jornada/fases"]').analyze();
+      expect(screen.violations).toEqual([]);
+      await phase2.getByRole('button', { name: 'Adicionar hábito' }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await settle(page);
+      const add = await axe().include('[role="dialog"]').analyze();
+      expect(add.violations).toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await phase2.getByRole('button', { name: /^Peso, da fase 1\./ }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await settle(page);
+      const menu = await axe().include('[role="dialog"]').analyze();
+      expect(menu.violations).toEqual([]);
+    });
+  }
 
   test('corrida: começa, pausa, sobrevive a recarregar e encerra com toque longo', async ({ page }) => {
     // espera de verdade pelo relógio (pausa, recarregar e o toque longo)

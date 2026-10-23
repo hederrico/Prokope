@@ -39,11 +39,22 @@ import {
   habitDay,
   inPillar,
   isDoneLike,
+  isInPlan,
+  isStoppedOn,
   nextRampStep,
   pauseOn,
   type HabitDay,
 } from './habitState';
-import { currentPhase, isFirstDay, nextPhase, phaseSuggestion, phaseTimeline, type PhaseView } from './phases';
+import {
+  currentPhase,
+  isFirstDay,
+  loosePhaseHabits,
+  nextPhase,
+  phaseSuggestion,
+  phaseTimeline,
+  type PhaseHabit,
+  type PhaseView,
+} from './phases';
 import {
   currentTweak,
   pendingReview,
@@ -266,7 +277,8 @@ export function habitView(data: DomainData, id: string, today: DayKey): HabitVie
   if (!habit) return null;
   const pause = pauseOn(data, today, habit.id);
   const own = data.pauses.find((p) => p.habitIds?.includes(habit.id) && p.start <= today && p.end >= today);
-  const status = habit.archived
+  // parado numa fase que já começou: é como um arquivado daquela data em diante
+  const status = !isInPlan(habit, today, data)
     ? 'archived'
     : !habit.startDay || habit.startDay > today
       ? 'upcoming'
@@ -397,7 +409,7 @@ export function habitsList(data: DomainData, today: DayKey): HabitListItem[] {
   const timeline = phaseTimeline(data, today);
   return data.habits.map((habit) => {
     const own = data.pauses.find((p) => p.habitIds?.includes(habit.id) && p.end >= today && p.start <= today);
-    const status: HabitView['status'] = habit.archived
+    const status: HabitView['status'] = !isInPlan(habit, today, data)
       ? 'archived'
       : !habit.startDay || habit.startDay > today
         ? 'upcoming'
@@ -560,7 +572,7 @@ export function progressRange(
 }
 
 function pillarSections(data: DomainData, pillar: Pillar, range: ProgressRange, today: DayKey): PillarSections {
-  const habits = data.habits.filter((h) => !h.archived && h.startDay && inPillar(h, pillar.id));
+  const habits = data.habits.filter((h) => isInPlan(h, today, data) && h.startDay && inPillar(h, pillar.id));
   const days = daysBetween(range.from, range.to);
   const out: PillarSections = { counters: [], habits: [], limits: [], daysSince: [], ratings: [] };
   for (const h of habits) {
@@ -691,7 +703,10 @@ export function progressView(
   } else if (theme === 'measures') {
     const weights = data.measurementsByKind.weight ?? [];
     const numbers = data.habits
-      .filter((h) => h.type === 'number' && !h.archived && h.startDay && h.role !== 'weight' && h.role !== 'waist')
+      .filter(
+        (h) =>
+          h.type === 'number' && isInPlan(h, today, data) && h.startDay && h.role !== 'weight' && h.role !== 'waist',
+      )
       .map((h) => {
         const days = daysBetween(range.from, range.to > today ? today : range.to).map((d) => ({
           day: d,
@@ -733,7 +748,9 @@ export function daySummary(data: DomainData, day: DayKey, today: DayKey): DaySum
     checkin: data.checkins.get(day) ?? null,
     count: { done: count.done, total: count.total },
     counters: data.habits
-      .filter((h) => h.type === 'counter' && h.startDay && h.startDay <= day && !h.archived)
+      .filter(
+        (h) => h.type === 'counter' && h.startDay && h.startDay <= day && !h.archived && !isStoppedOn(h, day, data),
+      )
       .map((h) => ({ habit: h, total: counterTotal(data, h.id, day), goal: goalOn(h, day, data).value })),
     weight: data.measurementById.get(`${day}_weight`) ?? null,
     pause: appPauseOn(data, day),
@@ -765,6 +782,8 @@ export interface JourneyView {
   /** a primeira revisão (estado vazio "A primeira Revisão da semana é no domingo, 27 set.") */
   firstReviewDay: DayKey | null;
   pause: Pause | null;
+  /** Editar jornada: os hábitos sem fase, que seguem em todas */
+  loose: PhaseHabit[];
 }
 
 function reviewDayOf(data: DomainData, week: WeekKey): DayKey {
@@ -830,6 +849,7 @@ export function journeyView(data: DomainData, now: Millis): JourneyView {
     reviews,
     firstReviewDay: start ? reviewDayOf(data, weekStart(start)) : null,
     pause: currentOrNextPause(data, today),
+    loose: loosePhaseHabits(data, today),
   };
 }
 
@@ -917,9 +937,9 @@ export function reviewView(data: DomainData, weekOrDay: DayKey, now: Millis): Re
           open: false,
         };
   const role = (r: HabitRole) =>
-    data.habits.find((h) => h.role === r && !h.archived && h.startDay && h.startDay <= today) ?? null;
+    data.habits.find((h) => h.role === r && isInPlan(h, today, data) && h.startDay && h.startDay <= today) ?? null;
   const ramps = data.habits
-    .filter((h) => h.type === 'counter' && !h.archived && h.goal.ramp?.ask)
+    .filter((h) => h.type === 'counter' && isInPlan(h, today, data) && h.goal.ramp?.ask)
     .map((h) => ({ h, r: nextRampStep(h, today) }))
     .filter((x) => x.r?.due)
     .map((x) => ({ habit: x.h, from: x.r!.from, to: x.r!.to }));
@@ -933,7 +953,7 @@ export function reviewView(data: DomainData, weekOrDay: DayKey, now: Millis): Re
     suggestion: phaseSuggestion(data, today),
     next: nextPhase(data, today),
     together: role('together'),
-    waist: data.habits.find((h) => h.role === 'waist' && !h.archived) ?? null,
+    waist: data.habits.find((h) => h.role === 'waist' && isInPlan(h, today, data)) ?? null,
     lastWaist: lastBefore(data.measurementsByKind.waist ?? [], addDays(today, 1)),
     ramps,
     readOnly: review?.status === 'done',
