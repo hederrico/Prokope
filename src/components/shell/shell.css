@@ -1,0 +1,539 @@
+/* Casca do app: camadas das telas, barra de abas, barras do topo, folhas, passos e toasts.
+   O visual é o de docs/telas/base.css (tb, nb, hd, sheet, steptop, toast); as classes levam o prefixo sh-
+   para não cruzar com as do design system (pk-). Tokens em src/styles/tokens.css. */
+
+@layer components {
+  /* ---------- a coluna do app (até 480 px no computador, com o --bg em volta) ---------- */
+  .sh-app {
+    position: fixed;
+    inset: 0;
+    margin-inline: auto;
+    max-width: var(--app-max);
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    --sh-tabbar-pad: max(8px, calc(var(--safe-bottom) - 4px));
+    --sh-tabbar-h: 0px;
+  }
+  .sh-app[data-tabs='true'] {
+    /* 7 + 26 + 3 + 13 + borda + área segura */
+    --sh-tabbar-h: calc(50px + var(--sh-tabbar-pad));
+  }
+  .sh-main {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ---------- camadas das telas ---------- */
+  .sh-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  /* sombra da borda esquerda da tela empurrada (fica fora da tela quando ela está no lugar) */
+  .sh-layer[data-level='tab'] {
+    box-shadow: -8px 0 24px -12px rgb(20 15 10 / 0.35);
+  }
+  .sh-scroll {
+    position: absolute;
+    inset: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sh-layer[data-level='tab'] > .sh-scroll {
+    padding-bottom: var(--sh-tabbar-h);
+  }
+  .sh-noscroll {
+    position: absolute;
+    inset: 0;
+  }
+  .sh-shade {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    background: oklch(0% 0 0);
+    pointer-events: none;
+  }
+  .sh-tabs-content {
+    position: absolute;
+    inset: 0;
+  }
+  /* faixa da borda esquerda que começa o voltar (20 px) */
+  .sh-edge {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 6;
+    width: 20px;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ---------- abertura (carregando a sessão): calma, sem girador ---------- */
+  .sh-splash {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+  }
+  .sh-splash p {
+    margin: 0;
+    font: 430 44px/1 var(--font-display);
+    font-variation-settings: var(--display-vs);
+    letter-spacing: -0.025em;
+    color: var(--text);
+    opacity: 0;
+    animation: sh-splash-in var(--dur-base) var(--ease-out) 300ms forwards;
+  }
+
+  /* ---------- barra de abas (tb) ---------- */
+  .sh-tb {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 7px 10px var(--sh-tabbar-pad);
+    background: color-mix(in oklch, var(--surface) 92%, transparent);
+    border-top: 1px solid var(--border);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+  }
+  .sh-tb a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-height: 44px;
+    border-radius: 12px;
+    color: var(--text-3);
+    font: 600 11px/13px var(--font-ui);
+    text-decoration: none;
+    -webkit-touch-callout: none;
+  }
+  .sh-tb a[aria-selected='true'] {
+    color: var(--accent-ink);
+  }
+  .sh-tb-ic {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    font-size: 26px;
+  }
+
+  /* ---------- barra da tela empurrada e do formulário (nb) ---------- */
+  .sh-nb {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
+    min-height: calc(44px + var(--safe-top));
+    padding: var(--safe-top) 14px 0;
+    background: var(--bg);
+  }
+  .sh-nb-left,
+  .sh-nb-act {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-ink);
+    font: 400 17px/1 var(--font-ui);
+  }
+  .sh-nb-left {
+    justify-self: start;
+    gap: 2px;
+    max-width: 100%;
+  }
+  .sh-nb-left > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 22px;
+  }
+  .sh-nb-left svg,
+  .sh-nb-act svg {
+    flex: none;
+    font-size: 22px;
+  }
+  .sh-nb-title {
+    margin: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 600 17px/22px var(--font-ui);
+    text-align: center;
+    color: var(--text);
+  }
+  .sh-nb-title:focus {
+    outline: none;
+  }
+  .sh-nb-act {
+    justify-self: end;
+    gap: 4px;
+    font-weight: 600;
+  }
+  .sh-nb-act[aria-disabled='true'] {
+    color: var(--text-3);
+    cursor: default;
+  }
+
+  /* ---------- cabeçalho de aba (hd) ---------- */
+  .sh-hd {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: calc(var(--safe-top) + 2px) 16px 12px;
+  }
+  .sh-hd-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 36px;
+  }
+  .sh-hd-ctx {
+    font: var(--t-sub);
+    color: var(--text-2);
+  }
+  .sh-hd h1 {
+    margin: 0;
+    font: 500 32px/38px var(--font-display);
+    font-variation-settings: var(--display-vs);
+    letter-spacing: -0.015em;
+  }
+  .sh-hd h1:focus {
+    outline: none;
+  }
+  /* títulos que recebem o foco ao trocar de tela ou de passo: o leitor de tela lê, e não aparece anel (não são controles) */
+  .sh-layer :is(h1, h2, h3)[tabindex='-1']:focus {
+    outline: none;
+  }
+
+  /* ---------- topo dos fluxos em passos (steptop) ---------- */
+  .sh-steptop {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 8px;
+    min-height: calc(48px + var(--safe-top));
+    padding: var(--safe-top) 8px 0;
+  }
+  .sh-steps {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .sh-steps > span {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: var(--track);
+  }
+  .sh-steps > span > i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-mark);
+  }
+  .sh-ibtn,
+  .sh-xbtn {
+    display: grid;
+    place-items: center;
+    flex: none;
+    justify-self: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--sunken);
+    color: var(--text-2);
+  }
+  .sh-ibtn {
+    width: 36px;
+    height: 36px;
+    font-size: 19px;
+  }
+  .sh-xbtn {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+
+  /* ---------- tela cheia ---------- */
+  .sh-full {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    background: var(--bg);
+  }
+  .sh-full-body {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .sh-full-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 12px 16px max(16px, calc(var(--safe-bottom) + 8px));
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+  }
+
+  /* ---------- folha (sheet) ---------- */
+  .sh-sheets {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+  }
+  .sh-sheet-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+  }
+  .sh-dim {
+    position: absolute;
+    inset: 0;
+    background: var(--dim);
+    touch-action: none;
+  }
+  .sh-sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--sh-kb, 0px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100% - var(--sh-kb, 0px) - var(--safe-top) - 40px);
+    padding: 8px 0 max(20px, calc(var(--safe-bottom) + 10px));
+    border-radius: 28px 28px 0 0;
+    background: var(--raised);
+    box-shadow: var(--shadow-2);
+    color: var(--text);
+    touch-action: none;
+    outline: none;
+    --sep: var(--raised);
+  }
+  .sh-sheet[data-tall='true'] {
+    top: calc(var(--safe-top) + 56px);
+    max-height: none;
+  }
+  .sh-sheet[data-kb='true'] {
+    padding-bottom: 12px;
+  }
+  /* abaixo da folha, para a resistência ao puxar para cima não mostrar um vão */
+  .sh-sheet::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% - 1px);
+    height: 260px;
+    background: var(--raised);
+  }
+  .sh-sheet[data-kb='true']::after {
+    content: none;
+  }
+  .sh-grab {
+    flex: none;
+    width: 36px;
+    height: 5px;
+    margin: 0 auto;
+    border-radius: 3px;
+    background: var(--border-strong);
+  }
+  .sh-sheet-head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px;
+  }
+  .sh-sheet-head h2 {
+    margin: 0;
+    min-width: 0;
+    font: 500 24px/30px var(--font-display);
+    font-variation-settings: var(--display-vs);
+  }
+  .sh-sheet-head h2:focus {
+    outline: none;
+  }
+  .sh-sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 16px;
+  }
+  .sh-sheet-foot {
+    flex: none;
+    padding: 0 16px;
+  }
+}
+
+@keyframes sh-splash-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- toasts (Sonner, com o conteúdo do quadro) ----------
+   Fora de camada: o CSS do Sonner entra sem camada e precisa perder para estas regras. */
+[data-sonner-toaster].sh-toaster.sh-toaster {
+  left: 50%;
+  right: auto;
+  bottom: var(--sh-toast-bottom);
+  width: min(calc(100vw - 24px), calc(var(--app-max) - 24px));
+  transform: translateX(-50%);
+  font-family: var(--font-ui);
+}
+.sh-toaster.sh-toaster [data-sonner-toast] {
+  left: 0;
+  right: 0;
+  width: 100%;
+  --y: translateY(var(--rise));
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
+}
+.sh-toaster.sh-toaster [data-sonner-toast][data-mounted='true'] {
+  --y: translateY(0);
+}
+.sh-toaster.sh-toaster [data-sonner-toast][data-removed='true'][data-swipe-out='false'] {
+  --y: translateY(0);
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-exit);
+}
+.sh-toaster.sh-toaster [data-sonner-toast]:focus-visible {
+  outline: 2.5px solid var(--accent-mark);
+  outline-offset: 2px;
+  border-radius: 18px;
+}
+.sh-toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 8px 6px 8px 12px;
+  border-radius: 18px;
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  box-shadow: var(--shadow-2), var(--toast-ring);
+  overflow: hidden;
+  font: var(--t-body);
+}
+.sh-toast[data-noic='true'] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-left: 16px;
+}
+.sh-toast[data-noact='true'] {
+  grid-template-columns: 32px minmax(0, 1fr);
+  padding-right: 16px;
+}
+.sh-toast[data-noic='true'][data-noact='true'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.sh-toast-ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 17px;
+  background: var(--fill, var(--accent-fill));
+  color: var(--on, var(--bg));
+}
+.sh-toast-tt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sh-toast-tt b {
+  font: 600 15px/20px var(--font-ui);
+}
+.sh-toast-tt small {
+  font: var(--t-caption);
+  color: var(--toast-2);
+  font-variant-numeric: tabular-nums;
+}
+.sh-toast-act {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--toast-act);
+  font: 600 16px/1 var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sh-toast-act svg {
+  font-size: 18px;
+}
+.sh-toast-act[data-filled='true'] {
+  margin-right: 2px;
+  padding: 0 16px;
+  background: var(--toast-act);
+  color: var(--toast-bg);
+}
+.sh-toast-fio {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: color-mix(in oklch, var(--toast-fg) 14%, transparent);
+}
+.sh-toast-fio > i {
+  display: block;
+  height: 100%;
+  background: var(--toast-act);
+  transform-origin: left center;
+  animation-name: sh-fio;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+/* o tempo para enquanto o toast tem foco ou o dedo está sobre ele */
+.sh-toast:focus-within .sh-toast-fio > i,
+[data-sonner-toast]:focus .sh-toast-fio > i,
+.sh-toast[data-hold='true'] .sh-toast-fio > i {
+  animation-play-state: paused;
+}
+@media (hover: hover) {
+  .sh-toast:hover .sh-toast-fio > i {
+    animation-play-state: paused;
+  }
+}
+@keyframes sh-fio {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}

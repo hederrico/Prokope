@@ -107,3 +107,24 @@ export const numberFlowTiming = {
   spinTiming: { duration: 400, easing: 'cubic-bezier(.2, .8, .2, 1)' },
   opacityTiming: { duration: 150, easing: 'ease-out' },
 } as const satisfies Pick<NumberFlowProps, 'transformTiming' | 'spinTiming' | 'opacityTiming'>;
+
+/** Limites dos gestos (navegacao.md): borda do voltar, quanto arrastar e a que velocidade para completar. */
+export const gesture = {
+  /** largura da faixa da borda esquerda que começa o voltar (px) */
+  edge: 20,
+  /** o voltar completa acima de 35% da largura... */
+  backDistance: 0.35,
+  /** ...ou acima de 500 px/s */
+  backVelocity: 500,
+  /** a folha fecha acima de 30% da altura... */
+  sheetDistance: 0.3,
+  /** ...ou acima de 600 px/s */
+  sheetVelocity: 600,
+  /** o arrasto só começa depois de 5 px na direção certa (os toques nos filhos continuam funcionando) */
+  slop: 5,
+} as const;
+
+/** Resistência acima do limite (a mesma do iOS e do laboratório): d px de arrasto viram menos que dim px. */
+export function rubberband(d: number, dim: number): number {
+  return (1 - 1 / ((d * 0.55) / dim + 1)) * dim;
+}

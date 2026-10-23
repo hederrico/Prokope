@@ -1,6 +1,5 @@
 import { render } from '@testing-library/react';
 import { Icon, isIconName } from '@/icons';
-import { App } from '@/app/App';
 
 describe('Icon', () => {
   it('desenha um ícone do Phosphor pelo nome, decorativo', () => {
@@ -31,13 +30,5 @@ describe('Icon', () => {
     expect(isIconName('salsicha')).toBe(true);
     expect(isIconName('person-simple-walk')).toBe(true);
     expect(isIconName('dog')).toBe(false);
-  });
-});
-
-describe('App (placeholder da etapa 0)', () => {
-  it('mostra o nome e o grego', () => {
-    const { getByRole, getByText } = render(<App />);
-    expect(getByRole('heading', { level: 1 })).toHaveTextContent('Prokopē');
-    expect(getByText('προκοπή')).toHaveAttribute('lang', 'el');
   });
 });

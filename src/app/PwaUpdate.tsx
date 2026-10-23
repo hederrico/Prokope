@@ -1,45 +1,86 @@
-// Aviso de versão nova do app (vite-plugin-pwa em modo "prompt"): a versão nova só entra quando a pessoa toca em Atualizar.
-// Também registra o service worker e procura atualização a cada hora, porque o app instalado no iPhone fica aberto por dias.
-// Provisório da etapa 0: na etapa 1 este aviso pode virar um Toast do design system.
+// Aviso de versão nova (vite-plugin-pwa em modo "prompt"): o toast "Nova versão do Prokopē" com "Atualizar".
+// Ele espera não haver folha nem tela cheia nem Desfazer na tela, e a pessoa passar 5 s sem tocar
+// (telas/estados.md › Nova versão pronta). Arrastar para baixo dispensa até a próxima abertura do app.
+// Também registra o service worker e procura atualização a cada hora e ao voltar para a frente,
+// porque o app instalado no iPhone fica aberto por dias.
+import { useEffect, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { dismissToast, showToast } from '@/components/shell/toast';
+import { useShellState } from '@/components/shell/shellState';
+import { onForeground } from '@/motion/useForeground';
 
 const HOUR = 60 * 60 * 1000;
+const IDLE = 5000;
+const ID = 'update';
 
 export function PwaUpdate() {
   const {
-    needRefresh: [needRefresh, setNeedRefresh],
+    needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
       if (!registration) return;
-      setInterval(() => {
+      const check = () => {
         if (navigator.onLine) void registration.update();
-      }, HOUR);
+      };
+      setInterval(check, HOUR);
+      onForeground(check);
     },
   });
+  const sheetOpen = useShellState((s) => s.sheetOpen);
+  const fullScreen = useShellState((s) => s.fullScreen);
+  const undoVisible = useShellState((s) => s.undoVisible);
+  const lastTouch = useShellState((s) => s.lastTouch);
+  // o último toque que já completou 5 s parado
+  const [idleSince, setIdleSince] = useState<number | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const showing = useRef(false);
 
-  if (!needRefresh) return null;
+  useEffect(() => {
+    const t = window.setTimeout(() => setIdleSince(lastTouch), IDLE);
+    return () => window.clearTimeout(t);
+  }, [lastTouch]);
 
-  return (
-    <div
-      role="status"
-      className="fixed inset-x-0 bottom-[calc(var(--safe-bottom)+16px)] z-50 mx-auto flex w-[calc(100%-24px)] max-w-[456px] items-center gap-2 rounded-[18px] bg-toast py-2 pr-1.5 pl-4 text-toast-fg shadow-float"
-    >
-      <p className="min-w-0 flex-1 text-left text-[15px] leading-5 font-semibold">Tem uma versão nova do app.</p>
-      <button
-        type="button"
-        className="min-h-11 rounded-[12px] px-3 text-[16px] font-semibold text-toast-2"
-        onClick={() => setNeedRefresh(false)}
-      >
-        Depois
-      </button>
-      <button
-        type="button"
-        className="min-h-11 rounded-[12px] bg-toast-act px-4 text-[16px] font-semibold text-toast"
-        onClick={() => void updateServiceWorker(true)}
-      >
-        Atualizar
-      </button>
-    </div>
-  );
+  const idle = idleSince === lastTouch;
+  const canShow = needRefresh && !dismissed && !sheetOpen && !fullScreen && !undoVisible;
+
+  useEffect(() => {
+    if (!canShow) {
+      if (showing.current) {
+        showing.current = false;
+        dismissToast(ID);
+      }
+      return;
+    }
+    if (!idle || showing.current) return;
+    showing.current = true;
+    const show = (updating: boolean) =>
+      showToast({
+        id: ID,
+        title: 'Nova versão do Prokopē',
+        detail: 'Leva um segundo e nada se perde',
+        icon: 'sparkle',
+        pillar: 'accent',
+        duration: Infinity,
+        action: {
+          label: updating ? 'Atualizando' : 'Atualizar',
+          filled: true,
+          keepOpen: true,
+          onClick: () => {
+            if (updating) return;
+            show(true);
+            void updateServiceWorker(true);
+          },
+        },
+        onDismiss: () => {
+          // dispensado pela pessoa (arrastar), e não tirado para dar lugar a um Desfazer ou a uma folha
+          const s = useShellState.getState();
+          if (showing.current && !s.undoVisible && !s.sheetOpen && !s.fullScreen) setDismissed(true);
+          showing.current = false;
+        },
+      });
+    show(false);
+  }, [canShow, idle, updateServiceWorker]);
+
+  return null;
 }

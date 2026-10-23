@@ -1,0 +1,153 @@
+/* Galeria dos componentes (/dev/componentes): só em desenvolvimento. */
+.gx {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  padding-bottom: calc(var(--safe-bottom) + 64px);
+}
+.gx-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: calc(var(--safe-top) + 10px) 16px 10px;
+  background: color-mix(in oklch, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.gx[data-shot] .gx-top {
+  position: static;
+}
+.gx-top h1 {
+  margin: 0;
+}
+.gx-tools {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 8px;
+}
+.gx-nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 2px 16px;
+}
+.gx-nav a {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--text-2);
+  font: 600 12px/14px var(--font-ui);
+  text-decoration: none;
+}
+.gx-sec {
+  scroll-margin-top: 150px;
+  padding-top: 8px;
+}
+.gx-sec > header {
+  padding: 28px 16px 2px;
+}
+.gx-sec > header h2 {
+  margin: 0;
+  font: 500 26px/32px var(--font-display);
+  font-variation-settings: var(--display-vs);
+  letter-spacing: -0.01em;
+}
+.gx-sec > header p {
+  margin: 4px 0 0;
+  font: 400 14px/20px var(--font-ui);
+  color: var(--text-2);
+}
+.gx-pad {
+  padding-inline: 16px;
+}
+.gx-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.gx-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gx-cap {
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.gx-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px 0;
+}
+.gx-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 64px;
+}
+.gx-log {
+  min-height: 20px;
+  padding: 6px 16px 0;
+  font: 500 13px/20px var(--font-ui);
+  color: var(--text-2);
+}
+.gx-hd {
+  padding: 2px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gx-hd .date {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  font: var(--t-sub);
+  color: var(--text-2);
+}
+.gx-t {
+  font: 600 16px/20px var(--font-ui);
+}
+.gx-protein .gx-total {
+  font: var(--t-sub);
+  font-variant-numeric: tabular-nums;
+}
+.gx-protein .gx-total b {
+  font-weight: 600;
+}
+.gx-water .pk-ringbox .rc {
+  color: var(--ink);
+  font-size: 18px;
+}
+.gx-palette {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  justify-items: center;
+}
+.gx-closed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+}
+.gx-closed .num-big {
+  font: 400 60px/1 var(--font-display);
+  font-variation-settings: var(--display-vs);
+}
