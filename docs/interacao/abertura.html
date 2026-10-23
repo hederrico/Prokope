@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prokopē · Abertura</title>
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    try { t = t || localStorage.getItem('pk-lab-theme'); } catch (e) {}
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;1,400&text=%CF%80%CF%81%CE%BF%CE%BA%CE%BF%CF%80%CE%AE&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="stylesheet" href="../telas/base.css">
+<link rel="stylesheet" href="laboratorio/lab.css">
+<style>
+  /* A página: o topo e os cartões vêm do laboratório; aqui ficam os controles, a grade e a abertura. */
+  .ab-wrap { max-width: 1500px; margin: 0 auto; padding: 32px 24px 120px; display: flex; flex-direction: column; gap: 28px; }
+  .ab-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; padding: 16px 20px; border-radius: 22px; background: var(--cv-panel); border: 1px solid var(--cv-line); }
+  .ab-ctl .lab-b { margin-left: auto; }
+  .ab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; align-items: start; }
+  /* os três cartões dividem as linhas da grade: os celulares ficam na mesma altura, com textos de tamanhos diferentes */
+  .ab-card { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 16px; }
+  .ab-card .lab-ch p { font-size: 14.5px; line-height: 21px; }
+  .ab-card .lab-tok { align-items: flex-start; align-content: flex-start; }
+  .cv-seg button { white-space: nowrap; }
+  .ab-best { display: inline-block; vertical-align: 5px; margin-left: 6px; padding: 4px 9px; border-radius: 99px; background: var(--accent-wash); color: var(--accent-ink); font: 600 12px/1 var(--font-ui); }
+  .ab-stage { min-height: 560px; }
+  .ab-stage .phone { zoom: .64; }
+  .ab-log { min-height: 40px; }
+  .ab-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+  .ab-notes h2 { font: 500 26px/31px var(--font-display); font-variation-settings: var(--display-vs); letter-spacing: -.01em; }
+  .ab-notes ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font: 400 15px/22px var(--font-ui); color: var(--cv-text2); }
+  .ab-notes li b { color: var(--cv-text); font-weight: 600; }
+
+  /* ---------- a abertura (mesma composição de .ob-hero em src/screens/onboarding/onboarding.css) ---------- */
+  .ab-phone .sb, .ab-phone .hi { z-index: 9; }
+  .ab-splash { position: absolute; inset: 0; z-index: 8; padding-top: 54px; display: flex; flex-direction: column; background: var(--bg); }
+  .ab-dest { flex: 1; min-height: 0; overflow: hidden; }
+  .ab-dest.ab-entrar { display: flex; flex-direction: column; }
+  .ab-hero { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 32px 0; text-align: center; }
+  .ab-art { position: relative; width: 264px; height: 260px; margin-bottom: 32px; }
+  .ab-art::before { content: ''; position: absolute; inset: -40px -64px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in oklch, var(--accent-wash) 90%, transparent), transparent); }
+  .ab-art svg { position: relative; display: block; width: 100%; height: 100%; overflow: visible; }
+  .ab-trail { fill: none; stroke: var(--border-strong); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 5 8; }
+  .ab-walked, .ab-go { fill: none; stroke: var(--accent-mark); stroke-width: 4; stroke-linecap: round; }
+  .ab-go { stroke-dasharray: 0 9999; }
+  .ab-go.full { stroke-dasharray: none; }
+  .ab-steps { fill: none; stroke: var(--accent-mark); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 5 8; }
+  .ab-mask { fill: none; stroke: #fff; stroke-width: 14; stroke-dasharray: 0 9999; }
+  .ab-pt { fill: var(--fill); stroke: var(--mark); stroke-width: 2; transform-box: fill-box; transform-origin: center;
+    transition: fill var(--lab-micro) var(--ease-out), stroke var(--lab-micro) var(--ease-out); }
+  .ab-pt.off { fill: var(--bg); stroke: var(--border-strong); }
+  .ab-start { fill: var(--accent-mark); }
+  .ab-end { fill: none; stroke: var(--border-strong); stroke-width: 2; }
+  .ab-halo { fill: color-mix(in oklch, var(--accent-fill) 55%, transparent); }
+  .ab-here { fill: var(--accent-ink); stroke: var(--bg); stroke-width: 2; }
+  .ab-arrive { transform-box: fill-box; transform-origin: center; }
+  .ab-breathe { animation: ab-breathe 1600ms ease-in-out infinite; }
+  @keyframes ab-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+  .ab-brand { margin: 0; font: 430 58px/1 var(--font-display); font-variation-settings: var(--display-vs); letter-spacing: -.025em; }
+  .ab-greek { margin: 10px 0 0; font: italic 400 22px/28px var(--font-display); color: var(--accent-ink); letter-spacing: .02em; }
+  .ab-tag { margin: 22px 0 0; font: 500 18px/24px var(--font-ui); color: var(--text); }
+  .ab-what { margin: 6px 0 0; font: 400 16px/22px var(--font-ui); color: var(--text-2); }
+  .ab-foot { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 24px 46px; }
+  .ab-legal { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 4px; font: 400 13px/18px var(--font-ui); color: var(--text-2); }
+  .ab-legal i { font-size: 15px; }
+  .ab-ghost { visibility: hidden; }
+
+  @media (max-width: 560px) {
+    .lab-tool { flex-wrap: wrap; }
+    #lab-sys { display: none; }
+    .ab-wrap { padding: 20px 12px 80px; }
+    .ab-ctl .lab-b { margin-left: 0; }
+    .ab-stage .phone { zoom: .58; }
+    .ab-stage { min-height: 510px; }
+  }
+</style>
+</head>
+<body class="lab">
+<header class="lab-top">
+  <div class="lab-brand"><b>Prokopē</b><span>Abertura</span></div>
+  <div class="lab-tools">
+    <div class="lab-tool"><span>Velocidade</span>
+      <div class="cv-seg" role="group" aria-label="Velocidade"><button type="button" data-speed="1">1×</button><button type="button" data-speed="0.5">0,5×</button><button type="button" data-speed="0.25">0,25×</button></div>
+    </div>
+    <div class="lab-tool"><span>Movimento <em id="lab-sys"></em></span>
+      <div class="cv-seg" role="group" aria-label="Movimento"><button type="button" data-motion="system">Sistema</button><button type="button" data-motion="reduced">Reduzido</button><button type="button" data-motion="full">Completo</button></div>
+    </div>
+    <div class="lab-tool"><span>Tema</span>
+      <div class="cv-seg" role="group" aria-label="Tema"><button type="button" data-theme-btn="system">Sistema</button><button type="button" data-theme-btn="light">Claro</button><button type="button" data-theme-btn="dark">Escuro</button></div>
+    </div>
+  </div>
+</header>
+
+<main class="ab-wrap">
+  <section class="lab-intro">
+    <span class="ey">Prokopē · interação · 23 de outubro de 2026</span>
+    <h1>Abertura</h1>
+    <p>A tela que aparece enquanto o app carrega. Hoje ela mostra só o nome, e só depois que o JavaScript chega: até lá, o iPhone mostra uma tela vazia. As três propostas usam a arte do caminho da tela Entrar, no mesmo lugar em que ela aparece lá, e começam já na primeira pintura. Escolha quanto tempo os dados levam e compare as três ao mesmo tempo.</p>
+  </section>
+
+  <div class="ab-ctl" id="ab-ctl">
+    <div class="lab-tool"><span>Os dados chegam em</span>
+      <div class="cv-seg" role="group" aria-label="Tempo até os dados chegarem"><button type="button" data-load="200">0,2 s</button><button type="button" data-load="1200">1,2 s</button><button type="button" data-load="4000">4 s</button><button type="button" data-load="9000">9 s</button></div>
+    </div>
+    <div class="lab-tool"><span>Depois</span>
+      <div class="cv-seg" role="group" aria-label="Para onde o app vai"><button type="button" data-dest="hoje">Hoje</button><button type="button" data-dest="entrar">Entrar</button></div>
+    </div>
+    <button type="button" class="lab-b p" id="ab-play"><i class="ph-fill ph-play"></i>Abrir de novo</button>
+  </div>
+
+  <div class="ab-grid" id="ab-grid"></div>
+
+  <section class="ab-notes">
+    <article class="lab-card">
+      <h2>Os tempos</h2>
+      <ul>
+        <li><b>0,2 s:</b> o app aberto há pouco ou com tudo no cache do aparelho. A abertura nem chega a aparecer.</li>
+        <li><b>1,2 s:</b> o dia a dia no iPhone, com o app fechado e os dados no cache.</li>
+        <li><b>4 s:</b> a primeira vez num aparelho, ou uma versão nova do app baixando.</li>
+        <li><b>9 s:</b> internet ruim. Na Caminhada, a linha passa de 90% e quase para, mas não chega ao fim.</li>
+      </ul>
+    </article>
+    <article class="lab-card">
+      <h2>Como entra no app</h2>
+      <ul>
+        <li><b>Na primeira pintura:</b> a abertura vai para o <code>index.html</code>, com o desenho e um script pequeno. Ela aparece antes de o JavaScript do app baixar, e o React só avisa quando o dia está pronto.</li>
+        <li><b>Os seus pilares:</b> os pontos usam os pilares e as cores de quem abre, guardados no aparelho na última vez. Na primeira vez, os quatro do plano base.</li>
+        <li><b>Sem pisca:</b> nada aparece antes de 300 ms. Para Entrar, a arte e o nome ficam no lugar e só o resto entra.</li>
+        <li><b>Movimento reduzido:</b> o último quadro parado (o caminho inteiro, os pilares acesos e a chegada), e a troca só por opacidade.</li>
+        <li><b>Leitor de tela:</b> um anúncio só, "Abrindo o Prokopē".</li>
+      </ul>
+    </article>
+  </section>
+
+  <div id="lab-grid" hidden></div>
+  <nav id="lab-index" hidden></nav>
+</main>
+
+<script src="../telas/base.js"></script>
+<script src="laboratorio/mola.js"></script>
+<script src="laboratorio/lab.js"></script>
+<script src="laboratorio/hoje.js"></script>
+<script src="laboratorio/abertura.js"></script>
+<script>Lab.boot(); Abertura.boot();</script>
+</body>
+</html>

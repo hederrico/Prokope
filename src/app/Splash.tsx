@@ -1,9 +1,6 @@
-// Abertura calma enquanto a sessão carrega: só o nome, que aparece depois de 300 ms (se a sessão responder antes,
-// nada pisca). Sem girador e sem "Carregando..." (estados.md › Carregando).
+// O lugar da abertura enquanto a sessão ou a primeira tela carregam. A abertura de verdade (a arte do caminho) mora no
+// index.html, por cima de tudo, desde a primeira pintura (estados.md › Abertura); aqui fica só o fundo, sem anúncio
+// próprio: quem anuncia "Abrindo o Prokopē" é a abertura.
 export function Splash() {
-  return (
-    <div className="sh-splash" role="status" aria-label="Abrindo o Prokopē">
-      <p aria-hidden="true">Prokopē</p>
-    </div>
-  );
+  return <div className="sh-splash" aria-hidden="true" />;
 }

@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, type FeatureBundle } from 'motion/react';
 import { useLocation, useNavigate, useNavigationType, useOutlet } from 'react-router';
 import { useSession } from '@/data/session';
-import { useProfile } from '@/data/hooks';
+import { usePillars, useProfile } from '@/data/hooks';
 import { SheetHost } from '@/components/shell/SheetHost';
 import { AppToaster } from '@/components/shell/toast';
 import { ScreenLayer, TransitionContext, type TransitionInfo } from '@/components/shell/ScreenLayer';
@@ -18,10 +18,22 @@ import { lastNavigation, pathOf } from './history';
 import { installDismissedRecently, isIOSSafariBrowser } from './platform';
 import { findScreen, rootKey } from './screens';
 import { Splash } from './Splash';
+import { rememberPillars, splashAgain, splashDone } from './splashBridge';
 import { WriteErrorToast } from './WriteErrorToast';
 
 // para onde a pessoa queria ir antes de entrar (um link direto)
 let pendingDestination: string | null = null;
+
+/** Guarda as cores dos pilares ativos, na ordem, para a próxima abertura acender os pontos do caminho. */
+function SplashMemory() {
+  const colors = usePillars()
+    .map((p) => p.pillar.color)
+    .join(',');
+  useEffect(() => {
+    if (colors) rememberPillars(colors.split(',') as Parameters<typeof rememberPillars>[0]);
+  }, [colors]);
+  return null;
+}
 
 export function RootLayout() {
   useApplyPreferences();
@@ -90,6 +102,8 @@ export function RootLayout() {
 
   const tabs = key === 'tabs' && !waiting;
   useEffect(() => setShellState({ fullScreen: !waiting && key !== 'tabs' }), [key, waiting]);
+  // a abertura do index.html sai quando a primeira tela pinta, e volta numa espera dentro do app
+  useEffect(() => (waiting ? splashAgain() : splashDone()), [waiting]);
 
   return (
     <LazyMotion features={features}>
@@ -116,6 +130,7 @@ export function RootLayout() {
           <div id="sh-overlays" className="sh-sheets" />
           <AppToaster />
           <WriteErrorToast />
+          {session.status === 'ready' && <SplashMemory />}
         </div>
       </MotionConfig>
     </LazyMotion>

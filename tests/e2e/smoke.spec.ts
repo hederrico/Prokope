@@ -35,3 +35,20 @@ test('tem o manifesto do app instalável', async ({ page, request }) => {
   const manifest = await (await request.get(href!)).json();
   expect(manifest).toMatchObject({ name: 'Prokopē', display: 'standalone', start_url: '/', lang: 'pt-BR' });
 });
+
+test('a abertura sai quando a primeira tela fica pronta e guarda os pilares para a próxima', async ({ page }) => {
+  await page.goto('/entrar');
+  // a abertura do index.html aparece por cima de tudo e sai sozinha (ou nem aparece, se tudo chega em 300 ms)
+  await expect(page.locator('#pk-splash')).toHaveCount(0);
+  await page.getByRole('button', { name: /demonstra/i }).click();
+  await expect(page).toHaveURL(/\/hoje$/);
+  await expect(page.locator('#pk-splash')).toHaveCount(0);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('pk-splash') ?? '[]') as unknown[]);
+  expect(saved).toHaveLength(4);
+
+  // ao abrir de novo, a abertura desenha um ponto por pilar guardado
+  await page.evaluate(() => window.__pkSplash?.again());
+  await expect(page.locator('#pk-splash .pk-sp-pt')).toHaveCount(4);
+  await page.evaluate(() => window.__pkSplash?.done());
+  await expect(page.locator('#pk-splash')).toHaveCount(0);
+});

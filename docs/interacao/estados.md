@@ -2,6 +2,20 @@
 
 Regras para os momentos fora do caminho feliz: carregando, vazio, poucos dados, sem internet, erro, pausado, fora da agenda e os outros. Cada estado diz quando aparece, o que mostra e como entra e sai. As telas desenhadas estão na seção "Estados e feedback" do quadro (`docs/telas/index.html`), e o comportamento de cada uma está em [telas/estados.md](telas/estados.md).
 
+## Abertura
+
+A tela de quando o app abre. A comparação das três propostas está em [abertura.html](abertura.html); a escolhida foi a Caminhada.
+
+- **Quando:** ao abrir o app, enquanto o JavaScript baixa e a sessão carrega. Também numa espera dentro do app, como entrar na demonstração.
+- **Onde mora:** no `index.html`, por cima de tudo, para aparecer já na primeira pintura. Antes, até o JavaScript chegar, a tela ficava vazia. O React só avisa quando a primeira tela está pronta (`src/app/splashBridge.ts`).
+- **Espera antes de mostrar:** 300 ms. Se o app ficar pronto antes, ela nunca aparece.
+- **Como é:** a arte do caminho da tela Entrar, no mesmo lugar, com o nome e o "προκοπή". Uma linha percorre o caminho com o ponto da pessoa na ponta e acende cada pilar ao passar (`micro`, com mola). O ritmo é 1 − e^(−t/2,2 s), sem passar de 92%: rápido no começo, cada vez mais devagar, sem chegar ao fim antes dos dados.
+- **Os pilares:** os de quem abre, com as cores dele, guardados no aparelho (`pk-splash`) sempre que mudam, até 6. Quatro ficam nas curvas, como na tela Entrar; outros números se espalham entre a primeira e a última curva. Na primeira vez num aparelho, os quatro do plano base.
+- **Saída:** quando a tela fica pronta, a linha completa o caminho (`base`), o ponto de chegada acende (`micro`, com mola) e a abertura sai com opacidade em `base`. Fechar o caminho soma cerca de 0,25 s. Na tela Entrar, a arte e o nome ficam no lugar, e a ilustração de lá não se desenha de novo.
+- **Movimento reduzido:** o último quadro, parado (o caminho inteiro, os pilares acesos e a chegada), e a saída sem animação.
+- **Leitor de tela:** um anúncio só, "Abrindo o Prokopē".
+- **Nunca:** girador, texto "Carregando...", a linha voltando para trás.
+
 ## Carregando
 
 - **Quando:** só no primeiro acesso num aparelho novo, sem cache. Nas outras vezes, o Firestore responde do cache antes da primeira pintura.

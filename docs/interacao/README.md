@@ -23,7 +23,7 @@ Como o Prokopē se comporta: como as telas se ligam, o que se mexe, o que cada t
 
 ## Para sentir antes de construir
 
-O [laboratório de movimento](laboratorio.html) mostra cada animação destes documentos funcionando, com a velocidade ajustável (para ver em câmera lenta), o modo reduzido e os dois temas. Abra direto no navegador; não precisa de servidor.
+O [laboratório de movimento](laboratorio.html) mostra cada animação destes documentos funcionando, com a velocidade ajustável (para ver em câmera lenta), o modo reduzido e os dois temas. Abra direto no navegador; não precisa de servidor. A [abertura](abertura.html) compara as três propostas para a tela de quando o app abre, com o tempo dos dados ajustável.
 
 ## As dez regras
 

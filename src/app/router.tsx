@@ -1,5 +1,6 @@
 // O roteador (React Router, data router). Todas as telas carregam sob demanda (route.lazy): a navegação espera
 // o arquivo chegar, e a passagem já começa com a tela nova pronta. As rotas vêm da tabela em screens.ts.
+import { useEffect } from 'react';
 import { createBrowserRouter, Navigate, useNavigate, useRouteError, type RouteObject } from 'react-router';
 import { TabsLayout } from '@/components/shell/TabsLayout';
 import { recentLastPath } from '@/components/shell/navigation';
@@ -9,6 +10,7 @@ import { captureGesturesFlag, isStandalone } from './platform';
 import { RootLayout } from './RootLayout';
 import { SCREENS, type ScreenDef } from './screens';
 import { Splash } from './Splash';
+import { splashDone } from './splashBridge';
 
 function lazyScreen(def: ScreenDef): RouteObject {
   return {
@@ -32,6 +34,8 @@ function RouteError() {
   const error = useRouteError();
   const navigate = useNavigate();
   console.error(error);
+  // a abertura fica por cima de tudo: sai para o aviso aparecer
+  useEffect(() => splashDone(), []);
   return (
     <div className="sh-splash">
       <div style={{ display: 'grid', gap: 12, justifyItems: 'center', padding: 24, textAlign: 'center' }}>

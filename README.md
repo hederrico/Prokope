@@ -29,6 +29,6 @@ Vite, React e TypeScript. Sem o `.env.local`, o app roda no modo demonstração,
 | `npm run build` e `npm run preview` | Build de produção (com o service worker) e a prévia dele |
 | `npm run typecheck`, `npm run lint` | TypeScript e ESLint |
 | `npm test` | Testes do Vitest |
-| `npm run test:e2e` | Build e testes do Playwright no tamanho do iPhone |
+| `npm run test:e2e` | Build de teste e testes do Playwright no tamanho do iPhone. Os testes rodam sempre na demonstração, mesmo com o `.env.local` (`.env.e2e` e `.env.test`). |
 
 Os dados das telas e dos testes são ilustrativos. Registros pessoais ficam só no Firebase.

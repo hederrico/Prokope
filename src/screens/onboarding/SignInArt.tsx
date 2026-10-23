@@ -1,12 +1,13 @@
 // SignInArt: a ilustração da entrada (quadro: f-entrada.js › art). Um caminho sinuoso tracejado com um ponto por pilar
 // do plano base e o trecho percorrido na primária, até o "você está aqui". Decorativa (aria-hidden).
 // Só na primeira montagem do app: o trecho se desenha em ring (pathLength) e o ponto entra em micro no fim.
-// Ao voltar de um login cancelado, nada anima.
+// Ao voltar de um login cancelado, nada anima. Depois da abertura (index.html), também não: a arte já estava na tela.
 import { useEffect, useState } from 'react';
 import { m } from 'motion/react';
 import { TEMPLATE_PILLARS } from '@/data';
 import { pillarAttrs, useReduced } from '@/components/ui';
 import { dur, tween } from '@/motion/tokens';
+import { splashWasShown } from '@/app/splashBridge';
 
 const TRAIL =
   'M120 222 C86 222 46 206 46 184 C46 158 194 158 194 132 C194 110 70 110 70 88 C70 71 166 71 166 54 C166 40 146 30 124 30';
@@ -25,7 +26,7 @@ let drawn = false;
 
 export function SignInArt() {
   const reduced = useReduced();
-  const [animateNow] = useState(() => !drawn && !reduced);
+  const [animateNow] = useState(() => !drawn && !reduced && !splashWasShown());
   useEffect(() => {
     drawn = true;
   }, []);

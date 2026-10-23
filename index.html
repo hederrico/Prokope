@@ -36,10 +36,412 @@
         } catch (e) {}
       })();
     </script>
+
+    <!-- A abertura (docs/interacao/estados.md › Abertura; proposta em docs/interacao/abertura.html): a arte do caminho
+         da tela Entrar, no mesmo lugar, enquanto o app baixa e os dados chegam. Mora aqui, e não no React, para aparecer
+         já na primeira pintura. Cores e medidas copiadas dos tokens (tokens.css) e de .ob-hero (onboarding.css). -->
+    <style>
+      @font-face {
+        font-family: 'Fraunces';
+        src: url('/fonts/Fraunces.woff2') format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Literata';
+        src: url('/fonts/Literata-Italic-greek.woff2') format('woff2');
+        font-weight: 200 900;
+        font-style: italic;
+        font-display: swap;
+        unicode-range: U+0301, U+0389, U+038C, U+0397, U+039A, U+039F-03A1, U+03AE, U+03B7, U+03BA, U+03BF-03C1, U+03CC;
+      }
+      #pk-splash {
+        --sp-bg: oklch(98.2% 0.004 75);
+        --sp-text: oklch(25.5% 0.012 75);
+        --sp-line: oklch(80% 0.01 75);
+        --sp-wash: oklch(95.5% 0.022 230);
+        --sp-fill: oklch(85% 0.075 230);
+        --sp-mark: oklch(64% 0.115 230);
+        --sp-ink: oklch(47.5% 0.09 230);
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        pointer-events: none;
+        background: var(--sp-bg);
+        color: var(--sp-text);
+        transition: opacity 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) #pk-splash {
+          --sp-bg: oklch(17% 0.006 75);
+          --sp-text: oklch(93.5% 0.008 75);
+          --sp-line: oklch(40% 0.01 75);
+          --sp-wash: oklch(27% 0.03 230);
+          --sp-fill: oklch(78% 0.08 230);
+          --sp-mark: oklch(78% 0.08 230);
+          --sp-ink: oklch(85% 0.065 230);
+        }
+        :root:not([data-theme='light']) .pk-sp-pt.lit {
+          fill: oklch(var(--dfl, 78%) 0.08 var(--h));
+          stroke: oklch(var(--dfl, 78%) 0.08 var(--h));
+        }
+      }
+      :root[data-theme='dark'] #pk-splash {
+        --sp-bg: oklch(17% 0.006 75);
+        --sp-text: oklch(93.5% 0.008 75);
+        --sp-line: oklch(40% 0.01 75);
+        --sp-wash: oklch(27% 0.03 230);
+        --sp-fill: oklch(78% 0.08 230);
+        --sp-mark: oklch(78% 0.08 230);
+        --sp-ink: oklch(85% 0.065 230);
+      }
+      #pk-splash.out {
+        opacity: 0;
+      }
+      .pk-sp-frame {
+        position: absolute;
+        inset: 0;
+        max-width: 480px;
+        margin-inline: auto;
+        display: flex;
+        flex-direction: column;
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      .pk-sp-hero {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 32px 0;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      #pk-splash.on .pk-sp-hero {
+        opacity: 1;
+      }
+      .pk-sp-art {
+        position: relative;
+        width: 264px;
+        height: min(260px, 40dvh);
+        margin-bottom: min(32px, 4dvh);
+      }
+      .pk-sp-art::before {
+        content: '';
+        position: absolute;
+        inset: -40px -64px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, color-mix(in oklch, var(--sp-wash) 90%, transparent), transparent);
+      }
+      .pk-sp-art svg {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .pk-sp-trail {
+        fill: none;
+        stroke: var(--sp-line);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-dasharray: 5 8;
+      }
+      .pk-sp-line {
+        fill: none;
+        stroke: var(--sp-mark);
+        stroke-width: 4;
+        stroke-linecap: round;
+      }
+      .pk-sp-line {
+        stroke-dasharray: 0 9999;
+      }
+      .pk-sp-start {
+        fill: var(--sp-mark);
+      }
+      .pk-sp-end {
+        fill: none;
+        stroke: var(--sp-line);
+        stroke-width: 2;
+      }
+      .pk-sp-pt {
+        fill: var(--sp-bg);
+        stroke: var(--sp-line);
+        stroke-width: 2;
+        transform-box: fill-box;
+        transform-origin: center;
+        transition:
+          fill 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+          stroke 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .pk-sp-pt.lit {
+        fill: oklch(var(--fl, 85%) 0.075 var(--h));
+        stroke: oklch(var(--ml, 64%) 0.115 var(--h));
+      }
+      :root[data-theme='dark'] .pk-sp-pt.lit {
+        fill: oklch(var(--dfl, 78%) 0.08 var(--h));
+        stroke: oklch(var(--dfl, 78%) 0.08 var(--h));
+      }
+      #pk-splash.on:not(.still) .pk-sp-pt.lit {
+        animation: pk-sp-pop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .pk-sp-halo {
+        fill: color-mix(in oklch, var(--sp-fill) 55%, transparent);
+      }
+      .pk-sp-here {
+        fill: var(--sp-ink);
+        stroke: var(--sp-bg);
+        stroke-width: 2;
+      }
+      .pk-sp-arrive {
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      #pk-splash.arrived .pk-sp-arrive {
+        animation: pk-sp-arrive 150ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+      #pk-splash.arrived .pk-sp-tip {
+        opacity: 0;
+      }
+      /* movimento reduzido: o último quadro, parado (o caminho inteiro, os pilares acesos e a chegada) */
+      #pk-splash.still .pk-sp-line {
+        stroke-dasharray: none;
+      }
+      #pk-splash.still .pk-sp-tip {
+        display: none;
+      }
+      #pk-splash.still .pk-sp-arrive {
+        opacity: 1;
+      }
+      #pk-splash.still,
+      #pk-splash.still .pk-sp-hero {
+        transition-duration: 1ms;
+      }
+      @keyframes pk-sp-pop {
+        from {
+          transform: scale(0.55);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+      @keyframes pk-sp-arrive {
+        from {
+          opacity: 0;
+          transform: scale(0.6);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .pk-sp-brand {
+        margin: 0;
+        font: 430 58px/1 'Fraunces', 'Literata', 'Iowan Old Style', Georgia, serif;
+        font-variation-settings: 'SOFT' 100;
+        letter-spacing: -0.025em;
+      }
+      .pk-sp-greek {
+        margin: 10px 0 0;
+        font: italic 400 22px/28px 'Literata', 'Iowan Old Style', Georgia, serif;
+        color: var(--sp-ink);
+        letter-spacing: 0.02em;
+      }
+      /* o lugar da frase e do "Poucos hábitos por vez" (22 + 24 + 6 + 22) e do pé da tela Entrar: 12 em cima, o botão
+         do Google (52), 10, o botão sem fundo (44,4), 10, a linha do cadeado (4 + 18) e a área segura embaixo */
+      .pk-sp-rest {
+        flex: none;
+        height: 74px;
+      }
+      .pk-sp-foot {
+        flex: none;
+        height: calc(150.4px + max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px)));
+      }
+      @media (max-height: 600px) {
+        .pk-sp-art {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <noscript>O Prokopē precisa de JavaScript para funcionar.</noscript>
+
+    <div id="pk-splash" role="status" aria-label="Abrindo o Prokopē">
+      <div class="pk-sp-frame">
+        <div class="pk-sp-hero">
+          <div class="pk-sp-art">
+            <svg viewBox="0 0 240 236" aria-hidden="true" focusable="false">
+              <path class="pk-sp-trail" d="M120 222 C86 222 46 206 46 184 C46 158 194 158 194 132 C194 110 70 110 70 88 C70 71 166 71 166 54 C166 40 146 30 124 30" />
+              <path class="pk-sp-line" d="M120 222 C86 222 46 206 46 184 C46 158 194 158 194 132 C194 110 70 110 70 88 C70 71 166 71 166 54 C166 40 146 30 124 30" />
+              <circle class="pk-sp-start" cx="120" cy="222" r="4.5" />
+              <circle class="pk-sp-end" cx="124" cy="30" r="4" />
+              <g class="pk-sp-pts"></g>
+              <circle class="pk-sp-here pk-sp-tip" cx="120" cy="222" r="5.5" />
+              <g class="pk-sp-arrive">
+                <circle class="pk-sp-halo" cx="124" cy="30" r="11.5" />
+                <circle class="pk-sp-here" cx="124" cy="30" r="5.5" />
+              </g>
+            </svg>
+          </div>
+          <p class="pk-sp-brand" aria-hidden="true">Prokopē</p>
+          <p class="pk-sp-greek" lang="el" aria-hidden="true">προκοπή</p>
+          <div class="pk-sp-rest"></div>
+        </div>
+        <div class="pk-sp-foot"></div>
+      </div>
+    </div>
+
+    <!-- O motor da abertura. Nada aparece antes de 300 ms. Depois, a linha anda pelo caminho (1 − e^(−t/2,2 s), sem
+         passar de 92%) e acende cada pilar ao passar. O app chama __pkSplash.done() quando a primeira tela está pronta:
+         a linha completa o caminho (240 ms), o ponto de chegada acende e a abertura sai em 240 ms. again() mostra de novo
+         numa espera dentro do app (entrar na demonstração). Os pilares vêm de pk-splash (src/app/splash.ts). -->
+    <script>
+      (function () {
+        var el = document.getElementById('pk-splash');
+        if (!el) return;
+        var tpl = el.cloneNode(true);
+        var R = document.documentElement;
+        var WAIT = 300, CAP = 0.92, TAU = 2200, BASE = 240;
+        // as curvas do caminho em que ficam os pilares na tela Entrar, medidas num caminho de 547,3
+        var BENDS = [89.7, 252.4, 388.9, 494.5], MEASURED = 547.3;
+        // o plano base (Mente, Alimentação, Corpo, Família): [matiz, --fl, --ml, --dfl]
+        var BASE_PLAN = [[285], [150, '90.5%', '64.5%', '82%'], [60, '81.5%', '61%', '73%'], [355]];
+        var state, path, line, tip, pts, lens, total, p, raf, timer, shown = false;
+
+        function still() {
+          try {
+            return R.getAttribute('data-motion') === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+          } catch (e) {
+            return false;
+          }
+        }
+        function pillars() {
+          try {
+            var s = JSON.parse(localStorage.getItem('pk-splash') || 'null');
+            if (Array.isArray(s) && s.length) return s.slice(0, 6);
+          } catch (e) {}
+          return BASE_PLAN;
+        }
+        function setup() {
+          state = 'wait';
+          p = 0;
+          path = el.querySelector('.pk-sp-trail');
+          line = el.querySelector('.pk-sp-line');
+          tip = el.querySelector('.pk-sp-tip');
+          var calm = still();
+          if (calm) el.classList.add('still');
+          try {
+            total = path.getTotalLength() || MEASURED;
+          } catch (e) {
+            total = MEASURED;
+          }
+          var list = pillars(), n = list.length, k = total / MEASURED, g = el.querySelector('.pk-sp-pts');
+          // quatro pilares ficam nas curvas, como na tela Entrar; outros números se espalham entre a primeira e a última
+          lens = list.map(function (_, i) {
+            var l = n === 4 ? BENDS[i] : n === 1 ? BENDS[1] : BENDS[0] + ((BENDS[3] - BENDS[0]) * i) / (n - 1);
+            return l * k;
+          });
+          pts = [];
+          list.forEach(function (h, i) {
+            var q;
+            try {
+              q = path.getPointAtLength(lens[i]);
+            } catch (e) {
+              return;
+            }
+            var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            c.setAttribute('class', 'pk-sp-pt' + (calm ? ' lit' : ''));
+            c.setAttribute('cx', q.x);
+            c.setAttribute('cy', q.y);
+            c.setAttribute('r', '9');
+            c.style.setProperty('--h', h[0]);
+            if (h[1]) c.style.setProperty('--fl', h[1]);
+            if (h[2]) c.style.setProperty('--ml', h[2]);
+            if (h[3]) c.style.setProperty('--dfl', h[3]);
+            g.appendChild(c);
+            pts.push({ el: c, at: lens[i], lit: calm });
+          });
+          timer = setTimeout(show, WAIT);
+        }
+        function draw(v) {
+          p = v;
+          var len = v * total;
+          line.style.strokeDasharray = len + ' 9999';
+          try {
+            var q = path.getPointAtLength(len);
+            tip.setAttribute('cx', q.x);
+            tip.setAttribute('cy', q.y);
+          } catch (e) {}
+          pts.forEach(function (pt) {
+            if (pt.lit || len + 0.5 < pt.at) return;
+            pt.lit = true;
+            pt.el.classList.add('lit');
+          });
+        }
+        function show() {
+          state = 'on';
+          shown = true;
+          el.classList.add('on');
+          if (el.classList.contains('still')) return;
+          var begin = performance.now();
+          (function tick(now) {
+            draw(CAP * (1 - Math.exp(-Math.max(0, now - begin) / TAU)));
+            raf = requestAnimationFrame(tick);
+          })(begin);
+        }
+        function remove() {
+          state = 'gone';
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }
+        function leave() {
+          el.classList.add('out');
+          timer = setTimeout(remove, el.classList.contains('still') ? 0 : BASE);
+        }
+        function done() {
+          if (state === 'wait') {
+            clearTimeout(timer);
+            remove();
+            return;
+          }
+          if (state !== 'on') return;
+          state = 'closing';
+          cancelAnimationFrame(raf);
+          if (el.classList.contains('still')) return leave();
+          var from = p, start = performance.now();
+          (function step(now) {
+            var t = Math.min(1, Math.max(0, now - start) / BASE);
+            var e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            draw(from + (1 - from) * e);
+            if (t < 1) {
+              raf = requestAnimationFrame(step);
+              return;
+            }
+            el.classList.add('arrived');
+            leave();
+          })(start);
+        }
+        function again() {
+          if (state !== 'gone') return;
+          el = tpl.cloneNode(true);
+          document.body.appendChild(el);
+          setup();
+        }
+        setup();
+        window.__pkSplash = {
+          done: done,
+          again: again,
+          shown: function () {
+            return shown;
+          },
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

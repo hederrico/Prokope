@@ -74,22 +74,13 @@
     user-select: none;
   }
 
-  /* ---------- abertura (carregando a sessão): calma, sem girador ---------- */
+  /* ---------- fundo da abertura (a arte do caminho fica no index.html) e da tela de erro ---------- */
   .sh-splash {
     position: absolute;
     inset: 0;
     display: grid;
     place-items: center;
     background: var(--bg);
-  }
-  .sh-splash p {
-    margin: 0;
-    font: 430 44px/1 var(--font-display);
-    font-variation-settings: var(--display-vs);
-    letter-spacing: -0.025em;
-    color: var(--text);
-    opacity: 0;
-    animation: sh-splash-in var(--dur-base) var(--ease-out) 300ms forwards;
   }
 
   /* ---------- barra de abas (tb) ---------- */
@@ -406,12 +397,6 @@
   .sh-sheet-foot {
     flex: none;
     padding: 0 16px;
-  }
-}
-
-@keyframes sh-splash-in {
-  to {
-    opacity: 1;
   }
 }
 
