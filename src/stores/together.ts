@@ -26,7 +26,10 @@ function stopLink() {
 }
 
 function sync() {
-  const { source, profile } = useDataStore.getState();
+  const state = useDataStore.getState();
+  // modo exemplo: o A dois não liga com a cópia (nem mostra o par da pessoa); volta junto com os dados dela
+  const source = state.example ? null : state.source;
+  const profile = state.example ? null : state.profile;
   if (source !== currentSource) {
     for (const u of unsubs) u();
     unsubs = [];
@@ -67,7 +70,7 @@ export function startTogether(): () => void {
   started = true;
   sync();
   const unsub = useDataStore.subscribe((s, prev) => {
-    if (s.source !== prev.source || s.profile?.linkId !== prev.profile?.linkId) sync();
+    if (s.source !== prev.source || s.example !== prev.example || s.profile?.linkId !== prev.profile?.linkId) sync();
   });
   return () => {
     unsub();

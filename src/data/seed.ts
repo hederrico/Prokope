@@ -159,9 +159,11 @@ export async function seedDemo(source: DataSource, now: number): Promise<void> {
   for (let i = 0; i < ops.length; i += 400) await source.write(ops.slice(i, i + 400));
 }
 
-/** Os documentos da demonstração (separado para os testes). */
-export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
-  const clock = clockOf(null);
+/**
+ * Os documentos da demonstração (separado para os testes). O modo exemplo passa o fuso e a virada da pessoa, para o
+ * "hoje" da história ser o mesmo dia dela.
+ */
+export function buildDemoOps(now: number, newId: () => string, clock: Clock = clockOf(null)): WriteOp[] {
   const today = logicalDay(now, clock);
   const p1 = addDays(today, -STORY.phase1Start);
   const p2 = addDays(today, -STORY.phase2Start);

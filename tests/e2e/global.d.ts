@@ -1,5 +1,6 @@
 // O gancho de teste da casca (src/app/router.tsx): só existe com navegador automatizado (navigator.webdriver).
 // Uma declaração só para todos os testes; os specs usam window.__pkShell sem redeclarar.
+// O do modo exemplo (window.__pkExample: enter, leave e active) fica declarado em src/data/example.ts.
 export {};
 
 interface ShellHookToastInput {

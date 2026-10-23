@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { currentEntry, previousEntry } from '@/app/history';
 import { findScreen, parentPath, tabOf, tabRoot, TABS, type TabId } from '@/app/screens';
 import { SHEET_PARAM, withSheet, withoutSheet } from '@/app/sheets';
+import { useDataStore } from '@/stores/data';
 
 // ---------- pilhas das abas ----------
 
@@ -46,13 +47,36 @@ export function syncTabStack(
     else if (top && kind === 'replace') stack[stack.length - 1] = entry;
     else stacks[tab] = parent && parent !== pathname ? [{ pathname: parent, path: parent }, entry] : [entry];
   }
-  try {
-    localStorage.setItem(LAST_KEY, JSON.stringify({ path: entry.path, at: Date.now() }));
-  } catch {
-    /* sem armazenamento */
+  // no modo exemplo, o último caminho fica o de antes: abrir pelo ícone não cai numa tela da história de exemplo
+  if (!useDataStore.getState().example) {
+    try {
+      localStorage.setItem(LAST_KEY, JSON.stringify({ path: entry.path, at: Date.now() }));
+    } catch {
+      /* sem armazenamento */
+    }
   }
   // sem notify(): roda durante a renderização da casca, e a tela nova já lê a pilha atualizada
 }
+
+// Modo exemplo: as pilhas guardam caminhos com ids da história de exemplo. Na volta, cada aba recupera a pilha de
+// antes do exemplo, e tocar na aba não abre um hábito que não existe nos dados da pessoa.
+let beforeExample: Record<TabId, Entry[]> | null = null;
+useDataStore.subscribe((s, prev) => {
+  if (s.example === prev.example) return;
+  if (s.example) {
+    beforeExample = {
+      hoje: [...stacks.hoje],
+      progresso: [...stacks.progresso],
+      jornada: [...stacks.jornada],
+      ajustes: [...stacks.ajustes],
+    };
+    return;
+  }
+  if (!beforeExample) return;
+  Object.assign(stacks, beforeExample);
+  beforeExample = null;
+  notify();
+});
 
 /** O último caminho da aba (para onde a aba volta ao ser tocada). */
 export function lastPathOf(tab: TabId): string {

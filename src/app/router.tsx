@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate, useNavigate, useRouteError, type RouteOb
 import { TabsLayout } from '@/components/shell/TabsLayout';
 import { recentLastPath } from '@/components/shell/navigation';
 import { showToast, showUndo } from '@/components/shell/toast';
+import { takeExampleReturn } from '@/data/example';
 import { recordNavigation } from './history';
 import { captureGesturesFlag, isStandalone } from './platform';
 import { RootLayout } from './RootLayout';
@@ -92,6 +93,13 @@ const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 // há pouco, volta para ela
 function initialRedirect() {
   if (typeof window === 'undefined') return;
+  // recarregou no meio do modo exemplo: o app abre onde a pessoa estava antes dele (as telas do exemplo levam ids
+  // que não existem nos dados dela)
+  const beforeExample = takeExampleReturn();
+  if (beforeExample) {
+    window.history.replaceState(window.history.state, '', beforeExample);
+    return;
+  }
   const path = window.location.pathname.slice(basename.length) || '/';
   if (!isStandalone() || (path !== '/' && path !== '/hoje') || window.location.search) return;
   const last = recentLastPath();

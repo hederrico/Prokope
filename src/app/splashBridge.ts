@@ -2,6 +2,7 @@
 // chegar; o app só avisa quando a primeira tela está pronta (done) e quando precisa dela de novo numa espera (again).
 // Também guarda as cores dos pilares de quem abre, para a próxima abertura acender os pontos certos no caminho.
 import { PALETTE, type PaletteKey } from '@/styles/palette';
+import { isExampleActive } from '@/data/example';
 
 interface SplashApi {
   done(): void;
@@ -32,8 +33,12 @@ export function splashWasShown(): boolean {
 
 const KEY = 'pk-splash';
 
-/** Guarda [matiz, --fl, --ml, --dfl] de cada pilar, na ordem, no formato que o index.html lê. */
+/**
+ * Guarda [matiz, --fl, --ml, --dfl] de cada pilar, na ordem, no formato que o index.html lê. No modo exemplo, não
+ * guarda: a próxima abertura acende os pilares da pessoa, e não os da história de exemplo.
+ */
 export function rememberPillars(colors: PaletteKey[]): void {
+  if (isExampleActive()) return;
   const list = colors.map((key) => {
     const c: { hue: number; fl?: string; ml?: string; dfl?: string } = PALETTE[key];
     return c.fl ? [c.hue, c.fl, c.ml, c.dfl] : [c.hue];
