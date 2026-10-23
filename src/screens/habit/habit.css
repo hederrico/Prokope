@@ -1,0 +1,338 @@
+/* Detalhe do hábito e "corrigir um dia" (quadro: f-habito-progresso.js, prefixo .xc-). Prefixo hb-. */
+@layer components {
+  /* a tela ocupa a altura toda abaixo da barra (o "Registrar deslize" fica no pé) */
+  .hb-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100% - 44px - var(--safe-top));
+  }
+  .hb-pad {
+    padding-inline: 16px;
+  }
+  .hb-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ---------- topo: ícone, nome, pilares e a meta ---------- */
+  .hb-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 8px 24px 20px;
+  }
+  .hb-hero h1 {
+    margin: 6px 0 0;
+    font: 500 26px/32px var(--font-display);
+    font-variation-settings: var(--display-vs);
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+  .hb-hero h1:focus {
+    outline: none;
+  }
+  /* no quadro, a bolha grande do topo fica branca, com a sombra dos cartões */
+  .hb-hero .pk-bub.lg {
+    background: var(--surface);
+    box-shadow: var(--shadow-1);
+  }
+  .hb-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+  .hb-sub {
+    margin: 0;
+    font: var(--t-sub);
+    color: var(--text-2);
+  }
+  /* a linha da meta abre o formulário do hábito (sem mudar o desenho) */
+  .hb-sub-btn {
+    min-height: 44px;
+    margin: -10px 0;
+    padding: 0 8px;
+    border-radius: 12px;
+    text-align: center;
+    transition: background-color var(--dur-press) var(--ease-out);
+  }
+  .hb-sub-btn:active {
+    background: color-mix(in oklab, var(--text) 5%, transparent);
+  }
+
+  /* ---------- números ---------- */
+  .hb-wst {
+    padding: 14px 0;
+  }
+  .hb-wst .pk-dots {
+    gap: 4px;
+    padding: 1px 0;
+  }
+  .hb-wst .pk-dots i {
+    width: 8px;
+    height: 8px;
+  }
+  .hb-x {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 16px;
+  }
+  .hb-x > span:has(.pk-mbar) {
+    align-self: stretch;
+  }
+  .hb-wst .pk-mbar {
+    margin-top: 2px;
+  }
+  .hb-wst .cap {
+    font: var(--t-caption);
+    color: var(--text-2);
+  }
+  .hb-wst .v.muted {
+    color: var(--text-3);
+  }
+  .hb-why {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 11px 14px 13px;
+    border-top: 1px solid var(--border);
+    font: 500 13px/18px var(--font-ui);
+    color: var(--text-2);
+  }
+  .hb-why svg {
+    flex: none;
+    font-size: 16px;
+    margin-top: 1px;
+    color: var(--ink);
+  }
+
+  /* ---------- calendário ---------- */
+  .hb-nv {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--wash);
+    font: 500 14px/19px var(--font-ui);
+    color: var(--text);
+  }
+  .hb-nv svg {
+    flex: none;
+    font-size: 20px;
+    color: var(--ink);
+  }
+  .hb-cal .pk-hmk {
+    margin-top: 12px;
+  }
+  .hb-nv + .pk-hmk {
+    margin-top: 0;
+  }
+  .hb-neutral {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: var(--wash, var(--accent-wash));
+    font: 500 15px/21px var(--font-ui);
+  }
+  .hb-neutral svg {
+    flex: none;
+    font-size: 22px;
+    color: var(--ink);
+  }
+
+  /* ---------- dias sem ---------- */
+  .hb-ds-hero {
+    padding-top: 4px;
+    padding-bottom: 16px;
+  }
+  .hb-ds-hero h1 {
+    margin-top: 2px;
+    font: 500 22px/28px var(--font-display);
+    font-variation-settings: var(--display-vs);
+    letter-spacing: 0;
+  }
+  .hb-huge {
+    font: 400 100px/0.92 var(--font-display);
+    font-variation-settings: var(--display-vs);
+    letter-spacing: -0.03em;
+    margin-top: 2px;
+  }
+  .hb-hs {
+    font: 500 17px/22px var(--font-ui);
+    color: var(--text-2);
+  }
+  .hb-stats2 .k svg {
+    font-size: 15px;
+  }
+  .hb-pers {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hb-pc {
+    --hb-bar: color-mix(in oklab, var(--fill), var(--mark));
+  }
+  .hb-per {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border-radius: 10px;
+  }
+  .hb-per-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .hb-pt {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+  .hb-pt b {
+    font: 600 16px/20px var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .hb-pt .cap {
+    color: var(--text-2);
+    font: 500 13px/16px var(--font-ui);
+  }
+  .hb-pr {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+  }
+  .hb-chev {
+    color: var(--text-3);
+    font-size: 16px;
+    display: grid;
+    place-items: center;
+  }
+  .hb-pbar {
+    position: relative;
+    display: block;
+    height: 12px;
+    margin-top: 8px;
+    border-radius: 99px;
+    background: var(--track);
+  }
+  .hb-pbar > i {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 99px;
+    background: var(--hb-bar);
+    transition: width var(--dur-fill) var(--ease-out);
+  }
+  .hb-per.now .hb-pbar > i {
+    background: var(--mark);
+  }
+  .hb-knob {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border-radius: 50%;
+    background: var(--mark);
+    box-shadow: 0 0 0 2.5px var(--surface);
+    transition:
+      left var(--dur-fill) var(--ease-out),
+      opacity var(--dur-micro) var(--ease-out);
+  }
+  .hb-hist > .cap {
+    display: block;
+    margin-top: 14px;
+    color: var(--text-2);
+    font: 500 13px/18px var(--font-ui);
+  }
+  .hb-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .hb-foot .cap {
+    text-align: center;
+    color: var(--text-2);
+  }
+  .hb-grow {
+    flex: 1;
+    min-height: 16px;
+  }
+
+  /* ---------- semana do contador ---------- */
+  .hb-week .pk-hmk {
+    margin-top: 0;
+  }
+
+  /* ---------- folha "corrigir um dia" ---------- */
+  .hb-fix {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .hb-shab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hb-shab b {
+    display: block;
+    font: 600 16px/20px var(--font-ui);
+  }
+  .hb-shab .cap {
+    display: block;
+    color: var(--text-2);
+  }
+  .hb-opts {
+    display: block;
+  }
+  .hb-opt {
+    grid-template-columns: 32px minmax(0, 1fr) 22px;
+  }
+  .hb-opt + .hb-opt {
+    border-top: 1px solid var(--border);
+  }
+  .hb-radio {
+    display: grid;
+    place-items: center;
+  }
+  .hb-note {
+    margin: 0;
+    padding: 0 20px;
+    text-align: center;
+    font: 400 13px/18px var(--font-ui);
+    color: var(--text-3);
+  }
+  .hb-pauseline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font: 500 14px/19px var(--font-ui);
+    color: var(--text-2);
+  }
+  .hb-pauseline svg {
+    font-size: 18px;
+  }
+  .hb-missing {
+    padding: 40px 24px;
+    text-align: center;
+  }
+}

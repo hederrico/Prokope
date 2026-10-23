@@ -1,0 +1,261 @@
+/* MonthCalendar (quadro: .xc-calh, .xc-calg, .xc-c). O mesmo no hábito e no humor.
+   Estados: d feito (✓) · p parcial (metade cheia) · n sem registro (trilho) · x pausado · u fora da agenda
+   · f por vir · i antes do começo · t hoje · sel tocado · l1 a l5 humor. */
+@layer components {
+  .mc-head,
+  .mc-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .mc-head {
+    margin: 12px 0 6px;
+  }
+  .mc-head span {
+    text-align: center;
+    font: 600 11px/14px var(--font-ui);
+    color: var(--text-3);
+  }
+  .mc-grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .mc-grid > li {
+    display: flex;
+    min-width: 0;
+  }
+  .mc-c {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 48px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font: 600 11px/12px var(--font-ui);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    transition:
+      background-color var(--dur-micro) var(--ease-out),
+      color var(--dur-micro) var(--ease-out),
+      box-shadow var(--dur-micro) var(--ease-out),
+      transform 250ms var(--ease-spring);
+  }
+  button.mc-c {
+    cursor: pointer;
+  }
+  button.mc-c:active {
+    transform: scale(var(--press-scale));
+    transition-duration: var(--dur-press);
+  }
+  .mc-c > i {
+    display: block;
+    height: 16px;
+    font-size: 15px;
+    line-height: 16px;
+  }
+  .mc-c > i > svg {
+    display: block;
+  }
+  .mc-c .pk-face,
+  .mc-c .mc-fs {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+  .mc-c small {
+    position: absolute;
+    top: 3px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font: 500 9px/10px var(--font-ui);
+    color: var(--text-3);
+  }
+  .mc-c.n {
+    background: var(--track);
+    color: var(--text-2);
+  }
+  .mc-c.f,
+  .mc-c.i {
+    box-shadow: inset 0 0 0 1.5px var(--border);
+    color: var(--text-3);
+    font-weight: 500;
+  }
+  .mc-c.i {
+    box-shadow: none;
+  }
+  .mc-c.e {
+    visibility: hidden;
+  }
+  .mc-c.t {
+    box-shadow:
+      0 0 0 1.5px var(--surface),
+      0 0 0 3px var(--text);
+  }
+  .mc-c.f.t {
+    box-shadow:
+      inset 0 0 0 1.5px var(--border),
+      0 0 0 1.5px var(--surface),
+      0 0 0 3px var(--text);
+  }
+  .mc-c.sel,
+  .mc-c.sel.t {
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 4.5px var(--accent-mark);
+  }
+
+  /* hábito */
+  .mc-hab .mc-c.d {
+    background: var(--fill);
+    color: var(--on);
+  }
+  .mc-hab .mc-c.p {
+    background: linear-gradient(to top, var(--fill) 50%, var(--track) 50%);
+  }
+  .mc-hab .mc-c.x {
+    background: repeating-linear-gradient(135deg, var(--track) 0 3px, transparent 3px 7px);
+    box-shadow: inset 0 0 0 1px var(--track);
+    color: var(--text-2);
+  }
+  .mc-hab .mc-c.x.d {
+    background:
+      repeating-linear-gradient(135deg, color-mix(in oklab, var(--fill) 55%, transparent) 0 3px, transparent 3px 7px),
+      color-mix(in oklab, var(--fill) 70%, var(--surface));
+    color: var(--on);
+  }
+  .mc-hab .mc-c.x.t,
+  .mc-hab .mc-c.u.t {
+    box-shadow:
+      0 0 0 1.5px var(--surface),
+      0 0 0 3px var(--text);
+  }
+  .mc-hab .mc-c.u {
+    border: 1.5px dotted var(--border-strong);
+    color: var(--text-3);
+  }
+  /* o ✓ se desenha quando o dia vira feito */
+  .mc-c > i.pop > svg {
+    animation: mc-pop var(--dur-base) var(--ease-spring) both;
+  }
+  @keyframes mc-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* humor: a cor e o rostinho de cada dia (o tom da primária em 5 níveis) */
+  .mc-mood {
+    --m1: color-mix(in oklab, var(--accent-mark) 10%, var(--surface));
+    --m2: color-mix(in oklab, var(--accent-mark) 24%, var(--surface));
+    --m3: color-mix(in oklab, var(--accent-mark) 40%, var(--surface));
+    --m4: color-mix(in oklab, var(--accent-mark) 57%, var(--surface));
+    --m5: color-mix(in oklab, var(--accent-mark) 76%, var(--surface));
+  }
+  :root[data-theme='dark'] .mc-mood {
+    --m1: color-mix(in oklab, var(--accent-mark) 11%, var(--surface));
+    --m2: color-mix(in oklab, var(--accent-mark) 20%, var(--surface));
+    --m3: color-mix(in oklab, var(--accent-mark) 30%, var(--surface));
+    --m4: color-mix(in oklab, var(--accent-mark) 40%, var(--surface));
+    --m5: color-mix(in oklab, var(--accent-mark) 52%, var(--surface));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .mc-mood {
+      --m1: color-mix(in oklab, var(--accent-mark) 11%, var(--surface));
+      --m2: color-mix(in oklab, var(--accent-mark) 20%, var(--surface));
+      --m3: color-mix(in oklab, var(--accent-mark) 30%, var(--surface));
+      --m4: color-mix(in oklab, var(--accent-mark) 40%, var(--surface));
+      --m5: color-mix(in oklab, var(--accent-mark) 52%, var(--surface));
+    }
+  }
+  .mc-c.l1 {
+    background: var(--m1);
+  }
+  .mc-c.l2 {
+    background: var(--m2);
+  }
+  .mc-c.l3 {
+    background: var(--m3);
+  }
+  .mc-c.l4 {
+    background: var(--m4);
+  }
+  .mc-c.l5 {
+    background: var(--m5);
+  }
+  .mc-mood .pk-hmk i.t {
+    background: var(--m4);
+  }
+  .mc-legend {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    margin: 18px 0 12px;
+  }
+  .mc-legend > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font: 500 11px/13px var(--font-ui);
+    color: var(--text-2);
+    text-align: center;
+  }
+  .mc-legend .mc-c {
+    flex: none;
+    width: 36px;
+    min-height: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .mc-legend .mc-c .pk-face {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* setas do mês: alvo de 44 */
+  .mc-arrows {
+    display: flex;
+    margin: -10px -12px 0 0;
+  }
+  .mc-ar {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--accent-ink);
+    font-size: 18px;
+  }
+  .mc-ar:disabled,
+  .mc-ar[aria-disabled='true'] {
+    color: var(--text-3);
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mc-c > i.pop > svg {
+      animation: mc-fade var(--dur-micro) var(--ease-out) both;
+    }
+  }
+  :root[data-motion='off'] .mc-c > i.pop > svg {
+    animation: mc-fade var(--dur-micro) var(--ease-out) both;
+  }
+  @keyframes mc-fade {
+    from {
+      opacity: 0;
+    }
+  }
+}
