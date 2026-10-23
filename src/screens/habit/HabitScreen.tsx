@@ -2,6 +2,7 @@
 // Sim ou não (e vezes por semana, lista, horário, contador, nota, número, limite): o topo, os números (força do
 // hábito, a semana, o total), o calendário do mês para corrigir um dia, o insight (ou a espera, com poucos dados)
 // e Pausar e Arquivar. "Dias sem" tem a tela própria (DaysSinceDetail). O voltar diz a origem (a pilha da aba).
+// Num hábito de horário, os textos são "no horário", "após o horário" e "sem registro" (patternWords, em text.ts).
 // Ao aparecer: cascata de 30 ms em topo, números, calendário e insight; a MiniBar da força enche em fill.
 import { useState, type ReactNode } from 'react';
 import { m } from 'motion/react';
@@ -35,6 +36,7 @@ import {
   formatNumber,
   monthName,
   parseDay,
+  useDomain,
   useFrozen,
   useHabit,
   useHabitStats,
@@ -48,10 +50,11 @@ import { DayRings } from '@/screens/progress/DayRings';
 import { useDrawGate, useDrawnValue } from '@/screens/progress/draw';
 import { PatternWaitCard } from '@/screens/progress/PatternWaitCard';
 import { fmt1, shortMinutes } from '@/screens/progress/format';
+import { habitHistory } from '@/screens/progress/insights';
 import { habitCells, sheetForDay } from './cells';
 import { DaysSinceDetail } from './DaysSinceDetail';
 import { MonthArrows, MonthCalendar } from './MonthCalendar';
-import { agree, countNoun, habitSubtitle, pastOf, pluralNoun, shortOf, verbOf } from './text';
+import { agree, countNoun, habitSubtitle, patternWords, pluralNoun, shortOf, type PatternWords } from './text';
 import './habit.css';
 
 function valueText(v: number, unit?: string) {
@@ -183,7 +186,10 @@ function statItems(habit: Habit, st: HabitStatsView, today: DayKey): { items: St
     extra: <span className="cap">{totalNoun}</span>,
   };
   const eachNoun = pluralNoun(short) ? short : 'dia feito';
-  const why = `A força do hábito sobe a cada ${eachNoun} e desce devagar nos dias sem. Ela nunca zera.`;
+  const why =
+    habit.type === 'time'
+      ? 'A força do hábito sobe a cada dia no horário e desce devagar nos outros. Ela nunca zera.'
+      : `A força do hábito sobe a cada ${eachNoun} e desce devagar nos dias sem. Ela nunca zera.`;
 
   switch (habit.type) {
     case 'rating': {
@@ -354,6 +360,7 @@ function CounterWeek({
 
 function CalendarCard({
   habit,
+  words,
   st,
   today,
   pillar,
@@ -365,6 +372,7 @@ function CalendarCard({
   hasPrev,
 }: {
   habit: Habit;
+  words: PatternWords;
   st: HabitStatsView;
   today: DayKey;
   pillar?: PillarColor;
@@ -406,7 +414,20 @@ function CalendarCard({
                 : 'dias na meta'
               : countNoun(done, short);
   const doneLabel =
-    habit.type === 'budget' ? 'Usou' : habit.type === 'number' ? 'Com registro' : habit.type === 'rating' ? 'Com nota' : 'Feito';
+    habit.type === 'budget'
+      ? 'Usou'
+      : habit.type === 'number'
+        ? 'Com registro'
+        : habit.type === 'rating'
+          ? 'Com nota'
+          : habit.type === 'time'
+            ? 'No horário'
+            : 'Feito';
+  // no horário, o trilho é "após o horário" (anotado depois da meta) ou "sem registro" (nada anotado): os dois têm
+  // o mesmo desenho, e a legenda diz os que aparecem no mês
+  const lateDays = inMonth.some((c) => c.state === 'notDone' && c.registered);
+  const blankDays = inMonth.some((c) => c.state === 'notDone' && !c.registered && c.day < today);
+  const timeNone = lateDays && blankDays ? 'Após o horário ou sem registro' : blankDays ? 'Sem registro' : 'Após o horário';
   const noneLabel =
     habit.type === 'budget'
       ? 'Não usou'
@@ -414,7 +435,9 @@ function CalendarCard({
         ? 'Sem registro'
         : habit.type === 'rating'
           ? 'Sem nota'
-          : `Sem ${short}`;
+          : habit.type === 'time'
+            ? timeNone
+            : `Sem ${short}`;
   const key: HeatmapKeyProps['items'] = [{ state: 'done', label: doneLabel }];
   if (habit.goal.partialMin !== undefined || inMonth.some((c) => c.state === 'partial'))
     key.push({ state: 'partial', label: 'Parcial' });
@@ -453,8 +476,7 @@ function CalendarCard({
         <p className="hb-nv">
           <Icon name="seal-check" weight="duotone" />
           <span>
-            Desde {formatDayMonth(habit.startDay!)}, você nunca ficou dois dias seguidos{' '}
-            {habit.type === 'time' ? 'fora do horário' : `sem ${verbOf(short) ?? short}`}.
+            Desde {formatDayMonth(habit.startDay!)}, {words.neverTwo}.
           </span>
         </p>
       )}
@@ -465,16 +487,30 @@ function CalendarCard({
 
 // ---------- insight ----------
 
-function HabitInsight({ habit, st, pillar }: { habit: Habit; st: HabitStatsView; pillar?: PillarColor }) {
+function HabitInsight({
+  habit,
+  words,
+  noRecord,
+  st,
+  pillar,
+}: {
+  habit: Habit;
+  /** os textos dos padrões (no horário: "no horário" e "após o horário") */
+  words: PatternWords;
+  /** dos dias sem, os sem registro (só no horário) */
+  noRecord: number;
+  st: HabitStatsView;
+  pillar?: PillarColor;
+}) {
   const c = st.correlation;
   if (!c) return null;
   const short = shortOf(habit);
-  const what = c.metric === 'mood' ? 'humor' : 'energia';
   if (!c.ready) {
     return (
       <PatternWaitCard
         habitName={habit.name}
         short={short}
+        words={words}
         icon={habit.icon}
         pillar={pillar}
         metric={c.metric}
@@ -482,11 +518,7 @@ function HabitInsight({ habit, st, pillar }: { habit: Habit; st: HabitStatsView;
         withoutDays={c.withoutDays}
         needed={c.needed}
         showHeader={false}
-        almostAll={(() => {
-          const verb = verbOf(short);
-          const did = verb ? `Você ${pastOf(verb)}${habit.type === 'time' ? ' no horário' : ''}` : `Você fez ${short}`;
-          return `${did} em quase todos os dias, então ainda não dá para comparar.`;
-        })()}
+        almostAll={`${words.almostAll}, então ainda não dá para comparar.`}
       />
     );
   }
@@ -500,28 +532,24 @@ function HabitInsight({ habit, st, pillar }: { habit: Habit; st: HabitStatsView;
         data-hue={pillarAttrs(pillar)['data-hue']}
       >
         <Icon name="smiley" weight="duotone" />
-        <span>
-          Por enquanto, o {what} fica parecido nos dias com e sem {short}.
-        </span>
+        <span>{words.similar(c.metric)}</span>
       </div>
     );
   }
   // a base é a história do hábito: os dias com e sem desde o começo (o "Total" logo acima)
-  const w = st.totals.withDays;
   const wo = st.totals.withoutDays;
-  const base = `${w} ${w === 1 ? 'dia' : 'dias'} com · ${wo} ${wo === 1 ? 'dia' : 'dias'} sem`;
-  const text = `Nos dias com ${short}, ${c.metric === 'mood' ? 'seu humor médio foi' : 'sua energia média foi'} ${fmt1(c.withAvg ?? 0)}. Nos outros, ${fmt1(c.withoutAvg ?? 0)}.`;
+  const base = words.basis({ withDays: st.totals.withDays, withoutDays: wo, noRecord: Math.min(noRecord, wo) });
   return (
     <InsightCard
       pillar={pillar ?? 'accent'}
       icon={c.metric === 'mood' ? 'smiley' : 'lightning'}
-      text={text}
+      text={words.sentence(c.metric, c.withAvg ?? 0, c.withoutAvg ?? 0)}
       basis={base}
       compare={{
         with: c.withAvg ?? 0,
         without: c.withoutAvg ?? 0,
-        withLabel: `com ${short}`,
-        withoutLabel: `sem ${short}`,
+        withLabel: words.withLabel,
+        withoutLabel: words.withoutLabel,
         kind: c.metric,
       }}
     />
@@ -540,12 +568,16 @@ function HabitDetail({ h, pillar }: { h: HabitView; pillar?: PillarColor }) {
   const cascade = useCascadeOnce(`habito:${habit.id}`);
   const [month, setMonth] = useState<{ anchor: DayKey | null; dir: number }>({ anchor: null, dir: 0 });
   const live = useHabitStats(habit.id, month.anchor ?? undefined);
+  const data = useDomain();
   const sheet = params.get('folha') ?? '';
   // com uma folha aberta, os números e o calendário esperam ela fechar para andar (a coreografia depois de
   // corrigir um dia); sem folha, acompanham os dados na hora (o Desfazer do toast volta pelo mesmo caminho)
   const frozen = useFrozen(live, `${sheet}|${month.anchor ?? ''}`);
   const st = sheet ? frozen : live;
   const selected = sheet && sheet !== 'menu' ? params.get('dia') : null;
+  // os dias sem registro desde o começo (no horário, eles não são "após o horário")
+  const history = habitHistory(habit, data, today);
+  const words = patternWords(habit, history);
   if (!st) return null;
 
   const openDay = (day: DayKey) => {
@@ -590,6 +622,7 @@ function HabitDetail({ h, pillar }: { h: HabitView; pillar?: PillarColor }) {
         <m.div variants={fadeUpItem}>
           <CalendarCard
             habit={habit}
+            words={words}
             st={st}
             today={today}
             pillar={pillar}
@@ -602,7 +635,7 @@ function HabitDetail({ h, pillar }: { h: HabitView; pillar?: PillarColor }) {
           />
         </m.div>
         <m.div variants={fadeUpItem}>
-          <HabitInsight habit={habit} st={st} pillar={pillar} />
+          <HabitInsight habit={habit} words={words} noRecord={history.noRecord} st={st} pillar={pillar} />
         </m.div>
       </div>
       <div className="hb-pad" style={{ paddingTop: 20 }}>

@@ -1033,6 +1033,23 @@
   .st-chips .pk-chip {
     padding: 7px 10px;
   }
+  /* "Também conta em" (formulário do hábito): título e linha de baixo como a linha de Ajustes, chips embaixo */
+  .st-also {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px 14px;
+  }
+  .st-also-t b {
+    display: block;
+    font: 500 16px/20px var(--font-ui);
+  }
+  .st-also-t small {
+    display: block;
+    margin-top: 2px;
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
   .st-pause-list .pk-li {
     cursor: pointer;
   }

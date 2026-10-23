@@ -1,16 +1,19 @@
 // PatternWaitCard: o padrão em formação (estados.md › Progresso · poucos dados). Cartão tracejado com quanto falta,
 // em frase e com as barrinhas. Os dias sem ficam em cinza neutro e nunca animam, para não virarem meta.
 // No Progresso é um botão que abre o hábito; no hábito, aparece no lugar do insight, parado.
+// Os dois lados vêm de patternWords: "Com caminhada" e "Sem caminhada", ou "No horário" e "Após o horário".
 import clsx from 'clsx';
 import { PillarBubble, pillarAttrs, type PillarColor } from '@/components/ui';
 import { Icon, type IconName } from '@/icons';
 import { capitalize } from '@/data';
-import { waitingSentence } from '@/screens/habit/text';
+import { waitingSentence, type PatternWords } from '@/screens/habit/text';
 
 export interface PatternWaitCardProps {
   habitName: string;
   /** "caminhada" */
   short: string;
+  /** os textos dos dois lados e da espera (patternWords) */
+  words: PatternWords;
   icon: IconName;
   pillar?: PillarColor;
   metric: 'mood' | 'energy';
@@ -37,6 +40,7 @@ function Segments({ n, needed, neutral }: { n: number; needed: number; neutral?:
 export function PatternWaitCard({
   habitName,
   short,
+  words,
   icon,
   pillar,
   metric,
@@ -51,12 +55,14 @@ export function PatternWaitCard({
   const missingWithout = Math.max(0, needed - withoutDays);
   const what = metric === 'mood' ? 'humor' : 'energia';
   const sentence =
-    almostAll && missingWith === 0 ? almostAll : waitingSentence(missingWith, missingWithout, short, needed);
+    almostAll && missingWith === 0 ? almostAll : waitingSentence(missingWith, missingWithout, words, needed);
   const w = Math.min(withDays, needed);
   const wo = Math.min(withoutDays, needed);
+  const withLabel = capitalize(words.withLabel);
+  const withoutLabel = capitalize(words.withoutLabel);
   const a11y = `${capitalize(short)} e ${what}, em formação. ${
-    missingWith > 0 ? `Faltam ${missingWith} ${missingWith === 1 ? 'dia' : 'dias'} com ${short}. ` : ''
-  }Com ${short}, ${w} de ${needed}. Sem ${short}, ${wo} de ${needed}.`;
+    missingWith > 0 ? `${words.missing(missingWith)} ` : ''
+  }${withLabel}, ${w} de ${needed}. ${withoutLabel}, ${wo} de ${needed}.`;
   const p = pillarAttrs(pillar);
   const body = (
     <>
@@ -74,21 +80,21 @@ export function PatternWaitCard({
       <p>{sentence}</p>
       <span className="pg-cnts">
         <span className="pg-cnt">
-          <span>Com {short}</span>
+          <span>{withLabel}</span>
           <Segments n={w} needed={needed} />
           <em>
             {w} de {needed}
           </em>
         </span>
         <span className="pg-cnt">
-          <span>Sem {short}</span>
+          <span>{withoutLabel}</span>
           <Segments n={wo} needed={needed} neutral />
           <em>
             {wo} de {needed}
           </em>
         </span>
       </span>
-      {missingWith > 0 && <small>Os dias sem chegam no tempo deles. Não precisa mudar nada.</small>}
+      {missingWith > 0 && <small>{words.othersLater} Não precisa mudar nada.</small>}
     </>
   );
   if (onOpen) {

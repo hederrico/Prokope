@@ -23,6 +23,28 @@ O detalhe de cada hábito e as vistas do Progresso: telas de leitura, onde o mov
 
 **Tocar num dia.** No celular não existe hover. Em qualquer gráfico de dias, o toque num dia passado ou de hoje abre uma folha. No detalhe do hábito, abre "corrigir um dia" (só aquele hábito). No Progresso, abre "um dia" (o resumo do dia inteiro). Dia futuro não é tocável.
 
+**Hábitos de horário (acordar, deitar e todo hábito do tipo horário).** Todo mundo acorda: o que muda é se foi no horário. Por isso nenhum texto diz "sem acordar", "com acordar" ou "acordar feito". Um dia de horário é um destes três:
+
+| Estado | Quando | Texto |
+|---|---|---|
+| No horário | O horário anotado ficou até a meta mais a tolerância | "no horário" |
+| Após o horário | O horário foi anotado, mas depois da meta mais a tolerância | "após o horário" |
+| Sem registro | Nada anotado no dia. Não dá para dizer que passou da hora | "sem registro" (hoje: "ainda sem registro") |
+
+Os textos saem de uma função só, `patternWords(habit)` em `src/screens/habit/text.ts`, que também monta os textos dos outros hábitos ("com caminhada" e "sem caminhada"). Quando o nome curto é um verbo (-ar → -ou, -er → -eu, -ir → -iu), a frase usa o pretérito; quando não é, usa o nome:
+
+| Onde | Acordar | Hábito de horário com nome que não é verbo (Remédio) |
+|---|---|---|
+| Padrão | "Nos dias em que você acordou no horário, seu humor médio foi 4,1. Nos outros, 3,4." | "Nos dias com remédio no horário, seu humor médio foi 4,1. Nos outros, 3,4." |
+| Base do padrão | "24 dias no horário · 8 após o horário" | igual |
+| Rostinhos | "no horário" e "após o horário" | igual |
+| Espera | "Os padrões aparecem com 7 dias no horário e 7 após o horário. Faltam 4 dias no horário." | igual |
+| Quase todos no horário | "Você acordou no horário em quase todos os dias, então ainda não dá para comparar." | "O remédio ficou no horário em quase todos os dias…" |
+| Faixa do calendário | "Desde 21 de setembro, você nunca acordou após o horário dois dias seguidos." | "…você nunca ficou dois dias seguidos após o horário." |
+| Parecido | "Por enquanto, o humor fica parecido nos dias em que você acordou no horário e nos outros." | "…nos dias com remédio no horário e nos outros." |
+
+Um nome derivado ("caminhada") não vira verbo num hábito de horário: fica "Nos dias com caminhada no horário". Os dias sem registro nunca são contados como "após o horário": a base mostra os dois à parte ("24 dias no horário · 6 após o horário · 2 sem registro"), e, se houve algum, os rostinhos e a espera dizem "nos outros dias" no lugar de "após o horário". No calendário, os dois têm o mesmo desenho (o trilho), e a legenda diz o que aparece no mês: "Após o horário", "Sem registro" ou "Após o horário ou sem registro". Hoje, com o horário já anotado depois da meta, a célula já é o trilho ("após o horário"), e não o contorno de por vir.
+
 **Vista de um pilar.** Cada chip de pilar monta a vista a partir do tipo de cada hábito do pilar, nesta ordem. Seção sem hábito não aparece. Um hábito de dois pilares (caminhada) aparece nos dois.
 
 | Tipo do hábito | Seção | Peça | Título do cartão |
@@ -34,7 +56,7 @@ O detalhe de cada hábito e as vistas do Progresso: telas de leitura, onde o mov
 | Nota de 1 a 5 | Notas | Bloco com a média, `Stat` e `MiniBar` | — |
 | Número | Não entra. Fica em Medidas, que reúne todo hábito do tipo número de qualquer pilar | — | — |
 
-Toda linha e todo bloco de hábito abre `/progresso/habito/:id`. Pilar sem hábito mostra o `EmptyState` "Nenhum hábito neste pilar." com "Criar hábito".
+Toda linha e todo bloco de hábito abre `/progresso/habito/:id`. Pilar sem hábito mostra o `EmptyState` "Nenhum hábito neste pilar." com "Criar hábito". "Um hábito de dois pilares" é o que tem pilares em "Também conta em" (`alsoIn`, escolhidos no formulário do hábito, [ajustes-plano.md](ajustes-plano.md)): ele entra na vista, na constância e na barra de cada um, sempre na cor do principal.
 
 ## Hábito · Caminhada com o cachorro  (rota: `/hoje/habito/:id` ou `/progresso/habito/:id`)
 
@@ -51,8 +73,8 @@ Toda linha e todo bloco de hábito abre `/progresso/habito/:id`. Pilar sem hábi
 | Pausar este hábito | Toque | Aba Ajustes, em Pausar, com "Alguns hábitos" e a caminhada marcada | Troca de aba em `micro` | — | — |
 | Arquivar | Toque | Arquiva e volta para a origem; toast "Caminhada arquivada" com Desfazer | Volta com `calma`; a linha recolhe no Hoje em `base` | `archiveHabit` em `habits` | Sai do Hoje e das vistas de Família e Corpo |
 
-**Estados desta tela:** com menos de 7 dias com e 7 sem, o insight vira a espera de [estados.md](../estados.md). Quando faltam dias "sem" porque a pessoa fez quase todos, a frase é "Você caminhou em quase todos os dias, então ainda não dá para comparar.". A faixa "nunca dois dias seguidos sem caminhar" só aparece enquanto for verdade. Ela sai em silêncio, sem animação de perda.
-**Acessibilidade:** cada dia se lê "21 de outubro, sem caminhada, botão". A grade é uma lista de 7 colunas, e a ordem de foco vai por semana. Com letra grande, o calendário mantém 7 colunas e os números ficam até 15 px; a frase da força quebra linha.
+**Estados desta tela:** com menos de 7 dias com e 7 sem, o insight vira a espera de [estados.md](../estados.md). Quando faltam dias "sem" porque a pessoa fez quase todos, a frase é "Você caminhou em quase todos os dias, então ainda não dá para comparar.". A faixa "nunca dois dias seguidos sem caminhar" só aparece enquanto for verdade. Ela sai em silêncio, sem animação de perda. Num hábito de horário (o Acordar), os textos são os de "Hábitos de horário", acima: a legenda diz "No horário" e "Após o horário", a força "sobe a cada dia no horário e desce devagar nos outros", e o padrão compara os dias no horário com os outros.
+**Acessibilidade:** cada dia se lê "21 de outubro, sem caminhada, botão". No horário: "21 de outubro, após o horário, botão", "19 de outubro, sem registro, botão" ou "22 de outubro, hoje, no horário, botão". A grade é uma lista de 7 colunas, e a ordem de foco vai por semana. Com letra grande, o calendário mantém 7 colunas e os números ficam até 15 px; a frase da força quebra linha.
 **Implementação:** `ScreenHeader` não entra (é `NavBar`). Os componentes são `StatGroup` com `Stat`, `MiniBar`, `MonthCalendar` (`variant="habit"`), `HeatmapKey`, `InsightCard` e `ListGroup`. A força do hábito vem de `habitStrength()` em `src/domain/`, e o `NumberFlow` faz 72 → 74 em `fill`.
 
 ## Hábito · corrigir um dia  (rota: `?folha=corrigir&habito=:id&dia=2026-10-21`)
@@ -68,7 +90,7 @@ Toda linha e todo bloco de hábito abre `/progresso/habito/:id`. Pilar sem hábi
 | Toast "Caminhada marcada na quarta" | Desfazer | Volta o estado anterior | Célula, força e bolinhas voltam pelo mesmo caminho | O documento anterior | O mesmo |
 
 Depois de fechar, segue a coreografia de [movimento.md](../movimento.md). A célula troca a cor em `micro` e o ✓ se desenha. Com +60 ms, a força rola no `NumberFlow` e a `MiniBar` anda em `fill`. Com +120 ms, as bolinhas da semana mudam. Dia passado não celebra: sem vibração, sem brilho e sem dia fechado.
-**Estados desta tela:** num dia pausado, a primeira linha diz "Dia pausado · Férias" e as opções continuam valendo. Marcar feito tira aquele dia da pausa, só para este hábito. Para outros tipos de hábito, o toque no dia abre a folha do próprio registro com `&dia=`: horário (`acordar`), nota (`nota`) ou contador (`proteina`, `agua`).
+**Estados desta tela:** num dia pausado, a primeira linha diz "Dia pausado · Férias" e as opções continuam valendo. Marcar feito tira aquele dia da pausa, só para este hábito. Para outros tipos de hábito, o toque no dia abre a folha do próprio registro com `&dia=`: horário (`acordar`), nota (`nota`) ou contador (`proteina`, `agua`). Um hábito de horário sem folha própria (fora acordar e deitar) usa esta folha com "No horário" (com a meta embaixo) e "Sem registro"; quando o horário anotado ficou depois da meta, entra também "Após o horário", marcado como o estado atual. Escolher "No horário" grava o dia como feito; "Sem registro" apaga o horário anotado. O toast diz "Remédio no horário na quarta".
 **Acessibilidade:** as três opções formam um `radiogroup` chamado "Como foi a caminhada", e o foco entra no título com a data. O toast é anunciado com `aria-live`.
 **Implementação:** os componentes são `Sheet`, `ListGroup` com `ListItem` e `Radio`, e `Toast`. A ação grava antes de fechar, porque o app pode ser fechado a qualquer momento. Um segundo toque em 300 ms é ignorado.
 
@@ -105,7 +127,7 @@ Depois de fechar, segue a coreografia de [movimento.md](../movimento.md). A cél
 
 **Estados desta tela:** no período de uma fase, o anel mostra a constância de fechamento (81%), e a linha "Semana passada" vira "Fase anterior". Com poucos dados, vale a tela "Progresso · poucos dados" do grupo I.
 **Acessibilidade:** o seletor é um grupo "Período" com "Período anterior" e "Próximo período" (desabilitado). Os chips usam `aria-pressed`, e o anel se lê "Constância da semana, 76% até agora".
-**Implementação:** os componentes são `PeriodSelector`, `Chip` em fileira com rolagem horizontal, `Ring`, `CardHeader`, `MiniBar` e `InsightCard`. As correlações vêm de `correlation()`, que exige 7 dias com e 7 sem. O seletor só aceita `semana`, `mes` e `fase`.
+**Implementação:** os componentes são `PeriodSelector`, `Chip` em fileira com rolagem horizontal, `Ring`, `CardHeader`, `MiniBar` e `InsightCard`. As correlações vêm de `correlation()`, que exige 7 dias com e 7 sem. O seletor só aceita `semana`, `mes` e `fase`. A frase e a base de cada padrão são montadas em `src/screens/progress/insights.ts` com `patternWords` (e não com o texto do domínio): no Acordar, "Nos dias em que você acordou no horário, a constância do resto do dia foi 84%. Nos outros, 61%." com "19 dias no horário · 12 após o horário · desde 21 de setembro"; no Deitar, em Humor, "14 noites no horário · 14 após o horário".
 
 ## Progresso · humor  (rota: `/progresso?periodo=mes&tema=humor`)
 

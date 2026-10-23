@@ -157,6 +157,51 @@ test.describe('ajustes', () => {
     await expect(page.getByRole('button', { name: /^Leitura\./ })).toBeVisible();
   });
 
+  test('também conta em: a louça entra em Corpo, e trocar o principal tira o extra', async ({ page }) => {
+    await enterDemo(page);
+    await go(page, '/ajustes/habitos');
+    await page.getByRole('button', { name: /^Louça\./ }).first().click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/[^/]+$/);
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page).toHaveURL(/\/editar$/);
+    const save = page.getByRole('button', { name: 'Salvar' });
+    await expect(save).toHaveAttribute('aria-disabled', 'true');
+    const also = page.getByRole('group', { name: 'Também conta em' });
+    // o principal (Família) não aparece entre os extras
+    await expect(also.getByRole('button', { name: 'Família' })).toHaveCount(0);
+    const corpo = also.getByRole('button', { name: 'Corpo' });
+    await expect(corpo).toHaveAttribute('aria-pressed', 'false');
+    await corpo.click();
+    await expect(corpo).toHaveAttribute('aria-pressed', 'true');
+    await save.click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/[^/]+$/);
+    // a tela do hábito mostra os dois pilares
+    await expect(page.locator('.hb-tags')).toContainText('Família');
+    await expect(page.locator('.hb-tags')).toContainText('Corpo');
+
+    // Ajustes › Pilares › Corpo: a louça aparece, "principal em Família"
+    await go(page, '/ajustes/pilares');
+    await page.getByRole('button', { name: /^Corpo/ }).first().click();
+    await expect(page.getByRole('button', { name: /^Louça\..*principal em Família/ })).toBeVisible();
+
+    // Progresso › Corpo: a louça também entra na vista do pilar
+    await go(page, '/progresso?periodo=semana&tema=visao');
+    await page.getByRole('group', { name: 'O que ver' }).getByRole('button', { name: 'Corpo', exact: true }).click();
+    await page.waitForTimeout(650);
+    await expect(page.getByRole('button', { name: /^Louça/ })).toBeVisible();
+
+    // trocar o principal para Corpo: Corpo sai dos extras, e Família vira opção
+    await go(page, '/ajustes/habitos');
+    await page.getByRole('button', { name: /^Louça\./ }).first().click();
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await page.getByRole('button', { name: /^Pilar, Família/ }).click();
+    await page.getByRole('dialog').getByRole('radio', { name: /Corpo/ }).click();
+    await page.waitForTimeout(400);
+    await expect(page.getByRole('button', { name: /^Pilar, Corpo/ })).toBeVisible();
+    await expect(also.getByRole('button', { name: 'Corpo' })).toHaveCount(0);
+    await expect(also.getByRole('button', { name: 'Família' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   test('horários: mudar um horário grava ao fechar a roda e avisa com Desfazer', async ({ page }) => {
     await enterDemo(page);
     await go(page, '/ajustes/horarios');

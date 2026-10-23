@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { FullScreen, NavBar, Sheet, showUndo, useGoBack } from '@/components/shell';
-import { Button, DayPicker, ListGroup, SectionLabel, Switch, TextField, TimeValue } from '@/components/ui';
+import { Button, Chip, ChipRow, DayPicker, ListGroup, SectionLabel, Switch, TextField, TimeValue } from '@/components/ui';
 import {
   formatDayShort,
   formatTime,
@@ -29,6 +29,7 @@ import {
   MOMENTS,
   UNITS,
   draftToForm,
+  formChanged,
   formFromHabit,
   formToDraft,
   isHabitType,
@@ -38,7 +39,9 @@ import {
   rampSentence,
   rampText,
   stepFor,
+  toggleAlsoIn,
   unitLabel,
+  withPrimaryPillar,
   type FormState,
 } from './habitForm';
 import './settings.css';
@@ -116,7 +119,9 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
   const scheduleTime = g.timeKey ? profile?.schedule?.[g.timeKey] : undefined;
   const name = form.name.trim();
 
-  const changed = !editing || JSON.stringify(formFromHabit(editing)) !== JSON.stringify({ ...form, days: form.days });
+  const changed = !editing || formChanged(formFromHabit(editing), form);
+  // "Também conta em": os outros pilares ativos (o principal nunca está aqui)
+  const otherPillars = pillars.filter((p) => p.id !== form.pillarId);
   const canSave = !!name && changed && !busy;
 
   // ---------- começa e fase ----------
@@ -153,6 +158,7 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
         name,
         icon,
         pillarId: form.pillarId,
+        alsoIn: form.alsoIn,
         goal,
         schedule: { ...editing.schedule, days: form.days, moment: form.moment },
         quickAdds: form.quickAdds,
@@ -166,6 +172,7 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
       name,
       type: form.type,
       pillarId: form.pillarId,
+      alsoIn: form.alsoIn,
       icon,
       goal,
       schedule: { days: form.days, moment: form.moment },
@@ -477,6 +484,34 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
               label={`Pilar, ${pillar?.name ?? 'nenhum'}`}
               onClick={() => setSheet('pillar')}
             />
+            {otherPillars.length > 0 && (
+              <div className="st-also">
+                <span className="st-also-t">
+                  {/* o grupo dos chips já diz o título ao leitor de tela */}
+                  <b aria-hidden="true">Também conta em</b>
+                  <small>Entra na constância de cada um. A cor é a do principal.</small>
+                </span>
+                <ChipRow label="Também conta em">
+                  {otherPillars.map((p) => {
+                    const on = form.alsoIn.includes(p.id);
+                    return (
+                      <Chip
+                        key={p.id}
+                        selected={on}
+                        tint
+                        icon={on ? undefined : 'plus'}
+                        pillar={p.color}
+                        onPressedChange={(v) =>
+                          update({ alsoIn: toggleAlsoIn(form.alsoIn, p.id, v, pillars.map((x) => x.id)) })
+                        }
+                      >
+                        {p.name}
+                      </Chip>
+                    );
+                  })}
+                </ChipRow>
+              </div>
+            )}
             <Row title="Momento do dia" value={momentLabel(form.moment)} onClick={() => setSheet('moment')} />
             {showDays &&
               (fixedDays ? (
@@ -520,7 +555,7 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
         title="Pilar"
         value={form.pillarId}
         options={pillars.map((p) => ({ value: p.id, label: p.name, icon: p.icon, pillar: p.color }))}
-        onChange={(v) => update({ pillarId: v })}
+        onChange={(v) => setForm((f) => withPrimaryPillar(f, v))}
       />
       <ChoiceSheet
         open={sheet === 'moment'}

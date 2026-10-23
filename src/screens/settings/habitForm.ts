@@ -109,7 +109,10 @@ export interface FormState {
   icon: IconName | null;
   /** a pessoa escolheu o ícone (deixa de seguir a sugestão do nome) */
   iconChosen: boolean;
+  /** o pilar principal (dá a cor) */
   pillarId: string;
+  /** "Também conta em": os pilares extras (nunca o principal) */
+  alsoIn: string[];
   goal: HabitGoal;
   quickAdds: QuickAdd[];
   checklist: ChecklistItem[];
@@ -152,12 +155,14 @@ export function newForm(
 ): FormState {
   const sameType = keep.type === type;
   const d = typeDefaults(type);
+  const primary = keep.pillarId || pillarId;
   return {
     type,
     name: keep.name ?? '',
     icon: keep.icon ?? null,
     iconChosen: keep.iconChosen ?? false,
-    pillarId: keep.pillarId || pillarId,
+    pillarId: primary,
+    alsoIn: (keep.alsoIn ?? []).filter((p) => p !== primary),
     goal: sameType && keep.goal ? keep.goal : d.goal,
     quickAdds: sameType && keep.quickAdds ? keep.quickAdds : d.quickAdds,
     checklist: sameType && keep.checklist ? keep.checklist : d.checklist,
@@ -176,6 +181,8 @@ export function formFromHabit(h: Habit): FormState {
     icon: h.icon,
     iconChosen: true,
     pillarId: h.pillarId,
+    // documentos antigos podem não ter o campo
+    alsoIn: (h.alsoIn ?? []).filter((p) => p !== h.pillarId),
     goal: { ...h.goal },
     quickAdds: h.quickAdds.map((q) => ({ ...q })),
     checklist: h.checklist.map((c) => ({ ...c })),
@@ -194,6 +201,7 @@ export function formToDraft(f: FormState): HabitFormDraft {
     // só o ícone escolhido vai para o rascunho; o sugerido pelo nome volta a ser calculado
     icon: f.iconChosen && f.icon ? f.icon : undefined,
     pillarId: f.pillarId,
+    alsoIn: f.alsoIn,
     goal: f.goal,
     quickAdds: f.quickAdds,
     checklist: f.checklist,
@@ -209,6 +217,7 @@ export function draftToForm(d: HabitFormDraft): Partial<FormState> {
     icon: (d.icon as IconName | undefined) ?? null,
     iconChosen: !!d.icon,
     pillarId: d.pillarId ?? '',
+    alsoIn: d.alsoIn,
     goal: d.goal,
     quickAdds: d.quickAdds,
     checklist: d.checklist,
@@ -216,6 +225,28 @@ export function draftToForm(d: HabitFormDraft): Partial<FormState> {
     days: d.schedule?.days,
     start: d.start,
   };
+}
+
+// ---------- pilares: o principal e "Também conta em" ----------
+
+/** Troca o pilar principal; se ele estava em "Também conta em", sai de lá (o principal nunca é extra). */
+export function withPrimaryPillar<F extends Pick<FormState, 'pillarId' | 'alsoIn'>>(form: F, pillarId: string): F {
+  return { ...form, pillarId, alsoIn: form.alsoIn.filter((p) => p !== pillarId) };
+}
+
+/** Marca ou desmarca um pilar extra, na ordem dos pilares (os ids de fora da lista, como um arquivado, ficam). */
+export function toggleAlsoIn(alsoIn: string[], pillarId: string, on: boolean, order: string[]): string[] {
+  const set = new Set(alsoIn);
+  if (on) set.add(pillarId);
+  else set.delete(pillarId);
+  const known = order.filter((id) => set.has(id));
+  return [...known, ...[...set].filter((id) => !order.includes(id))];
+}
+
+/** O formulário mudou? (os extras como conjunto: desmarcar e marcar de novo não conta como mudança) */
+export function formChanged(a: FormState, b: FormState): boolean {
+  const norm = (f: FormState) => JSON.stringify({ ...f, alsoIn: [...f.alsoIn].sort() });
+  return norm(a) !== norm(b);
 }
 
 /** A escada da meta: 80, 90, 100, 110 g, com o rótulo de quando chega cada degrau. No máximo 6 degraus. */

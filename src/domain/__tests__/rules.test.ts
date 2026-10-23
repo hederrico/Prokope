@@ -5,11 +5,12 @@ import { daysSince } from '@/domain/daysSince';
 import { addDays, daysBetween, instantAt, DEFAULT_CLOCK } from '@/domain/day';
 import { goalOn, habitDay } from '@/domain/habitState';
 import { phaseSuggestion, phaseTimeline } from '@/domain/phases';
-import { pillarExitPlan } from '@/domain/pillars';
+import { habitsOfPillar, pillarExitPlan } from '@/domain/pillars';
 import { reviewSummary, reviewWindow } from '@/domain/review';
 import { nextSession, RUN_PLAN, runElapsed, runPosition } from '@/domain/runPlan';
-import { constancy, dayCount, ema, habitStrength, weekProgress } from '@/domain/stats';
+import { constancy, dayCount, ema, habitStrength, pillarConstancies, weekProgress } from '@/domain/stats';
 import { gentleNudge, isDayClosed, todayItems, todayLayout, todayMode } from '@/domain/today';
+import { pillarsList, progressView } from '@/domain/views';
 import { weightTrend } from '@/domain/weight';
 import { checkin, data, entry, habit, mark, pause, phase, pillar, profile, slip } from './fixtures';
 
@@ -367,6 +368,34 @@ describe('pilares', () => {
       { kind: 'stays', habit: walk },
       { kind: 'goes', habit: football },
     ]);
+  });
+
+  it('"também conta em": o hábito entra na constância, na contagem e na vista de cada pilar', () => {
+    const pillars = [pillar('familia'), pillar('corpo'), pillar('mente')];
+    // a caminhada é de Família e também conta em Corpo; o futebol é só de Corpo
+    const walk = habit({ id: 'walk', type: 'check', pillarId: 'familia', alsoIn: ['corpo'], startDay: '2026-10-19' });
+    const football = habit({ id: 'football', type: 'check', pillarId: 'corpo', startDay: '2026-10-19' });
+    const d = data({
+      pillars,
+      habits: [walk, football],
+      marks: ['2026-10-19', '2026-10-20', '2026-10-21'].map((day) => mark('walk', day)),
+    });
+    const ratios = Object.fromEntries(
+      pillarConstancies(d, '2026-10-19', '2026-10-21', TODAY).map((p) => [p.pillarId, p.ratio]),
+    );
+    // Família: só a caminhada (3 de 3); Corpo: caminhada e futebol (3 de 6); Mente: nada
+    expect(ratios).toEqual({ familia: 1, corpo: 0.5, mente: null });
+    expect(Object.fromEntries(pillarsList(d).map((p) => [p.pillar.id, p.habitCount]))).toEqual({
+      familia: 1,
+      corpo: 2,
+      mente: 0,
+    });
+    expect(habitsOfPillar('corpo', d.habits).map((h) => h.id)).toEqual(['walk', 'football']);
+    // Progresso › Corpo: a caminhada aparece nos dois pilares
+    const corpo = progressView(d, 'week', 'corpo', TODAY, TODAY).pillar;
+    expect(corpo?.habits.map((x) => x.habit.id)).toEqual(['walk', 'football']);
+    const familia = progressView(d, 'week', 'familia', TODAY, TODAY).pillar;
+    expect(familia?.habits.map((x) => x.habit.id)).toEqual(['walk']);
   });
 
   it('dias fora da conta não pesam na semana (addDays de apoio)', () => {

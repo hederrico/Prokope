@@ -12,6 +12,8 @@ export function habitCells(weeks: CalendarCell[][], habit: Habit, today: DayKey)
       if (!c.inMonth) return { day: c.day, date, state: 'e', label: '', tappable: false } satisfies CalCell;
       let state: CalCell['state'];
       let doneOver = false;
+      // horário anotado depois da meta: o dia já se resolveu, mesmo sendo hoje ("após o horário")
+      const lateTime = habit.type === 'time' && c.state === 'notDone' && c.registered;
       switch (c.state) {
         case 'done':
           state = 'd';
@@ -20,7 +22,7 @@ export function habitCells(weeks: CalendarCell[][], habit: Habit, today: DayKey)
           state = 'p';
           break;
         case 'notDone':
-          state = c.day === today ? 'f' : 'n';
+          state = c.day === today && !lateTime ? 'f' : 'n';
           break;
         case 'paused':
         case 'skipped':
@@ -36,12 +38,15 @@ export function habitCells(weeks: CalendarCell[][], habit: Habit, today: DayKey)
         default:
           state = 'i';
       }
-      let words = dayStateWords(c.state, habit, { partialText: partialText(c.goal) ?? undefined });
+      let words = dayStateWords(c.state, habit, {
+        partialText: partialText(c.goal) ?? undefined,
+        registered: c.registered,
+      });
       if (habit.type === 'budget') words = c.state === 'done' ? 'usou' : c.state === 'notDone' ? 'não usou' : words;
       if (habit.type === 'number' && c.value !== null && c.state !== 'future')
         words = `${formatNumber(c.value)}${habit.goal.unit ? ` ${habit.goal.unit}` : ''}`;
       if (habit.type === 'rating' && c.value) words = `nota ${c.value}`;
-      if (c.state === 'notDone' && c.day === today) words = 'ainda sem registro';
+      if (c.state === 'notDone' && c.day === today && !lateTime) words = 'ainda sem registro';
       const tappable = c.state !== 'future' && c.state !== 'inactive' && c.day <= today;
       return {
         day: c.day,

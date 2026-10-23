@@ -21,7 +21,7 @@ import { shortOf } from '@/screens/habit/text';
 import { useDrawGate, useDrawnValue } from './draw';
 import { MorePatterns, PatternWaitCard } from './PatternWaitCard';
 import { Chevron, InsightItem } from './shared';
-import { overviewInsights } from './insights';
+import { habitPatternWords, overviewInsights } from './insights';
 import { pillarColor } from './format';
 
 export interface OverviewViewProps {
@@ -241,6 +241,7 @@ export function OverviewView({ p, today, onTheme, onPhase, onMonth }: OverviewVi
                 <PatternWaitCard
                   habitName={waitHabit.name}
                   short={shortOf(waitHabit)}
+                  words={habitPatternWords(waitHabit, data, today)}
                   icon={waitHabit.icon}
                   pillar={pillarColor(data.pillarById.get(waitHabit.pillarId))}
                   metric={waiting.metric}

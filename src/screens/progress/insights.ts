@@ -1,5 +1,6 @@
 // Os padrões do Progresso que o domínio ainda não calcula (habito-progresso.md › Progresso · visão geral e humor):
 // - a constância do resto do dia nos dias com e sem um hábito ("acordou no horário: 84% contra 61%");
+// - a base de cada padrão ("24 dias com · 8 dias sem"; no horário, "20 dias no horário · 12 após o horário");
 // - a meta da semana de um contador ("a proteína chegou a 80 g em 2 dos 3 dias fechados");
 // - a energia do dia seguinte depois das noites com e sem um hábito da noite ("deitou até 22h30");
 // - o padrão dos dias "muito bem" (fim de semana ou dias de semana).
@@ -12,7 +13,7 @@ import { goalOn, habitDay, isCountable, isDoneLike } from '@/domain/habitState';
 import { dayCount, habitTotals } from '@/domain/stats';
 import { CORRELATION_NEEDED } from '@/domain/correlation';
 import type { Insight } from '@/domain/views';
-import { article, capitalize, pastOf, shortOf, verbOf } from '@/screens/habit/text';
+import { article, capitalize, nameVerb, pastOf, patternWords, shortOf, verbOf, type PatternWords } from '@/screens/habit/text';
 
 export interface ExtraInsight {
   key: string;
@@ -24,17 +25,52 @@ export interface ExtraInsight {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const one = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const dias = (n: number) => (n === 1 ? 'dia' : 'dias');
 
-/** "24 dias com · 8 dias sem": a história do hábito desde o começo (a mesma conta do Total no hábito). */
-export function totalsBasis(habit: Habit, data: DomainData, today: DayKey): string {
+export interface HabitHistory {
+  /** dias com (feito ou parcial) desde o começo: o Total do hábito */
+  withDays: number;
+  /** dias passados sem */
+  withoutDays: number;
+  /** dos dias sem, os que ficaram sem registro (no horário: o resto foi anotado após o horário) */
+  noRecord: number;
+}
+
+const histories = new WeakMap<DomainData, Map<string, HabitHistory>>();
+
+/** A história do hábito desde o começo (a mesma conta do Total no hábito), com os dias sem registro à parte. */
+export function habitHistory(habit: Habit, data: DomainData, today: DayKey): HabitHistory {
+  let m = histories.get(data);
+  if (!m) histories.set(data, (m = new Map()));
+  const key = `${habit.id}:${today}`;
+  const hit = m.get(key);
+  if (hit) return hit;
   const t = habitTotals(habit, today, data, today);
-  return `${t.withDays} ${dias(t.withDays)} com · ${t.withoutDays} ${dias(t.withoutDays)} sem`;
+  let noRecord = 0;
+  if (habit.type === 'time' && habit.startDay && t.withoutDays) {
+    for (const d of daysBetween(habit.startDay, addDays(today, -1))) {
+      const hd = habitDay(habit, d, data, today);
+      if (hd.state === 'notDone' && !hd.registered) noRecord++;
+    }
+  }
+  const v = { withDays: t.withDays, withoutDays: t.withoutDays, noRecord };
+  m.set(key, v);
+  return v;
+}
+
+/** "24 dias com · 8 dias sem" ou, no horário, "24 dias no horário · 8 após o horário": a história do hábito. */
+export function totalsBasis(habit: Habit, data: DomainData, today: DayKey): string {
+  const t = habitHistory(habit, data, today);
+  return patternWords(habit, t).basis(t);
+}
+
+/** Os textos dos padrões do hábito, sabendo se algum dia sem ficou sem registro. */
+export function habitPatternWords(habit: Habit, data: DomainData, today: DayKey): PatternWords {
+  return patternWords(habit, habitHistory(habit, data, today));
 }
 
 /** O hábito que mais puxa o resto do dia: a constância dos outros hábitos nos dias com e sem ele. */
 export function restOfDayInsight(data: DomainData, today: DayKey): ExtraInsight | null {
-  let best: { h: Habit; w: number; wo: number; wn: number; won: number } | null = null;
+  let best: { h: Habit; w: number; wo: number; wn: number; won: number; none: number } | null = null;
   for (const h of data.habits) {
     if (h.archived || !h.startDay || h.startDay >= today) continue;
     if (h.type !== 'time' && h.type !== 'check') continue;
@@ -43,6 +79,8 @@ export function restOfDayInsight(data: DomainData, today: DayKey): ExtraInsight 
     let wn = 0;
     let wos = 0;
     let won = 0;
+    // dos dias sem, os sem registro (no horário, o resto foi anotado após o horário)
+    let none = 0;
     for (const d of daysBetween(h.startDay, addDays(today, -1))) {
       const hd = habitDay(h, d, data, today);
       if (!isCountable(hd.state)) continue;
@@ -54,6 +92,7 @@ export function restOfDayInsight(data: DomainData, today: DayKey): ExtraInsight 
       } else {
         wos += rest.ratio;
         won++;
+        if (!hd.registered) none++;
       }
     }
     if (wn < CORRELATION_NEEDED || won < CORRELATION_NEEDED) continue;
@@ -65,26 +104,26 @@ export function restOfDayInsight(data: DomainData, today: DayKey): ExtraInsight 
       !best ||
       (h.type === 'time' && best.h.type !== 'time') ||
       (h.type === best.h.type && w - wo > best.w - best.wo);
-    if (better) best = { h, w, wo, wn, won };
+    if (better) best = { h, w, wo, wn, won, none };
   }
   if (!best) return null;
-  const { h, w, wo, wn, won } = best;
+  const { h, w, wo, wn, won, none } = best;
   const short = shortOf(h);
   const verb = verbOf(short);
+  // no horário: "Nos dias em que você acordou no horário" (patternWords); nos outros, o verbo quando dá
   const when =
     h.type === 'time'
-      ? verb
-        ? `Nos dias em que você ${pastOf(verb)} no horário`
-        : `Nos dias com ${short} no horário`
+      ? `Nos ${patternWords(h).days}`
       : verb
         ? `Nos dias em que você ${pastOf(verb)}`
         : `Nos dias com ${short}`;
+  const counts = { withDays: wn, withoutDays: won, noRecord: none };
   return {
     key: `resto:${h.id}`,
     habitId: h.id,
     icon: h.icon,
     text: `${when}, a constância do resto do dia foi ${pct(w)}. Nos outros, ${pct(wo)}.`,
-    basis: `${wn} ${dias(wn)} com · ${won} sem · desde ${formatDayMonth(h.startDay!)}`,
+    basis: `${patternWords(h, counts).basis(counts)} · desde ${formatDayMonth(h.startDay!)}`,
   };
 }
 
@@ -133,7 +172,7 @@ export function counterWeekInsight(data: DomainData, today: DayKey, preferPillar
 
 /** A energia do dia seguinte depois das noites com e sem um hábito da noite. */
 export function nextDayEnergyInsight(data: DomainData, today: DayKey): ExtraInsight | null {
-  let best: { h: Habit; w: number; wo: number; wn: number; won: number } | null = null;
+  let best: { h: Habit; w: number; wo: number; wn: number; won: number; none: number } | null = null;
   for (const h of data.habits) {
     if (h.archived || !h.startDay || h.role === 'checkin') continue;
     if (h.type !== 'time' && h.type !== 'check') continue;
@@ -142,6 +181,7 @@ export function nextDayEnergyInsight(data: DomainData, today: DayKey): ExtraInsi
     let wn = 0;
     let wos = 0;
     let won = 0;
+    let none = 0;
     for (const d of daysBetween(h.startDay, addDays(today, -1))) {
       const energy = data.checkins.get(addDays(d, 1))?.energy;
       if (!energy) continue;
@@ -152,6 +192,7 @@ export function nextDayEnergyInsight(data: DomainData, today: DayKey): ExtraInsi
       } else if (hd.state === 'notDone') {
         wos += energy;
         won++;
+        if (!hd.registered) none++;
       }
     }
     if (wn < CORRELATION_NEEDED || won < CORRELATION_NEEDED) continue;
@@ -163,22 +204,24 @@ export function nextDayEnergyInsight(data: DomainData, today: DayKey): ExtraInsi
       !best ||
       (h.type === 'time' && best.h.type !== 'time') ||
       (h.type === best.h.type && w - wo > best.w - best.wo);
-    if (better) best = { h, w, wo, wn, won };
+    if (better) best = { h, w, wo, wn, won, none };
   }
   if (!best) return null;
-  const { h, w, wo, wn, won } = best;
+  const { h, w, wo, wn, won, none } = best;
   const short = shortOf(h);
-  const verb = verbOf(short);
+  // no horário, só o nome que já é verbo vira pretérito ("deitou"); "caminhada" não vira "caminhou até 22h"
+  const verb = h.type === 'time' ? nameVerb(short) : verbOf(short);
   const time = h.type === 'time' ? goalOn(h, today, data).time : undefined;
   const when = verb
     ? `Nas noites em que você ${pastOf(verb)}${time ? ` até ${formatTime(time)}` : ''}`
     : `Nas noites com ${short}${time ? ` até ${formatTime(time)}` : ''}`;
+  const counts = { withDays: wn, withoutDays: won, noRecord: none };
   return {
     key: `energia:${h.id}`,
     habitId: h.id,
     icon: h.icon,
     text: `${when}, a energia do dia seguinte foi ${one(w)}. Nas outras, ${one(wo)}.`,
-    basis: `${wn} ${wn === 1 ? 'noite' : 'noites'} com · ${won} sem`,
+    basis: patternWords(h, counts).basis(counts, 'noite'),
   };
 }
 
@@ -223,7 +266,10 @@ function fromCorrelations(list: ExtraInsight[], insights: Insight[], data: Domai
   for (const ins of insights) {
     const h = data.habitById.get(ins.habitId);
     if (!h || list.some((x) => x.habitId === ins.habitId)) continue;
-    list.push({ key: `${prefix}:${h.id}`, habitId: h.id, icon: h.icon, text: ins.text, basis: totalsBasis(h, data, today) });
+    // a frase sai daqui (e não de ins.text): no horário, "Nos dias em que você acordou no horário"
+    const c = ins.correlation;
+    const text = patternWords(h).sentence(c.metric, c.withAvg ?? 0, c.withoutAvg ?? 0);
+    list.push({ key: `${prefix}:${h.id}`, habitId: h.id, icon: h.icon, text, basis: totalsBasis(h, data, today) });
   }
 }
 

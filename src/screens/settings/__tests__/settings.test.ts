@@ -6,6 +6,7 @@ import type { Habit, Pillar, Profile } from '@/types';
 import { daysLabel, exitSentence, goalText, habitLine, joinList, matchesWord, byListOrder } from '../habitText';
 import { ICON_CATALOG, ICON_CHIPS, iconSections, searchIcons, iconForName } from '../iconLibrary';
 import {
+  formChanged,
   formFromHabit,
   formToDraft,
   draftToForm,
@@ -14,6 +15,8 @@ import {
   rampText,
   stepFor,
   roundStep,
+  toggleAlsoIn,
+  withPrimaryPillar,
 } from '../habitForm';
 import { scheduleRows, suggestedAlarms } from '../schedule';
 
@@ -190,6 +193,30 @@ describe('formulário de hábito', () => {
     expect(f.name).toBe('Proteína');
     expect(f.phase).toBe(2);
     expect(f.iconChosen).toBe(true);
+  });
+  it('"Também conta em": os extras vão e voltam, e o principal nunca é extra', () => {
+    const walk = habit({ name: 'Caminhada', pillarId: 'familia', alsoIn: ['corpo'] });
+    const f = formFromHabit(walk);
+    expect(f.alsoIn).toEqual(['corpo']);
+    // um documento antigo sem o campo abre sem extras
+    expect(formFromHabit({ ...walk, alsoIn: undefined as unknown as string[] }).alsoIn).toEqual([]);
+    // o rascunho guarda os extras
+    expect(draftToForm(formToDraft(f)).alsoIn).toEqual(['corpo']);
+    expect(newForm('check', { pillarId: 'corpo', alsoIn: ['corpo', 'mente'] }, 'p1', 'now').alsoIn).toEqual(['mente']);
+    // trocar o principal para um extra tira ele de lá
+    const moved = withPrimaryPillar(f, 'corpo');
+    expect(moved.pillarId).toBe('corpo');
+    expect(moved.alsoIn).toEqual([]);
+    expect(withPrimaryPillar(f, 'mente').alsoIn).toEqual(['corpo']);
+    // marcar e desmarcar seguem a ordem dos pilares; um extra fora da lista (arquivado) continua
+    const order = ['familia', 'corpo', 'mente', 'alim'];
+    expect(toggleAlsoIn(['mente'], 'corpo', true, order)).toEqual(['corpo', 'mente']);
+    expect(toggleAlsoIn(['corpo', 'mente'], 'corpo', false, order)).toEqual(['mente']);
+    expect(toggleAlsoIn(['velho'], 'alim', true, order)).toEqual(['alim', 'velho']);
+    // desmarcar e marcar de novo não conta como mudança
+    expect(formChanged(f, { ...f, alsoIn: ['corpo'] })).toBe(false);
+    expect(formChanged({ ...f, alsoIn: ['mente', 'corpo'] }, { ...f, alsoIn: ['corpo', 'mente'] })).toBe(false);
+    expect(formChanged(f, { ...f, alsoIn: [] })).toBe(true);
   });
 });
 
