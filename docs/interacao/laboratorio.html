@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prokopē · Laboratório de movimento</title>
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    try { t = t || localStorage.getItem('pk-lab-theme'); } catch (e) {}
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;1,400&text=%CF%80%CF%81%CE%BF%CE%BA%CE%BF%CF%80%CE%AE&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="stylesheet" href="../telas/base.css">
+<link rel="stylesheet" href="laboratorio/lab.css">
+</head>
+<body class="lab">
+<header class="lab-top">
+  <div class="lab-brand"><b>Prokopē</b><span>Laboratório de movimento</span></div>
+  <div class="lab-tools">
+    <div class="lab-tool"><span>Velocidade</span>
+      <div class="cv-seg" role="group" aria-label="Velocidade"><button type="button" data-speed="1">1×</button><button type="button" data-speed="0.5">0,5×</button><button type="button" data-speed="0.25">0,25×</button></div>
+    </div>
+    <div class="lab-tool"><span>Movimento <em id="lab-sys"></em></span>
+      <div class="cv-seg" role="group" aria-label="Movimento"><button type="button" data-motion="system">Sistema</button><button type="button" data-motion="reduced">Reduzido</button><button type="button" data-motion="full">Completo</button></div>
+    </div>
+    <div class="lab-tool"><span>Tema</span>
+      <div class="cv-seg" role="group" aria-label="Tema"><button type="button" data-theme-btn="system">Sistema</button><button type="button" data-theme-btn="light">Claro</button><button type="button" data-theme-btn="dark">Escuro</button></div>
+    </div>
+  </div>
+</header>
+
+<div class="lab-wrap">
+  <nav class="lab-index" id="lab-index" aria-label="Demonstrações"></nav>
+  <main>
+    <section class="lab-intro">
+      <span class="ey">Prokopē · interação · 22 de outubro de 2026</span>
+      <h1>Laboratório de movimento</h1>
+      <p>Cada animação de <code>movimento.md</code> funcionando, com os componentes das telas. Toque nas cenas ou use Tocar e Repetir. Em 0,25× dá para ver a mola quicando e a ordem da coreografia; em Reduzido aparece o que o app faz quando o iPhone pede menos movimento. Tocar de novo no meio de uma animação continua dali, sem salto.</p>
+    </section>
+    <div class="lab-grid" id="lab-grid"></div>
+  </main>
+</div>
+
+<script src="../telas/base.js"></script>
+<script src="laboratorio/mola.js"></script>
+<script src="laboratorio/lab.js"></script>
+<script src="laboratorio/hoje.js"></script>
+<script src="laboratorio/demos-1.js"></script>
+<script src="laboratorio/demos-2.js"></script>
+<script src="laboratorio/demos-3.js"></script>
+<script>Lab.boot();</script>
+</body>
+</html>

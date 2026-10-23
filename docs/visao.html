@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prokopē</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Commissioner:wght@300..700&family=Noto+Serif+Display:ital,wght@0,400..700;1,400..600&display=swap">
+<style>
+  /* Layout: coluna de leitura de até 1120px; abertura em duas colunas com o celular; fases como seletor que acende os hábitos dos quatro pilares */
+  :root {
+    color-scheme: light;
+    --ground: #F1F4F1;
+    --surface: #FFFFFF;
+    --ink: #17201C;
+    --muted: #56645D;
+    --line: #D3DBD6;
+    --frame: #1E2723;
+    --accent: #22596A;
+    --mente: #4A57A3;
+    --alim: #5F7020;
+    --corpo: #9A5A0E;
+    --familia: #A24A64;
+    --font-display: "Noto Serif Display", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --font-body: "Commissioner", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #111714;
+      --surface: #19211D;
+      --ink: #E4EBE7;
+      --muted: #98A69F;
+      --line: #2B3631;
+      --frame: #313C36;
+      --accent: #74B6C7;
+      --mente: #A3AEF2;
+      --alim: #B7C870;
+      --corpo: #E8AC62;
+      --familia: #EB95AC;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #111714;
+    --surface: #19211D;
+    --ink: #E4EBE7;
+    --muted: #98A69F;
+    --line: #2B3631;
+    --frame: #313C36;
+    --accent: #74B6C7;
+    --mente: #A3AEF2;
+    --alim: #B7C870;
+    --corpo: #E8AC62;
+    --familia: #EB95AC;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.55;
+    font-weight: 400;
+  }
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    padding-block: 0 48px;
+    display: flex;
+    flex-direction: column;
+  }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* Seções */
+  .section {
+    padding-block: 56px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .section-head { display: flex; flex-direction: column; gap: 8px; max-width: 62ch; }
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 2.25rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .section-head p { color: var(--muted); }
+
+  /* Abertura */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 48px;
+    align-items: center;
+    padding-block: 64px 56px;
+  }
+  .hero-text { display: flex; flex-direction: column; gap: 20px; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(3.75rem, 10vw, 7rem);
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+  }
+  .greek {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.5rem;
+    color: var(--accent);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    align-items: baseline;
+  }
+  .greek small {
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .lede { font-size: 1.125rem; max-width: 52ch; }
+  .pillar-keys { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.875rem; color: var(--muted); }
+  .pillar-keys span { display: inline-flex; align-items: center; gap: 8px; }
+
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--c, var(--accent));
+    flex: none;
+  }
+  [data-pillar="mente"] { --c: var(--mente); }
+  [data-pillar="alim"] { --c: var(--alim); }
+  [data-pillar="corpo"] { --c: var(--corpo); }
+  [data-pillar="familia"] { --c: var(--familia); }
+
+  /* Celular de exemplo */
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .phone {
+    width: 320px;
+    max-width: 100%;
+    background: var(--frame);
+    border-radius: 44px;
+    padding: 10px;
+    box-shadow: 0 24px 60px -28px rgba(10, 20, 15, 0.45);
+  }
+  .screen {
+    background: var(--surface);
+    border-radius: 35px;
+    padding: 22px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-size: 0.875rem;
+  }
+  .screen-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .screen-top strong { font-family: var(--font-display); font-weight: 500; font-size: 1.375rem; line-height: 1.1; display: block; }
+  .screen-top .eyebrow { font-size: 0.6875rem; }
+  .tag-example {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .streaks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .streak {
+    background: var(--ground);
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  .streak b { font-size: 1.375rem; font-weight: 600; line-height: 1.1; }
+  .streak span { font-size: 0.75rem; color: var(--muted); }
+  .group { display: flex; flex-direction: column; gap: 2px; }
+  .group-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--c); font-weight: 600;
+    padding-bottom: 2px;
+  }
+  .check {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 2px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .group .check:last-child { border-bottom: 0; }
+  .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--c); flex: none; cursor: pointer; }
+  .check em { margin-left: auto; font-style: normal; font-size: 0.75rem; color: var(--muted); }
+  .check input:checked + span { color: var(--muted); }
+  .cta-fake {
+    background: var(--accent);
+    color: var(--surface);
+    border-radius: 14px;
+    padding: 11px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 600;
+  }
+  .cta-fake span { font-weight: 400; font-size: 0.75rem; opacity: 0.85; }
+  .tabbar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+    font-size: 0.6875rem; color: var(--muted); text-align: center;
+  }
+  .tabbar .on { color: var(--accent); font-weight: 600; }
+  .phone-caption { font-size: 0.8125rem; color: var(--muted); text-align: center; max-width: 34ch; }
+
+  /* Princípios */
+  .principles { display: flex; flex-direction: column; }
+  .principle {
+    display: grid;
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    gap: 8px 32px;
+    padding-block: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .principle:last-child { border-bottom: 1px solid var(--line); }
+  .principle h3 { font-size: 1.125rem; font-weight: 600; }
+  .principle p { color: var(--muted); max-width: 62ch; }
+
+  /* Fases */
+  .phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .phase-btn {
+    font: inherit; color: inherit; text-align: left;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+  .phase-btn:hover { border-color: var(--muted); }
+  .phase-btn[aria-pressed="true"] {
+    background: var(--surface);
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .phase-btn .eyebrow { color: var(--accent); }
+  .phase-btn strong { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; line-height: 1.1; }
+  .phase-btn .weeks { font-size: 0.8125rem; color: var(--muted); }
+  .phase-btn .what { font-size: 0.875rem; }
+  .note { font-size: 0.875rem; color: var(--muted); max-width: 70ch; }
+
+  /* Pilares */
+  .pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 24px; align-items: start; }
+  .pillar { display: flex; flex-direction: column; gap: 4px; }
+  .pillar-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--c);
+  }
+  .pillar-head h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; color: var(--c); }
+  .pillar-head .count { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
+  .habit {
+    display: flex; flex-direction: column; gap: 6px;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--line);
+    transition: opacity 0.25s;
+  }
+  .habit h4 { margin: 0; font-size: 1rem; font-weight: 600; line-height: 1.3; }
+  .habit p { font-size: 0.875rem; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    padding: 1px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip-phase {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--c) 14%, transparent);
+    color: var(--c);
+    font-weight: 600;
+  }
+  .habit.is-later { opacity: 0.42; }
+  .habit.is-later .chip-phase { background: transparent; border-color: var(--line); color: var(--muted); font-weight: 500; }
+
+  /* Dia e semana */
+  .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+  .sub { display: flex; flex-direction: column; gap: 16px; }
+  .sub h3 { font-size: 1.125rem; font-weight: 600; }
+  .timeline { display: flex; flex-direction: column; }
+  .tl-row {
+    display: grid;
+    grid-template-columns: 92px 16px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+  .tl-time { font-weight: 600; text-align: right; padding-top: 6px; font-size: 0.9375rem; }
+  .tl-rail { position: relative; align-self: stretch; display: flex; justify-content: center; }
+  .tl-rail::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 1px; background: var(--line); transform: translateX(-50%);
+  }
+  .tl-row:first-child .tl-rail::before { top: 14px; }
+  .tl-row:last-child .tl-rail::before { bottom: calc(100% - 14px); }
+  .tl-rail .dot { position: relative; margin-top: 10px; width: 11px; height: 11px; box-shadow: 0 0 0 3px var(--ground); }
+  .tl-what { padding-block: 4px 14px; }
+  .tl-what strong { display: block; font-weight: 600; }
+  .tl-what span { font-size: 0.875rem; color: var(--muted); }
+
+  .ritual {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ritual ul { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; font-size: 0.875rem; }
+  .ritual li { display: flex; gap: 8px; }
+  .ritual li::before { content: "·"; color: var(--mente); font-weight: 700; }
+
+  .week { display: flex; flex-direction: column; gap: 6px; }
+  .day {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 11px 14px;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+  }
+  .day b { width: 40px; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .day span { font-size: 0.8125rem; line-height: 1.3; display: flex; gap: 6px; align-items: baseline; }
+  .day span .dot { width: 7px; height: 7px; transform: translateY(-1px); }
+  .day.fixed { box-shadow: inset 0 0 0 1px var(--accent); }
+  .week-legend { display: flex; flex-direction: column; gap: 6px; font-size: 0.875rem; color: var(--muted); }
+
+  /* Proteína */
+  .protein { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+  .chart { display: flex; flex-direction: column; gap: 10px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .chart-head strong { font-family: var(--font-display); font-weight: 500; font-size: 2.25rem; line-height: 1; }
+  .chart-head span { font-size: 0.875rem; color: var(--muted); }
+  .bar-area { position: relative; padding-top: 24px; }
+  .bar {
+    display: flex; height: 40px; gap: 2px;
+    background: var(--ground);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .seg { height: 100%; }
+  .seg-1 { background: var(--alim); }
+  .seg-2 { background: color-mix(in srgb, var(--alim) 78%, var(--surface)); }
+  .seg-3 { background: color-mix(in srgb, var(--alim) 58%, var(--surface)); }
+  .seg-4 { background: color-mix(in srgb, var(--alim) 40%, var(--surface)); }
+  .marker {
+    position: absolute; top: 18px; bottom: -6px;
+    width: 0; border-left: 2px dashed var(--ink);
+  }
+  .marker span {
+    position: absolute; top: -20px; right: 4px;
+    font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+  }
+  .bar-legend { display: flex; gap: 2px; font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
+  .bar-legend > div { min-width: 0; padding-right: 4px; }
+  .bar-legend b { display: block; color: var(--ink); font-weight: 600; }
+  .chart-note { font-size: 0.8125rem; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  th { text-align: left; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 0 8px; }
+  td { padding: 9px 0; border-top: 1px solid var(--line); }
+  td:last-child, th:last-child { text-align: right; }
+  td.g { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .table-scroll { overflow-x: auto; }
+
+  /* Telas */
+  .screens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .screen-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .screen-card h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.375rem; }
+  .screen-card p { font-size: 0.875rem; color: var(--muted); }
+
+  /* Lembretes e técnica */
+  .alarms { display: flex; flex-direction: column; }
+  .alarm { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding-block: 10px; border-top: 1px solid var(--line); }
+  .alarm b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tech { display: flex; flex-direction: column; }
+  .tech li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding-block: 10px; border-top: 1px solid var(--line); font-size: 0.9375rem; }
+  .tech li b { font-weight: 600; }
+  .tech li span { color: var(--muted); }
+  code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.875em; color: var(--ink); overflow-wrap: anywhere; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-block: 24px 0;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phase-btn, .habit { transition: none; }
+  }
+
+  @media (max-width: 1000px) {
+    .pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .screens { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 40px 48px; }
+    .two-col, .protein { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+    .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .principle { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .pillars, .screens { grid-template-columns: minmax(0, 1fr); }
+    .section { padding-block: 44px; }
+    .section-head h2 { font-size: 1.875rem; }
+    .ritual ul { grid-template-columns: minmax(0, 1fr); }
+    .tl-row { grid-template-columns: 70px 16px minmax(0, 1fr); }
+    .tech li, .alarm { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">New Me · plano do app</p>
+      <h1>Prokopē</h1>
+      <p class="greek">προκοπή <small>grego, “progresso”</small></p>
+      <p class="lede">Os estoicos chamavam de <em>prokoptōn</em> quem ainda não é perfeito, mas está no caminho, avançando um pouco todo dia. Este é o plano do app: quatro pilares, hábitos que entram em fases e um registro gentil, que mostra o que você fez na semana.</p>
+      <div class="pillar-keys">
+        <span data-pillar="mente"><i class="dot"></i>Mente</span>
+        <span data-pillar="alim"><i class="dot"></i>Alimentação</span>
+        <span data-pillar="corpo"><i class="dot"></i>Corpo</span>
+        <span data-pillar="familia"><i class="dot"></i>Família</span>
+      </div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone" role="img" aria-label="Exemplo da tela Hoje do app">
+        <div class="screen">
+          <div class="screen-top">
+            <div>
+              <span class="eyebrow">Fase 1 · semana 1</span>
+              <strong>Quinta, 22 out</strong>
+            </div>
+            <span class="tag-example">Exemplo</span>
+          </div>
+
+          <div class="streaks">
+            <div class="streak"><b class="num">12</b><span>dias sem refrigerante</span></div>
+            <div class="streak"><b class="num">4 de 5</b><span>dias com o cachorro</span></div>
+          </div>
+
+          <div class="group" data-pillar="mente">
+            <div class="group-title"><i class="dot"></i>Mente</div>
+            <label class="check" for="m-acordar"><input type="checkbox" id="m-acordar" checked><span>Acordei</span><em class="num">6h52</em></label>
+            <label class="check" for="m-telas"><input type="checkbox" id="m-telas"><span>Telas desligadas</span><em class="num">21h</em></label>
+            <label class="check" for="m-deitar"><input type="checkbox" id="m-deitar"><span>Deitar</span><em class="num">22h</em></label>
+          </div>
+
+          <div class="group" data-pillar="familia">
+            <div class="group-title"><i class="dot"></i>Família</div>
+            <label class="check" for="f-dog"><input type="checkbox" id="f-dog" checked><span>Cachorro</span><em class="num">25 min</em></label>
+            <label class="check" for="f-louca"><input type="checkbox" id="f-louca"><span>Louça</span><em class="num">até 20h30</em></label>
+            <label class="check" for="f-lixo"><input type="checkbox" id="f-lixo"><span>Lixo</span><em>coleta hoje</em></label>
+          </div>
+
+          <div class="group" data-pillar="corpo">
+            <div class="group-title"><i class="dot"></i>Corpo</div>
+            <label class="check" for="c-fut"><input type="checkbox" id="c-fut"><span>Futebol</span><em>quinta</em></label>
+          </div>
+
+          <div class="cta-fake">Check-in do dia <span class="num">20h30</span></div>
+
+          <div class="tabbar">
+            <span class="on">Hoje</span><span>Semana</span><span>Progresso</span><span>Ajustes</span>
+          </div>
+        </div>
+      </div>
+      <p class="phone-caption">Exemplo da tela Hoje na fase 1, com números ilustrativos. As caixas podem ser marcadas.</p>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="t-principios">
+    <div class="section-head">
+      <p class="eyebrow">Como o app trata você</p>
+      <h2 id="t-principios">Princípios</h2>
+    </div>
+    <div class="principles">
+      <div class="principle"><h3>Constância acima de perfeição</h3><p>Bons hábitos aparecem como “x de y na semana”. Maus hábitos aparecem como “dias sem”, em contagem.</p></div>
+      <div class="principle"><h3>Nunca falhar dois dias seguidos</h3><p>Errar um dia faz parte. O app incentiva a voltar no dia seguinte.</p></div>
+      <div class="principle"><h3>Tom gentil</h3><p>Sem vermelho e sem “você falhou”. O app mostra o que foi feito.</p></div>
+      <div class="principle"><h3>Poucos hábitos por vez</h3><p>Os hábitos entram em fases, quando os anteriores já se firmaram.</p></div>
+      <div class="principle"><h3>Os dados mostram o que funciona</h3><p>O check-in de humor e energia é cruzado com os hábitos. Por exemplo: “nos dias com caminhada, seu humor médio foi 4”.</p></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-fases">
+    <div class="section-head">
+      <p class="eyebrow">Quatro fases de cerca de 3 semanas</p>
+      <h2 id="t-fases">Fases e pilares</h2>
+      <p>Toque numa fase para ver o que já está ativo em cada pilar.</p>
+    </div>
+
+    <div class="phases" role="group" aria-label="Escolher fase">
+      <button type="button" class="phase-btn" data-phase-btn="1" aria-pressed="true">
+        <span class="eyebrow">Fase 1</span><strong>Base</strong><span class="weeks num">semanas 1 a 3</span>
+        <span class="what">Sono, telas às 21h, check-in, cachorro, zero refrigerante, louça e lixo.</span>
+      </button>
+      <button type="button" class="phase-btn" data-phase-btn="2" aria-pressed="false">
+        <span class="eyebrow">Fase 2</span><strong>Alimentação</strong><span class="weeks num">semanas 4 a 6</span>
+        <span class="what">Proteína, notas das refeições, água, tranqueiras e refeições livres.</span>
+      </button>
+      <button type="button" class="phase-btn" data-phase-btn="3" aria-pressed="false">
+        <span class="eyebrow">Fase 3</span><strong>Movimento</strong><span class="weeks num">semanas 7 a 9</span>
+        <span class="what">Academia, corrida, limite do YouTube e meta de tempo de tela.</span>
+      </button>
+      <button type="button" class="phase-btn" data-phase-btn="4" aria-pressed="false">
+        <span class="eyebrow">Fase 4</span><strong>Profundidade</strong><span class="weeks num">semana 10 em diante</span>
+        <span class="what">Ritual do sono completo, silêncio, programa a dois e pequeno gesto.</span>
+      </button>
+    </div>
+    <p class="note">A revisão de domingo sugere avançar quando a fase atual chega a 70% de constância. Quem decide é você.</p>
+
+    <div class="pillars">
+      <div class="pillar" data-pillar="mente">
+        <div class="pillar-head"><h3>Mente</h3><span class="count num"></span></div>
+        <div class="habit" data-phase="0"><h4>Shorts e TikTok</h4><p>TikTok apagado, Shorts com timer de 0 min.</p><div class="chips"><span class="chip">dias sem</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Telas desligadas às 21h</h4><p>Celular, PC e TV, todas as noites.</p><div class="chips"><span class="chip">sim/não</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Deitar às 22h, acordar às 6h50</h4><p>No fim de semana, até 1h de diferença.</p><div class="chips"><span class="chip">horário</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Check-in do dia</h4><p>Humor e energia de 1 a 5, mais 3 coisas boas do dia, entre 20h30 e 21h.</p><div class="chips"><span class="chip">nota + texto</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Tempo de tela fora do trabalho</h4><p>Minutos do Tempo de Uso do iPhone. 2 semanas só medindo; na fase 3, meta 20% abaixo da média.</p><div class="chips"><span class="chip">medição</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="3"><h4>YouTube fora do trabalho</h4><p>Até 60 min por dia.</p><div class="chips"><span class="chip">minutos</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="4"><h4>Ritual do sono completo</h4><p>Os 8 itens do ritual, descritos em “O dia”.</p><div class="chips"><span class="chip">checklist</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="4"><h4>Momentos de silêncio</h4><p>Sem celular, fone ou música: tarefas de casa, trajetos, refeições, banho.</p><div class="chips"><span class="chip">checklist</span><span class="chip chip-phase"></span></div></div>
+      </div>
+
+      <div class="pillar" data-pillar="alim">
+        <div class="pillar-head"><h3>Alimentação</h3><span class="count num"></span></div>
+        <div class="habit" data-phase="1"><h4>Zero refrigerante</h4><p>Inclusive nas refeições livres. Só água e suco natural.</p><div class="chips"><span class="chip">dias sem</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Peso</h4><p>Diário, com gráfico da média de 7 dias.</p><div class="chips"><span class="chip">medição</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Cintura</h4><p>Semanal, na revisão de domingo.</p><div class="chips"><span class="chip">medição</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="2"><h4>Proteína</h4><p>Começa em 80 g e sobe 10 g a cada 2 ou 3 semanas, até 110 g.</p><div class="chips"><span class="chip">contador</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="2"><h4>Almoço e jantar</h4><p>Uma nota de 1 a 5 para cada um. O app acompanha a média da semana.</p><div class="chips"><span class="chip">nota</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="2"><h4>Água</h4><p>3 L por dia, com botões de 500 ml e 1 L.</p><div class="chips"><span class="chip">contador</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="2"><h4>Tranqueiras</h4><p>Até 2 dias por semana, fora as refeições livres.</p><div class="chips"><span class="chip">orçamento</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="2"><h4>Refeições livres</h4><p>Até 2 por semana, em dias flexíveis.</p><div class="chips"><span class="chip">orçamento</span><span class="chip chip-phase"></span></div></div>
+      </div>
+
+      <div class="pillar" data-pillar="corpo">
+        <div class="pillar-head"><h3>Corpo</h3><span class="count num"></span></div>
+        <div class="habit" data-phase="0"><h4>Futebol</h4><p>Quinta-feira, cerca de 1h.</p><div class="chips"><span class="chip">x/semana</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Caminhada com o cachorro</h4><p>20 min ou mais, 6 de 7 dias. Conta também em Família.</p><div class="chips"><span class="chip">sim/não</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="3"><h4>Academia do condomínio</h4><p>2 vezes por semana.</p><div class="chips"><span class="chip">x/semana</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="3"><h4>Corrida do zero</h4><p>2 vezes por semana, num plano de 13 semanas até correr 30 min seguidos.</p><div class="chips"><span class="chip">plano</span><span class="chip chip-phase"></span></div></div>
+      </div>
+
+      <div class="pillar" data-pillar="familia">
+        <div class="pillar-head"><h3>Família</h3><span class="count num"></span></div>
+        <div class="habit" data-phase="1"><h4>Louça</h4><p>Todo dia, até as 20h30.</p><div class="chips"><span class="chip">sim/não</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Lixo e recicláveis</h4><p>Nos dias de coleta, até as 20h30.</p><div class="chips"><span class="chip">sim/não</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="1"><h4>Caminhada com o cachorro</h4><p>O mesmo registro do pilar Corpo.</p><div class="chips"><span class="chip">sim/não</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="4"><h4>Programa a dois</h4><p>1 por semana, em qualquer dia.</p><div class="chips"><span class="chip">x/semana</span><span class="chip chip-phase"></span></div></div>
+        <div class="habit" data-phase="4"><h4>Pequeno gesto</h4><p>Ajudar sem ela pedir, um elogio, um bilhete. Todo dia.</p><div class="chips"><span class="chip">sim/não</span><span class="chip chip-phase"></span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-rotina">
+    <div class="section-head">
+      <p class="eyebrow">Rotina</p>
+      <h2 id="t-rotina">O dia e a semana</h2>
+    </div>
+    <div class="two-col">
+      <div class="sub">
+        <h3>O dia</h3>
+        <div class="timeline">
+          <div class="tl-row" data-pillar="mente"><span class="tl-time num">6h50</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Acordar</strong><span>No fim de semana, até 1h de diferença.</span></div></div>
+          <div class="tl-row" data-pillar="familia"><span class="tl-time">Manhã</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Luz do sol</strong><span>De preferência no passeio com o cachorro, que tem horário flexível.</span></div></div>
+          <div class="tl-row" data-pillar="mente"><span class="tl-time num">14h</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Fim da cafeína</strong><span>Café, chá preto, energético.</span></div></div>
+          <div class="tl-row" data-pillar="alim"><span class="tl-time num">até 19h30</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Jantar</strong><span>De 2 a 3h antes de deitar.</span></div></div>
+          <div class="tl-row" data-pillar="familia"><span class="tl-time num">até 20h30</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Louça, lixo e tarefas do dia</strong><span>Nada fica para o fim da noite.</span></div></div>
+          <div class="tl-row" data-pillar="mente"><span class="tl-time num">20h30</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Check-in</strong><span>Humor, energia, gratidão, minutos de tela e de YouTube.</span></div></div>
+          <div class="tl-row" data-pillar="mente"><span class="tl-time num">21h</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Telas desligadas</strong><span>Leitura, luzes baixas, desacelerar.</span></div></div>
+          <div class="tl-row" data-pillar="mente"><span class="tl-time num">22h</span><span class="tl-rail"><i class="dot"></i></span><div class="tl-what"><strong>Deitar</strong><span>Umas 8h50 até as 6h50.</span></div></div>
+        </div>
+        <div class="ritual">
+          <p class="eyebrow">Ritual do sono · fase 4</p>
+          <ul>
+            <li>Cafeína só até as 14h</li>
+            <li>Luz do sol pela manhã</li>
+            <li>Jantar de 2 a 3h antes de deitar</li>
+            <li>Tarefas do dia até as 20h30</li>
+            <li>Luzes baixas e quentes</li>
+            <li>Leitura antes de dormir</li>
+            <li>Nada de conteúdo que estimule o cérebro</li>
+            <li>Desacelerar e deixar o corpo desligar</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sub">
+        <h3>A semana</h3>
+        <div class="week">
+          <div class="day"><b>Seg</b><span data-pillar="corpo"><i class="dot"></i>Academia</span></div>
+          <div class="day"><b>Ter</b><span data-pillar="corpo"><i class="dot"></i>Corrida</span></div>
+          <div class="day"><b>Qua</b><span>Descanso</span></div>
+          <div class="day fixed"><b>Qui</b><span data-pillar="corpo"><i class="dot"></i>Futebol</span><span data-pillar="alim"><i class="dot"></i>Refeição livre</span></div>
+          <div class="day"><b>Sex</b><span data-pillar="corpo"><i class="dot"></i>Academia</span></div>
+          <div class="day"><b>Sáb</b><span data-pillar="corpo"><i class="dot"></i>Corrida</span><span data-pillar="alim"><i class="dot"></i>Refeição livre (flexível)</span></div>
+          <div class="day fixed"><b>Dom</b><span data-pillar="mente"><i class="dot"></i>Revisão semanal</span><span data-pillar="alim"><i class="dot"></i>Cintura</span></div>
+        </div>
+        <div class="week-legend">
+          <p>Os dias com contorno são fixos: futebol na quinta e revisão no domingo. Academia e corrida estão numa distribuição sugerida; os dias quem escolhe é você.</p>
+          <p>Todo dia: cachorro (meta de 6 de 7), louça e check-in. O programa a dois entra em qualquer dia, e a revisão de domingo ajuda a planejar o da semana seguinte.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-proteina">
+    <div class="section-head">
+      <p class="eyebrow">Alimentação · fase 2</p>
+      <h2 id="t-proteina">Proteína sem carne vermelha nem peixe</h2>
+      <p>Com ovo, queijo, feijão, leite e whey, um dia comum já chega perto dos 100 g. O frango facilita bastante: 100 g dão uns 30 g.</p>
+    </div>
+    <div class="protein">
+      <div class="chart">
+        <div class="chart-head"><strong class="num">~95 g</strong><span>num dia de exemplo</span></div>
+        <div class="bar-area">
+          <div class="bar" role="img" aria-label="Dia de exemplo: café 25 g, lanche 28 g, almoço 17 g, jantar 25 g, total 95 g, numa escala de 0 a 120 g">
+            <div class="seg seg-1" style="width:20.83%"></div>
+            <div class="seg seg-2" style="width:23.33%"></div>
+            <div class="seg seg-3" style="width:14.17%"></div>
+            <div class="seg seg-4" style="width:20.83%"></div>
+          </div>
+          <div class="marker" style="left:66.67%"><span class="num">80 g</span></div>
+          <div class="marker" style="left:91.67%"><span class="num">110 g</span></div>
+        </div>
+        <div class="bar-legend">
+          <div style="width:20.83%"><b class="num">25 g</b>Café</div>
+          <div style="width:23.33%"><b class="num">28 g</b>Lanche</div>
+          <div style="width:14.17%"><b class="num">17 g</b>Almoço</div>
+          <div style="width:20.83%"><b class="num">25 g</b>Jantar</div>
+        </div>
+        <p class="chart-note">Escala de 0 a 120 g. Linhas: 80 g (meta inicial) e 110 g (meta final). Café com 3 ovos e leite; lanche com whey batido no leite; almoço com feijão e queijo; jantar com omelete, queijo e feijão.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Botão rápido</th><th scope="col">Porção</th><th scope="col">Proteína</th></tr></thead>
+          <tbody>
+            <tr><td>Ovo</td><td>1 unidade</td><td class="g">~6 g</td></tr>
+            <tr><td>Queijo</td><td>1 fatia</td><td class="g">~5 g</td></tr>
+            <tr><td>Feijão</td><td>1 concha</td><td class="g">~7 g</td></tr>
+            <tr><td>Leite</td><td>1 copo de 200 ml</td><td class="g">~6 g</td></tr>
+            <tr><td>Whey</td><td>1 scoop</td><td class="g">~22 g</td></tr>
+            <tr><td>Iogurte</td><td>1 pote</td><td class="g">7 a 15 g</td></tr>
+            <tr><td>Frango</td><td>100 g</td><td class="g">~30 g</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-telas">
+    <div class="section-head">
+      <p class="eyebrow">O que você vai ver</p>
+      <h2 id="t-telas">Telas do app</h2>
+    </div>
+    <div class="screens">
+      <div class="screen-card"><h3>Hoje</h3><p>Os hábitos ativos por pilar, os contadores de proteína e água e as notas das refeições.</p></div>
+      <div class="screen-card"><h3>Check-in</h3><p>Humor, energia, 3 coisas boas do dia, minutos de tela e de YouTube.</p></div>
+      <div class="screen-card"><h3>Semana</h3><p>A constância de cada hábito, as refeições livres e tranqueiras já usadas e o treino de corrida do dia.</p></div>
+      <div class="screen-card"><h3>Progresso</h3><p>Peso com a média de 7 dias, cintura, humor cruzado com os hábitos e os contadores de “dias sem”.</p></div>
+      <div class="screen-card"><h3>Revisão de domingo</h3><p>Resumo da semana, o que funcionou, o que ajustar, a cintura, o programa a dois e a decisão de avançar de fase.</p></div>
+      <div class="screen-card"><h3>Ajustes</h3><p>Metas, horários, botões de proteína, dias de coleta do lixo, fases e o guia de alarmes do iPhone.</p></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-bastidores">
+    <div class="section-head">
+      <p class="eyebrow">Bastidores</p>
+      <h2 id="t-bastidores">Lembretes e técnica</h2>
+    </div>
+    <div class="two-col">
+      <div class="sub">
+        <h3>Alarmes do iPhone</h3>
+        <div class="alarms">
+          <div class="alarm"><b>20h30</b><span>Louça, lixo e check-in</span></div>
+          <div class="alarm"><b>21h00</b><span>Telas desligadas</span></div>
+          <div class="alarm"><b>21h50</b><span>Preparar para deitar</span></div>
+          <div class="alarm"><b>Domingo</b><span>Revisão semanal</span></div>
+        </div>
+        <p class="note">Ficam nos alarmes e nas automações do app Atalhos, sem notificações do próprio app.</p>
+      </div>
+      <div class="sub">
+        <h3>Como vai ser feito</h3>
+        <ul class="tech">
+          <li><b>Front</b><span>Vite + React + TypeScript, como PWA instalada pela Tela de Início do iPhone (Safari).</span></li>
+          <li><b>Dados</b><span>Firebase: Firestore com cache offline e login Google. Plano B no iPhone: e-mail e senha.</span></li>
+          <li><b>Segurança</b><span>As regras do Firestore liberam leitura e escrita só para o seu usuário.</span></li>
+          <li><b>Privacidade</b><span>O repositório é público. Registros, metas e anotações ficam só no Firebase.</span></li>
+          <li><b>Publicação</b><span>Código no GitHub, publicado pelo GitHub Actions no Firebase Hosting.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Prokopē · versão visual de docs/visao.md</span>
+    <span>22 de outubro de 2026</span>
+  </footer>
+</main>
+
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('[data-phase-btn]');
+    var habits = document.querySelectorAll('.habit');
+    var pillars = document.querySelectorAll('.pillar');
+
+    function setPhase(n) {
+      buttons.forEach(function (b) {
+        b.setAttribute('aria-pressed', String(Number(b.dataset.phaseBtn) === n));
+      });
+      habits.forEach(function (h) {
+        var p = Number(h.dataset.phase);
+        var later = p > n;
+        h.classList.toggle('is-later', later);
+        var chip = h.querySelector('.chip-phase');
+        if (p === 0) chip.textContent = 'já ativo';
+        else chip.textContent = later ? 'entra na fase ' + p : 'fase ' + p;
+      });
+      pillars.forEach(function (pl) {
+        var all = pl.querySelectorAll('.habit');
+        var active = pl.querySelectorAll('.habit:not(.is-later)');
+        pl.querySelector('.count').textContent = active.length + ' de ' + all.length + ' ativos';
+      });
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { setPhase(Number(b.dataset.phaseBtn)); });
+    });
+    setPhase(1);
+  })();
+</script>
+</body>
+</html>

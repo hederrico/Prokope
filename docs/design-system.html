@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prokopē Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@1,400&text=%CF%80%CF%81%CE%BF%CE%BA%CE%BF%CF%80%CE%AE&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<script>
+  (function () {
+    var r = document.documentElement;
+    try {
+      var t = localStorage.getItem('pk-theme'); if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  /* Fraunces hospedada junto: a versão recortada do Google Fonts desenha o "ē" com o traço deslocado */
+  @font-face {
+    font-family: "Fraunces";
+    src: url("fonts/Fraunces.ttf") format("truetype");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Fraunces";
+    src: url("fonts/Fraunces-Italic.ttf") format("truetype");
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  /* Layout: guia em coluna de até 1120px; barra fixa com o tema; especímenes em grade de 2 colunas que vira 1 no celular */
+  :root {
+    color-scheme: light;
+    /* Fraunces não tem grego: as letras de προκοπή caem na Literata, carregada só com esses glifos */
+    --font-display: "Fraunces", "Literata", "Iowan Old Style", Georgia, serif;
+    --font-ui: "Onest", -apple-system, system-ui, "Segoe UI", sans-serif;
+    --display-vs: "SOFT" 100;
+
+    --t-display: 450 34px/40px var(--font-display);
+    --t-hero: 400 44px/48px var(--font-display);
+    --t-title: 500 22px/28px var(--font-display);
+    --t-headline: 600 17px/22px var(--font-ui);
+    --t-body: 400 16px/22px var(--font-ui);
+    --t-sub: 500 15px/20px var(--font-ui);
+    --t-stat: 600 28px/32px var(--font-ui);
+    --t-label: 600 13px/16px var(--font-ui);
+    --t-caption: 500 12px/16px var(--font-ui);
+    --t-micro: 500 11px/13px var(--font-ui);
+
+    --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+    --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-full: 999px;
+    --hit: 44px;
+    --dur-1: 150ms; --dur-2: 240ms; --dur-3: 400ms; --dur-4: 600ms;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+
+    /* Neutros claros: pedra quente */
+    --bg: oklch(98.2% .004 75);
+    --surface: oklch(100% 0 0);
+    --raised: oklch(100% 0 0);
+    --sunken: oklch(95.8% .006 75);
+    --track: oklch(93% .007 75);
+    --border: oklch(90.5% .008 75);
+    --border-strong: oklch(80% .01 75);
+    --text: oklch(25.5% .012 75);
+    --text-2: oklch(47.5% .012 75);
+    --text-3: oklch(53% .01 75);
+    --shadow-1: 0 1px 2px oklch(25% .02 75 / .06), 0 2px 8px oklch(25% .02 75 / .05);
+    --shadow-2: 0 8px 24px oklch(25% .02 75 / .10), 0 2px 6px oklch(25% .02 75 / .06);
+
+    /* Pilares claros: wash / fill / mark / ink / on */
+    --mente-wash: oklch(95.5% .022 285); --mente-fill: oklch(85% .075 285); --mente-mark: oklch(64% .115 285); --mente-ink: oklch(47.5% .10 285); --mente-on: oklch(40% .09 285);
+    --alim-wash: oklch(95.5% .022 150); --alim-fill: oklch(90.5% .075 150); --alim-mark: oklch(64.5% .115 150); --alim-ink: oklch(45.5% .10 150); --alim-on: oklch(40% .09 150);
+    --corpo-wash: oklch(95.5% .022 60); --corpo-fill: oklch(81.5% .075 60); --corpo-mark: oklch(61% .115 60); --corpo-ink: oklch(46.5% .10 60); --corpo-on: oklch(40% .09 60);
+    --familia-wash: oklch(95.5% .022 355); --familia-fill: oklch(85% .075 355); --familia-mark: oklch(64% .115 355); --familia-ink: oklch(47.5% .10 355); --familia-on: oklch(40% .09 355);
+    --accent-wash: oklch(95.5% .022 230); --accent-fill: oklch(85% .075 230); --accent-mark: oklch(64% .115 230); --accent-ink: oklch(47.5% .09 230); --accent-on: oklch(40% .08 230);
+    --success-wash: oklch(95.5% .022 170); --success-fill: oklch(85% .075 170); --success-ink: oklch(47.5% .085 170);
+    --warning-wash: oklch(95.5% .022 85); --warning-fill: oklch(89% .075 85); --warning-ink: oklch(44.5% .085 85);
+    --btn-bg: var(--accent-ink); --btn-fg: oklch(100% 0 0);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: oklch(17% .006 75); --surface: oklch(21.2% .007 75); --raised: oklch(25.5% .008 75); --sunken: oklch(14.5% .005 75);
+      --track: oklch(29% .008 75); --border: oklch(30% .008 75); --border-strong: oklch(40% .01 75);
+      --text: oklch(93.5% .008 75); --text-2: oklch(76% .01 75); --text-3: oklch(66% .01 75);
+      --shadow-1: inset 0 1px 0 oklch(100% 0 0 / .05);
+      --shadow-2: 0 8px 24px oklch(0% 0 0 / .5), inset 0 1px 0 oklch(100% 0 0 / .06);
+      --mente-wash: oklch(27% .03 285); --mente-fill: oklch(78% .08 285); --mente-mark: var(--mente-fill); --mente-ink: oklch(85% .065 285); --mente-on: var(--bg);
+      --alim-wash: oklch(27% .03 150); --alim-fill: oklch(82% .08 150); --alim-mark: var(--alim-fill); --alim-ink: oklch(85% .065 150); --alim-on: var(--bg);
+      --corpo-wash: oklch(27% .03 60); --corpo-fill: oklch(73% .08 60); --corpo-mark: var(--corpo-fill); --corpo-ink: oklch(85% .065 60); --corpo-on: var(--bg);
+      --familia-wash: oklch(27% .03 355); --familia-fill: oklch(78% .08 355); --familia-mark: var(--familia-fill); --familia-ink: oklch(85% .065 355); --familia-on: var(--bg);
+      --accent-wash: oklch(27% .03 230); --accent-fill: oklch(78% .08 230); --accent-mark: var(--accent-fill); --accent-ink: oklch(85% .065 230); --accent-on: var(--bg);
+      --success-wash: oklch(27% .03 170); --success-fill: oklch(78% .08 170); --success-ink: oklch(85% .065 170);
+      --warning-wash: oklch(27% .03 85); --warning-fill: oklch(78% .08 85); --warning-ink: oklch(85% .065 85);
+      --btn-bg: var(--accent-fill); --btn-fg: var(--bg);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: oklch(17% .006 75); --surface: oklch(21.2% .007 75); --raised: oklch(25.5% .008 75); --sunken: oklch(14.5% .005 75);
+    --track: oklch(29% .008 75); --border: oklch(30% .008 75); --border-strong: oklch(40% .01 75);
+    --text: oklch(93.5% .008 75); --text-2: oklch(76% .01 75); --text-3: oklch(66% .01 75);
+    --shadow-1: inset 0 1px 0 oklch(100% 0 0 / .05);
+    --shadow-2: 0 8px 24px oklch(0% 0 0 / .5), inset 0 1px 0 oklch(100% 0 0 / .06);
+    --mente-wash: oklch(27% .03 285); --mente-fill: oklch(78% .08 285); --mente-mark: var(--mente-fill); --mente-ink: oklch(85% .065 285); --mente-on: var(--bg);
+    --alim-wash: oklch(27% .03 150); --alim-fill: oklch(82% .08 150); --alim-mark: var(--alim-fill); --alim-ink: oklch(85% .065 150); --alim-on: var(--bg);
+    --corpo-wash: oklch(27% .03 60); --corpo-fill: oklch(73% .08 60); --corpo-mark: var(--corpo-fill); --corpo-ink: oklch(85% .065 60); --corpo-on: var(--bg);
+    --familia-wash: oklch(27% .03 355); --familia-fill: oklch(78% .08 355); --familia-mark: var(--familia-fill); --familia-ink: oklch(85% .065 355); --familia-on: var(--bg);
+    --accent-wash: oklch(27% .03 230); --accent-fill: oklch(78% .08 230); --accent-mark: var(--accent-fill); --accent-ink: oklch(85% .065 230); --accent-on: var(--bg);
+    --success-wash: oklch(27% .03 170); --success-fill: oklch(78% .08 170); --success-ink: oklch(85% .065 170);
+    --warning-wash: oklch(27% .03 85); --warning-fill: oklch(78% .08 85); --warning-ink: oklch(85% .065 85);
+    --btn-bg: var(--accent-fill); --btn-fg: var(--bg);
+  }
+
+  [data-pillar="mente"] { --wash: var(--mente-wash); --fill: var(--mente-fill); --mark: var(--mente-mark); --ink: var(--mente-ink); --on: var(--mente-on); }
+  [data-pillar="alim"] { --wash: var(--alim-wash); --fill: var(--alim-fill); --mark: var(--alim-mark); --ink: var(--alim-ink); --on: var(--alim-on); }
+  [data-pillar="corpo"] { --wash: var(--corpo-wash); --fill: var(--corpo-fill); --mark: var(--corpo-mark); --ink: var(--corpo-ink); --on: var(--corpo-on); }
+  [data-pillar="familia"] { --wash: var(--familia-wash); --fill: var(--familia-fill); --mark: var(--familia-mark); --ink: var(--familia-ink); --on: var(--familia-on); }
+  [data-pillar="accent"] { --wash: var(--accent-wash); --fill: var(--accent-fill); --mark: var(--accent-mark); --ink: var(--accent-ink); --on: var(--accent-on); }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: var(--t-body);
+    transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+  }
+  h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  button { font: inherit; color: inherit; }
+
+  .t-display { font: var(--t-display); font-variation-settings: var(--display-vs); letter-spacing: -0.01em; }
+  .t-hero { font: var(--t-hero); font-variation-settings: var(--display-vs); letter-spacing: -0.015em; }
+  .t-title { font: var(--t-title); font-variation-settings: var(--display-vs); }
+  .t-headline { font: var(--t-headline); }
+  .t-body { font: var(--t-body); }
+  .t-sub { font: var(--t-sub); }
+  .t-stat { font: var(--t-stat); }
+  .t-label { font: var(--t-label); }
+  .t-caption { font: var(--t-caption); }
+  .t-micro { font: var(--t-micro); }
+  .num { font-variant-numeric: tabular-nums; }
+  /* Números que animam usam a Onest: a Fraunces não tem dígitos tabulares */
+  .live-num { font-family: var(--font-ui); font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; font-variation-settings: normal; }
+  .muted { color: var(--text-2); }
+  .faint { color: var(--text-3); }
+  .upper { text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Barra de controles */
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+    z-index: 30; background: var(--bg);
+  }
+  .controls {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    background: color-mix(in oklch, var(--bg) 86%, transparent);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .controls-inner {
+    max-width: 1120px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 10px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand b { font: 500 18px/1 var(--font-display); font-variation-settings: var(--display-vs); }
+  .ctl-groups { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .ctl { display: flex; align-items: center; gap: 8px; }
+  .segmented {
+    display: inline-flex; background: var(--sunken); border-radius: var(--r-full); padding: 3px; gap: 2px;
+  }
+  .segmented button {
+    border: 0; background: transparent; cursor: pointer;
+    font: var(--t-caption); color: var(--text-2);
+    padding: 6px 12px; border-radius: var(--r-full);
+    transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .segmented button[aria-pressed="true"] { background: var(--raised); color: var(--text); box-shadow: var(--shadow-1); }
+
+  /* Página */
+  .wrap {
+    max-width: 1120px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0 64px;
+    display: flex; flex-direction: column;
+  }
+  .intro { padding-block: 56px 40px; display: flex; flex-direction: column; gap: 16px; max-width: 64ch; }
+  .intro h1 { font: 450 clamp(40px, 7vw, 64px)/1.05 var(--font-display); font-variation-settings: var(--display-vs); letter-spacing: -0.02em; }
+  .intro .greek { font: italic 400 20px/1.3 var(--font-display); color: var(--accent-ink); }
+  .intro p.lede { font: 400 18px/28px var(--font-ui); color: var(--text-2); }
+
+  .section { padding-block: 48px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 24px; }
+  .section-head { display: flex; flex-direction: column; gap: 6px; max-width: 66ch; }
+  .section-head h2 { font: 500 30px/36px var(--font-display); font-variation-settings: var(--display-vs); letter-spacing: -0.01em; }
+  .section-head p { color: var(--text-2); }
+  .eyebrow { font: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); }
+
+  /* Cores */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .swatch { display: flex; flex-direction: column; gap: 8px; }
+  .swatch-chip { height: 64px; border-radius: var(--r-md); border: 1px solid var(--border); }
+  .swatch-meta { display: flex; flex-direction: column; gap: 2px; }
+  .swatch-meta code { font: var(--t-caption); color: var(--text-2); font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .ratio { font: var(--t-micro); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .ratio.ok { color: var(--success-ink); }
+
+  .hues { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .hue {
+    background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-1);
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .hue-head { display: flex; align-items: center; gap: 10px; }
+  .hue-head .hb { font-size: 22px; color: var(--ink); width: 36px; height: 36px; border-radius: var(--r-sm); background: var(--wash); display: grid; place-items: center; flex: none; }
+
+  /* Ícones próprios no estilo Phosphor (grade 256, traço 16), desenhados por máscara para herdar a cor */
+  .pk-icon {
+    display: inline-block; width: 1em; height: 1em; flex: none; vertical-align: -0.125em;
+    background-color: currentColor;
+    -webkit-mask: var(--pk) center / contain no-repeat; mask: var(--pk) center / contain no-repeat;
+  }
+  .pk-salsicha {
+    --pk: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cg fill='none' stroke='black' stroke-width='16' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M56 116 L166 116 C174 116 178 112 180 104 L184 84 C188 68 198 60 212 60 C222 60 228 66 232 74 L240 90 C244 100 238 108 228 108 L212 108 C204 108 200 114 200 122 L200 138 C200 152 196 160 188 164 L188 186 Q188 194 180 194 L176 194 Q168 194 168 186 L168 166 L76 166 L76 186 Q76 194 68 194 L64 194 Q56 194 56 186 L56 164 C40 162 32 152 32 140 C32 126 42 116 56 116 Z'/%3E%3Cpath d='M39 122 C30 114 27 102 27 88'/%3E%3C/g%3E%3Cpath fill='black' d='M196 66 C184 70 180 96 186 112 C190 122 202 120 204 110 C208 94 206 72 196 66 Z'/%3E%3Ccircle cx='222' cy='84' r='8' fill='black'/%3E%3C/svg%3E");
+  }
+  .pk-salsicha.pk-duo {
+    --pk: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath fill='black' fill-opacity='.2' d='M56 116 L166 116 C174 116 178 112 180 104 L184 84 C188 68 198 60 212 60 C222 60 228 66 232 74 L240 90 C244 100 238 108 228 108 L212 108 C204 108 200 114 200 122 L200 138 C200 152 196 160 188 164 L188 186 Q188 194 180 194 L176 194 Q168 194 168 186 L168 166 L76 166 L76 186 Q76 194 68 194 L64 194 Q56 194 56 186 L56 164 C40 162 32 152 32 140 C32 126 42 116 56 116 Z'/%3E%3Cg fill='none' stroke='black' stroke-width='16' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M56 116 L166 116 C174 116 178 112 180 104 L184 84 C188 68 198 60 212 60 C222 60 228 66 232 74 L240 90 C244 100 238 108 228 108 L212 108 C204 108 200 114 200 122 L200 138 C200 152 196 160 188 164 L188 186 Q188 194 180 194 L176 194 Q168 194 168 186 L168 166 L76 166 L76 186 Q76 194 68 194 L64 194 Q56 194 56 186 L56 164 C40 162 32 152 32 140 C32 126 42 116 56 116 Z'/%3E%3Cpath d='M39 122 C30 114 27 102 27 88'/%3E%3C/g%3E%3Cpath fill='black' d='M196 66 C184 70 180 96 186 112 C190 122 202 120 204 110 C208 94 206 72 196 66 Z'/%3E%3Ccircle cx='222' cy='84' r='8' fill='black'/%3E%3C/svg%3E");
+  }
+  .hue-head h3 { font: var(--t-title); font-variation-settings: var(--display-vs); color: var(--ink); }
+  .hue-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+  .hue-row .chip-c { width: 36px; height: 36px; border-radius: var(--r-sm); border: 1px solid var(--border); }
+  .hue-row b { font: var(--t-sub); display: block; }
+  .hue-row span.role { font: var(--t-caption); color: var(--text-3); }
+  .semantic { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .sem { border-radius: var(--r-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .sem b { font: var(--t-headline); }
+  .sem span { font: var(--t-caption); }
+
+  /* Tipografia */
+  .type-rows { display: flex; flex-direction: column; }
+  .type-row {
+    display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 8px 24px; align-items: baseline;
+    padding-block: 14px; border-top: 1px solid var(--border);
+  }
+  .type-row:last-child { border-bottom: 1px solid var(--border); }
+  .type-meta { display: flex; flex-direction: column; gap: 2px; }
+  .type-meta b { font: var(--t-label); }
+  .type-meta span { font: var(--t-caption); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .type-sample { min-width: 0; overflow-wrap: anywhere; }
+  .figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .fig-box { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .fig-box .col { display: flex; flex-direction: column; align-items: flex-end; font: var(--t-stat); }
+  .fig-box .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .fig-box .col.prop { font-variant-numeric: proportional-nums; }
+  .fig-box .col.tab { font-variant-numeric: tabular-nums; }
+  .greek-box { font: italic 400 44px/1.1 var(--font-display); color: var(--accent-ink); }
+
+  /* Espaço, cantos, elevação */
+  .space-list { display: flex; flex-direction: column; gap: 6px; }
+  .space-row { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 12px; }
+  .space-row span { font: var(--t-caption); color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .space-row i { display: block; height: 10px; border-radius: 3px; background: var(--accent-fill); }
+  .radii { display: flex; flex-wrap: wrap; gap: 12px; }
+  .radius { width: 76px; height: 76px; background: var(--accent-wash); border: 1.5px solid var(--accent-mark); display: grid; place-items: center; font: var(--t-caption); color: var(--accent-ink); }
+  .elev { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .elev div { height: 96px; border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
+  .elev b { font: var(--t-label); }
+  .elev span { font: var(--t-caption); color: var(--text-3); }
+  .three { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+
+  /* Ícones */
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .icon-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-1); }
+  .icon-cell i { font-size: 24px; color: var(--ink, var(--text)); }
+  .icon-cell span { font: var(--t-micro); color: var(--text-3); text-align: center; }
+  .icon-weights { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+  .icon-weights div { display: flex; align-items: center; gap: 10px; font: var(--t-caption); color: var(--text-2); }
+  .icon-weights i { font-size: 28px; color: var(--mente-ink); }
+
+  /* Componentes */
+  .specimens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .spec {
+    background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-1);
+    padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0;
+  }
+  .spec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .spec-note { font: var(--t-caption); color: var(--text-3); }
+
+  /* Linha de hábito */
+  .habits { display: flex; flex-direction: column; }
+  .habit-row {
+    display: grid; grid-template-columns: 40px minmax(0, 1fr) var(--hit); gap: 12px; align-items: center;
+    padding-block: 10px; border-bottom: 1px solid var(--border);
+  }
+  .habit-row:last-child { border-bottom: 0; }
+  .bubble { width: 40px; height: 40px; border-radius: var(--r-md); background: var(--wash); display: grid; place-items: center; }
+  .bubble i { font-size: 22px; color: var(--ink); }
+  .habit-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .habit-text .t-headline { overflow-wrap: anywhere; }
+  .week-dots { display: flex; align-items: center; gap: 4px; }
+  .week-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--track); transition: background-color var(--dur-2) var(--ease); }
+  .week-dots i.on { background: var(--mark); }
+  .week-dots span { margin-left: 6px; font: var(--t-caption); color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .check-btn {
+    width: var(--hit); height: var(--hit); border-radius: 50%;
+    border: 2px solid var(--border-strong); background: transparent; cursor: pointer;
+    display: grid; place-items: center; padding: 0;
+    transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+  }
+  .check-btn svg { width: 22px; height: 22px; }
+  .check-btn path { fill: none; stroke: var(--on); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset var(--dur-2) var(--ease) 60ms; }
+  .check-btn[aria-pressed="true"] { background: var(--fill); border-color: var(--mark); }
+  .check-btn[aria-pressed="true"] path { stroke-dashoffset: 0; }
+  .check-btn.pop { animation: pop var(--dur-3) var(--ease-spring); }
+  @keyframes pop { 0% { transform: scale(.82); } 100% { transform: scale(1); } }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 40;
+    transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+    background: var(--text); color: var(--bg);
+    border-radius: var(--r-full); padding: 8px 8px 8px 18px;
+    display: flex; align-items: center; gap: 14px; font: var(--t-sub);
+    box-shadow: var(--shadow-2);
+    transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+    max-width: calc(100% - 32px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast button { border: 0; background: color-mix(in oklch, var(--bg) 18%, transparent); color: var(--bg); font: var(--t-label); border-radius: var(--r-full); padding: 8px 14px; cursor: pointer; }
+
+  /* Proteína */
+  .p-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .p-total { display: flex; align-items: baseline; gap: 8px; }
+  .p-total .t-hero { color: var(--text); }
+  .pbar { position: relative; padding-top: 22px; }
+  .pbar-track { display: flex; height: 12px; background: var(--track); border-radius: var(--r-full); overflow: hidden; }
+  .pbar-seg { height: 100%; background: var(--fill); border-right: 2px solid var(--surface); transition: width var(--dur-3) var(--ease); }
+  .pbar-seg:last-child { border-right: 0; }
+  .pbar-target { position: absolute; top: 18px; bottom: -4px; width: 1.5px; background: var(--text-2); }
+  .pbar-target span { position: absolute; top: -18px; right: 4px; white-space: nowrap; font: var(--t-micro); color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip-btn {
+    border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+    min-height: 36px; padding: 6px 12px; border-radius: var(--r-full);
+    font: var(--t-sub); display: inline-flex; align-items: center; gap: 6px;
+    transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  }
+  .chip-btn small { font: var(--t-caption); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .chip-btn:hover { background: var(--wash); border-color: var(--fill); }
+  .chip-btn:active { transform: scale(.96); }
+  .p-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font: var(--t-caption); color: var(--text-2); }
+  .p-foot .done { color: var(--success-ink); display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+  .link-btn { border: 0; background: none; padding: 8px 0; cursor: pointer; font: var(--t-label); color: var(--accent-ink); }
+
+  /* Anel */
+  .ring-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .ring { position: relative; width: 128px; height: 128px; flex: none; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 13; }
+  .ring .r-track { stroke: var(--wash); }
+  .ring .r-val { stroke: var(--mark); stroke-linecap: round; transition: stroke-dashoffset var(--dur-4) var(--ease); }
+  .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* Notas 1 a 5 */
+  .rating { display: flex; flex-direction: column; gap: 8px; }
+  .rating-opts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .rating-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .rating-opts button {
+    border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+    border-radius: var(--r-md); min-height: 78px; padding: 8px 2px 6px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  }
+  .rating-opts button span { font: var(--t-micro); color: var(--text-3); text-align: center; }
+  /* Rostinhos na cor primária; o selecionado ganha o tom claro da primária */
+  .face { width: 32px; height: 32px; display: block; overflow: visible; opacity: .55; transition: opacity var(--dur-1) var(--ease); }
+  .face .f { fill: none; stroke: var(--accent-mark); stroke-width: 1.6; transition: stroke var(--dur-2) var(--ease), fill var(--dur-2) var(--ease); }
+  .face .ln { fill: none; stroke: var(--accent-mark); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: stroke var(--dur-2) var(--ease); }
+  .face .dot, .face .solid { fill: var(--accent-mark); stroke: var(--accent-mark); stroke-width: 1.2; stroke-linejoin: round; transition: fill var(--dur-2) var(--ease), stroke var(--dur-2) var(--ease); }
+  .rating-opts button:hover .face { opacity: .85; }
+  .rating-opts button[aria-checked="true"] { background: var(--accent-wash); border-color: var(--accent-mark); }
+  .rating-opts button[aria-checked="true"] span { color: var(--accent-ink); font-weight: 600; }
+  .rating-opts button[aria-checked="true"] .face { opacity: 1; animation: pop var(--dur-3) var(--ease-spring); }
+  .rating-opts button[aria-checked="true"] .f { stroke: var(--accent-ink); fill: var(--surface); }
+  .rating-opts button[aria-checked="true"] .ln { stroke: var(--accent-ink); }
+  .rating-opts button[aria-checked="true"] .dot, .rating-opts button[aria-checked="true"] .solid { fill: var(--accent-ink); stroke: var(--accent-ink); }
+
+  /* Paleta de pilares: as 12 cores seguem a mesma fórmula; cada uma muda só o matiz (--h) */
+  .hued {
+    --wash: oklch(95.5% .022 var(--h));
+    --fill: oklch(var(--fl, 85%) .075 var(--h));
+    --mark: oklch(var(--ml, 64%) .115 var(--h));
+    --ink: oklch(var(--il, 47.5%) .10 var(--h));
+    --on: oklch(40% .09 var(--h));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .hued {
+      --wash: oklch(27% .03 var(--h)); --fill: oklch(var(--dfl, 78%) .08 var(--h)); --mark: var(--fill);
+      --ink: oklch(85% .065 var(--h)); --on: var(--bg);
+    }
+  }
+  :root[data-theme="dark"] .hued {
+    --wash: oklch(27% .03 var(--h)); --fill: oklch(var(--dfl, 78%) .08 var(--h)); --mark: var(--fill);
+    --ink: oklch(85% .065 var(--h)); --on: var(--bg);
+  }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+  .pal { background: var(--wash); border-radius: var(--r-md); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .pal-dots { display: flex; gap: 6px; }
+  .pal-dots i { width: 22px; height: 22px; border-radius: 50%; }
+  .pal b { font: var(--t-sub); font-weight: 600; color: var(--ink); }
+  .pal span { font: var(--t-micro); color: var(--ink); }
+
+  /* Editor de pilar */
+  .spec-wide { grid-column: 1 / -1; }
+  .np-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .np-form { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .np-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .np-label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .np-colors { display: flex; flex-wrap: wrap; gap: 10px; }
+  .np-colors button {
+    width: 40px; height: 40px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+    background: var(--fill); box-shadow: inset 0 0 0 1.5px var(--mark);
+    display: grid; place-items: center;
+    transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+  }
+  .np-colors button i { font-size: 18px; color: var(--on); opacity: 0; transition: opacity var(--dur-1) var(--ease); }
+  .np-colors button[aria-checked="true"] { box-shadow: inset 0 0 0 1.5px var(--mark), 0 0 0 2px var(--surface), 0 0 0 4px var(--text); }
+  .np-colors button[aria-checked="true"] i { opacity: 1; }
+  .np-colors button:active { transform: scale(.92); }
+  .np-cats { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .np-cats::-webkit-scrollbar { display: none; }
+  .cat-btn {
+    flex: none; white-space: nowrap; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+    border-radius: var(--r-full); padding: 6px 12px; font: var(--t-caption);
+    transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .cat-btn[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .np-icons {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 4px;
+    max-height: 272px; overflow-y: auto; background: var(--sunken); border-radius: var(--r-md); padding: 6px;
+  }
+  .np-icons .ic {
+    width: 100%; height: 44px; border: 0; padding: 0; cursor: pointer; background: transparent;
+    border-radius: var(--r-sm); display: grid; place-items: center; color: var(--text-2);
+    transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .np-icons .ic i { font-size: 22px; }
+  .np-icons .ic:hover { background: var(--surface); color: var(--text); }
+  .np-icons .ic[aria-checked="true"] { background: var(--wash); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--mark); }
+  .np-cat-title { grid-column: 1 / -1; font: var(--t-micro); text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); padding: 8px 6px 2px; }
+  .np-empty { grid-column: 1 / -1; padding: 24px 8px; text-align: center; font: var(--t-sub); color: var(--text-2); }
+  .np-preview { background: var(--sunken); border-radius: var(--r-lg); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .np-preview .habit-row { border-bottom: 0; background: var(--surface); border-radius: var(--r-md); padding: 10px 12px; }
+  .pv-week { display: flex; gap: 6px; }
+  .pv-week .cell { width: 26px; height: 26px; border-radius: 7px; }
+  .np-preview .btn { align-self: flex-start; }
+  .rating-opts button:active { transform: scale(.96); }
+  .field { width: 100%; font: var(--t-body); font-size: 16px; color: var(--text); background: var(--sunken); border: 1px solid transparent; border-radius: var(--r-md); padding: 12px 14px; }
+  .field::placeholder { color: var(--text-3); }
+  .field:focus { outline: none; border-color: var(--accent-mark); background: var(--surface); }
+
+  /* Dias sem */
+  .streak-card { display: flex; flex-direction: column; gap: 10px; }
+  .streak-num { display: flex; align-items: baseline; gap: 10px; }
+  .streak-num .big { font: 400 64px/1 var(--font-display); font-variation-settings: var(--display-vs); font-variant-numeric: tabular-nums; color: var(--ink); }
+  .streak-stats { display: flex; gap: 20px; font: var(--t-caption); color: var(--text-2); }
+  .streak-stats b { display: block; font: var(--t-headline); color: var(--text); font-variant-numeric: tabular-nums; }
+  .streak-msg { font: var(--t-sub); color: var(--text-2); min-height: 20px; }
+
+  /* Metas semanais e orçamentos */
+  .targets { display: flex; flex-direction: column; }
+  .target-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding-block: 12px; border-bottom: 1px solid var(--border); }
+  .target-row:last-child { border-bottom: 0; }
+  .target-row .t-caption { color: var(--text-3); }
+  .slots { display: flex; align-items: center; gap: 6px; }
+  .slots i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border-strong); }
+  .slots i.on { background: var(--fill); border-color: var(--mark); }
+  .slots i.used { background: var(--track); border-color: var(--border-strong); }
+  .slots span { margin-left: 6px; font: var(--t-caption); color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 82px; text-align: right; }
+
+  /* Heatmap */
+  .heat { display: grid; grid-template-columns: repeat(7, 30px); gap: 6px; justify-content: start; }
+  .heat .dow { font: var(--t-micro); color: var(--text-3); text-align: center; }
+  .cell { width: 30px; height: 30px; border-radius: 8px; background: var(--track); }
+  .cell.done { background: var(--fill); }
+  .cell.partial { background: color-mix(in oklch, var(--fill) 45%, var(--track)); }
+  .cell.paused { background: repeating-linear-gradient(135deg, var(--track) 0 3px, transparent 3px 7px); box-shadow: inset 0 0 0 1px var(--track); }
+  .cell.unsched { background: transparent; border: 1.5px dotted var(--border-strong); }
+  .cell.future { background: transparent; box-shadow: inset 0 0 0 1.5px var(--border); }
+  .cell.today { box-shadow: 0 0 0 1.5px var(--surface), 0 0 0 3px var(--text); }
+  .heat-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font: var(--t-caption); color: var(--text-2); }
+  .heat-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .heat-legend .cell { width: 14px; height: 14px; border-radius: 4px; }
+  .heat-wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .strength { display: flex; flex-direction: column; gap: 6px; min-width: 140px; flex: 1; }
+  .mini-bar { height: 8px; border-radius: var(--r-full); background: var(--track); overflow: hidden; }
+  .mini-bar i { display: block; height: 100%; background: var(--mark); border-radius: var(--r-full); }
+
+  /* Linha do tempo */
+  .tl { display: flex; flex-direction: column; }
+  .tl-item { display: grid; grid-template-columns: 44px 18px minmax(0, 1fr); gap: 10px; align-items: start; position: relative; }
+  .tl-item time { font: var(--t-caption); color: var(--text-2); font-variant-numeric: tabular-nums; text-align: right; padding-top: 3px; }
+  .tl-rail { position: relative; align-self: stretch; display: flex; justify-content: center; }
+  .tl-rail::before { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item:first-child .tl-rail::before { top: 9px; }
+  .tl-item:last-child .tl-rail::before { bottom: calc(100% - 9px); }
+  .tl-dot { position: relative; margin-top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+  .tl-item.done .tl-dot { background: var(--fill); box-shadow: inset 0 0 0 1.5px var(--mark); }
+  .tl-body { padding-bottom: 14px; display: flex; flex-direction: column; gap: 1px; }
+  .tl-body b { font: var(--t-sub); }
+  .tl-item.done .tl-body b { color: var(--text-2); }
+  .tl-body span { font: var(--t-caption); color: var(--text-3); }
+  .tl-now { display: grid; grid-template-columns: 44px 18px minmax(0, 1fr); gap: 10px; align-items: center; margin-block: 2px 12px; }
+  .tl-now time { font: var(--t-micro); color: var(--accent-ink); text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tl-now .tl-rail::before { display: none; }
+  .tl-now .tl-rail i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-mark); }
+  .tl-now hr { margin: 0; border: 0; height: 2px; background: var(--accent-mark); border-radius: 2px; }
+
+  /* Gráfico de peso */
+  .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart .grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 4; }
+  .chart .axis { font: var(--t-micro); fill: var(--text-3); font-variant-numeric: tabular-nums; }
+  .chart .pts { fill: var(--mark); opacity: .35; }
+  .chart .trend { fill: none; stroke: var(--mark); stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--fill); opacity: .14; }
+  .chart .end { fill: var(--mark); stroke: var(--surface); stroke-width: 2.5; }
+
+  /* Insight */
+  .insight { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; background: var(--wash); border-radius: var(--r-md); padding: 14px; }
+  .insight i { font-size: 22px; color: var(--ink); }
+  .insight p { font: var(--t-sub); color: var(--text); }
+  .insight small { display: block; margin-top: 6px; font: var(--t-caption); color: var(--text-2); }
+
+  /* Botões */
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn {
+    min-height: var(--hit); padding: 10px 18px; border-radius: var(--r-full); cursor: pointer;
+    font: var(--t-headline); font-size: 16px; border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--btn-bg); color: var(--btn-fg); }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+  .btn-ghost { background: transparent; color: var(--accent-ink); }
+  .switch { position: relative; width: 52px; height: 32px; border-radius: var(--r-full); background: var(--track); border: 0; cursor: pointer; padding: 0; transition: background-color var(--dur-2) var(--ease); }
+  .switch i { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 3px oklch(0% 0 0 / .2); transition: transform var(--dur-2) var(--ease-spring); }
+  .switch[aria-checked="true"] { background: var(--success-fill); }
+  .switch[aria-checked="true"] i { transform: translateX(20px); }
+  .pill-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill-tag { font: var(--t-caption); padding: 3px 10px; border-radius: var(--r-full); background: var(--wash); color: var(--ink); font-weight: 600; }
+
+  /* Convite de fase */
+  .invite { display: flex; flex-direction: column; gap: 14px; background: var(--wash); border-radius: var(--r-lg); padding: 20px; }
+  .invite .t-title { color: var(--ink); }
+  .invite .btns .btn { flex: 1 1 160px; justify-content: center; }
+  .invite .btn-primary { background: var(--ink); color: var(--surface); }
+
+  /* Barra de abas */
+  .tabbar-demo {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    background: color-mix(in oklch, var(--surface) 92%, transparent);
+    border: 1px solid var(--border); border-radius: var(--r-xl); padding: 8px 6px;
+  }
+  .tabbar-demo button {
+    border: 0; background: none; cursor: pointer; min-height: var(--hit);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font: var(--t-micro); color: var(--text-3); padding: 4px 0;
+    transition: color var(--dur-1) var(--ease);
+  }
+  .tabbar-demo button i { font-size: 24px; }
+  .tabbar-demo button[aria-selected="true"] { color: var(--accent-ink); font-weight: 700; }
+
+  /* Motion e stack */
+  .motion-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .motion-cell { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .motion-cell b { font: var(--t-stat); font-variant-numeric: tabular-nums; }
+  .motion-cell span { font: var(--t-caption); color: var(--text-2); }
+  .rules { display: flex; flex-direction: column; }
+  .rules li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding-block: 12px; border-top: 1px solid var(--border); }
+  .rules li:last-child { border-bottom: 1px solid var(--border); }
+  .rules li i { font-size: 20px; color: var(--accent-ink); padding-top: 1px; }
+  .rules li p { color: var(--text-2); }
+  .rules li p b { color: var(--text); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; }
+  th { text-align: left; font: var(--t-label); text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); padding: 0 12px 10px 0; }
+  td { padding: 11px 12px 11px 0; border-top: 1px solid var(--border); font: var(--t-sub); vertical-align: top; }
+  td code { font: 500 13px/20px ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--text); white-space: nowrap; }
+  td.why { color: var(--text-2); font-weight: 400; }
+
+  .open-list { display: flex; flex-direction: column; gap: 10px; }
+  .open-item { background: var(--success-wash); border-radius: var(--r-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .open-item b { font: var(--t-headline); color: var(--success-ink); }
+  .open-item p { font: var(--t-sub); color: var(--text); font-weight: 400; }
+
+  footer { border-top: 1px solid var(--border); padding-top: 20px; font: var(--t-caption); color: var(--text-3); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+  :focus-visible { outline: 2px solid var(--accent-mark); outline-offset: 2px; }
+  .probe { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  }
+
+  @media (max-width: 960px) {
+    .hues { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .specimens { grid-template-columns: minmax(0, 1fr); }
+    .motion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 720px) {
+    .three, .figures, .np-grid { grid-template-columns: minmax(0, 1fr); }
+    .type-row { grid-template-columns: minmax(0, 1fr); }
+    .semantic { grid-template-columns: minmax(0, 1fr); }
+    .elev { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .hues { grid-template-columns: minmax(0, 1fr); }
+    .section-head h2 { font-size: 26px; line-height: 32px; }
+    .controls .brand span { display: none; }
+    .spec { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="controls-inner">
+    <div class="brand"><b>Prokopē</b><span class="t-caption faint">design system v0.1</span></div>
+    <div class="ctl-groups">
+      <div class="ctl"><span class="t-caption faint">Tema</span>
+        <div class="segmented" data-ctl="theme">
+          <button type="button" data-v="system">Sistema</button><button type="button" data-v="light">Claro</button><button type="button" data-v="dark">Escuro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <header class="intro">
+    <p class="eyebrow">Direção visual</p>
+    <h1>Papel e tinta</h1>
+    <p class="greek">προκοπή, o progresso de cada dia</p>
+    <p class="lede">Neutros quentes de papel durante o dia e carvão morno à noite. Quatro pastéis, um para cada pilar, sempre acompanhados de número ou texto. Uma serifa macia para títulos e uma sans clara para o resto. Nenhum vermelho em lugar nenhum: dia sem registro é só o trilho vazio.</p>
+  </header>
+
+  <!-- CORES -->
+  <section class="section" aria-labelledby="h-cores">
+    <div class="section-head">
+      <p class="eyebrow">Cores</p>
+      <h2 id="h-cores">Neutros</h2>
+      <p>Tudo em OKLCH, que mantém a luminosidade igual entre tons. Os números ao lado são o contraste calculado agora, no tema que está na tela.</p>
+    </div>
+    <div class="swatches" id="neutrals"></div>
+
+    <div class="section-head">
+      <h2>Pilares</h2>
+      <p>Cada pilar tem quatro papéis. <b>Wash</b> é o fundo tingido. <b>Fill</b> é o pastel das barras e bolinhas. <b>Mark</b> é o traço de gráficos e precisa de 3:1. <b>Ink</b> é texto e ícone e precisa de 4,5:1. No escuro, os papéis se invertem em vez de só escurecer.</p>
+    </div>
+    <div class="hues" id="hues"></div>
+
+    <div class="section-head">
+      <h2>Paleta para novos pilares</h2>
+      <p>Ao criar um pilar, você escolhe uma destas 12 cores. Todas seguem a mesma fórmula dos quatro pilares atuais e só mudam o matiz, então qualquer combinação fica harmônica nos dois temas. Pode repetir cor: o ícone e o nome também identificam o pilar.</p>
+    </div>
+    <div class="palette" id="palette"></div>
+
+    <div class="semantic">
+      <div class="sem" style="background: var(--accent-wash); color: var(--accent-ink);"><b>Destaque</b><span>Botões, links, “agora” na linha do tempo</span></div>
+      <div class="sem" style="background: var(--success-wash); color: var(--success-ink);"><b>Conquista</b><span>Meta batida, semana completa</span></div>
+      <div class="sem" style="background: var(--warning-wash); color: var(--warning-ink);"><b>Atenção gentil</b><span>Orçamento quase no fim, lembrete</span></div>
+    </div>
+  </section>
+
+  <!-- TIPOGRAFIA -->
+  <section class="section" aria-labelledby="h-tipo">
+    <div class="section-head">
+      <p class="eyebrow">Tipografia</p>
+      <h2 id="h-tipo">Duas famílias, dez tamanhos</h2>
+      <p>Fraunces com o eixo “soft” no máximo, redonda e acolhedora, para títulos e números parados. Onest para a interface e para todo número que anima ou se alinha em coluna, porque os dígitos dela têm a mesma largura.</p>
+    </div>
+    <div class="type-rows">
+      <div class="type-row"><div class="type-meta"><b>display</b><span>34/40 · 450 · serifa</span></div><p class="type-sample t-display">Quinta, 22 de outubro</p></div>
+      <div class="type-row"><div class="type-meta"><b>hero</b><span>44/48 · 400 · serifa</span></div><p class="type-sample t-hero num">86 g</p></div>
+      <div class="type-row"><div class="type-meta"><b>title</b><span>22/28 · 500 · serifa</span></div><p class="type-sample t-title">Fase 1 · Base</p></div>
+      <div class="type-row"><div class="type-meta"><b>headline</b><span>17/22 · 600</span></div><p class="type-sample t-headline">Caminhada com o cachorro</p></div>
+      <div class="type-row"><div class="type-meta"><b>body</b><span>16/22 · 400</span></div><p class="type-sample t-body">Errar um dia faz parte. Amanhã é um bom dia para voltar.</p></div>
+      <div class="type-row"><div class="type-meta"><b>sub</b><span>15/20 · 500</span></div><p class="type-sample t-sub num">6 de 7 dias nesta semana</p></div>
+      <div class="type-row"><div class="type-meta"><b>stat</b><span>28/32 · 600 · tabular</span></div><p class="type-sample t-stat num">1,5 L · 12 dias</p></div>
+      <div class="type-row"><div class="type-meta"><b>label</b><span>13/16 · 600</span></div><p class="type-sample t-label upper">Alimentação</p></div>
+      <div class="type-row"><div class="type-meta"><b>caption</b><span>12/16 · 500</span></div><p class="type-sample t-caption muted num">Meta de 80 g · sobe para 90 g em 2 semanas</p></div>
+      <div class="type-row"><div class="type-meta"><b>micro</b><span>11/13 · 500 · mínimo</span></div><p class="type-sample t-micro faint num">atualizado às 20h41</p></div>
+    </div>
+    <div class="figures">
+      <div class="fig-box">
+        <p class="eyebrow">Por que números tabulares</p>
+        <div class="cols">
+          <div class="col prop"><span>111 g</span><span>88 g</span><span>1.250 ml</span></div>
+          <div class="col tab"><span>111 g</span><span>88 g</span><span>1.250 ml</span></div>
+        </div>
+        <p class="t-caption muted">À esquerda, proporcionais: os dígitos têm larguras diferentes e a coluna fica torta e “pula” quando o número anima. À direita, tabulares.</p>
+      </div>
+      <div class="fig-box">
+        <p class="eyebrow">Grego no título</p>
+        <p class="greek-box">προκοπή</p>
+        <p class="t-caption muted">A Fraunces não tem letras gregas. Essas sete letras vêm da Literata, carregada só com elas, e o resto do texto segue em Fraunces.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESPAÇO -->
+  <section class="section" aria-labelledby="h-espaco">
+    <div class="section-head">
+      <p class="eyebrow">Espaço, cantos e elevação</p>
+      <h2 id="h-espaco">Grade de 4 pontos</h2>
+      <p>Margem lateral de 16, respiro interno dos cartões de 16, 12 entre cartões e 32 entre seções. Toda área de toque tem pelo menos 44 × 44.</p>
+    </div>
+    <div class="three">
+      <div class="space-list" id="spaces"></div>
+      <div style="display:flex;flex-direction:column;gap:24px;">
+        <div class="radii">
+          <div class="radius" style="border-radius:6px">6</div>
+          <div class="radius" style="border-radius:10px">10</div>
+          <div class="radius" style="border-radius:14px">14</div>
+          <div class="radius" style="border-radius:20px">20</div>
+          <div class="radius" style="border-radius:28px">28</div>
+          <div class="radius" style="border-radius:999px">pílula</div>
+        </div>
+        <p class="t-caption muted">6 em células pequenas, 14 em botões e campos, 20 em cartões, 28 em painéis que sobem de baixo. Cantos aninhados são concêntricos: o raio de dentro é o de fora menos o respiro.</p>
+        <div class="elev">
+          <div style="background: var(--sunken);"><b>Rebaixado</b><span>campos, trilhos</span></div>
+          <div style="background: var(--surface); box-shadow: var(--shadow-1);"><b>Superfície</b><span>cartões</span></div>
+          <div style="background: var(--raised); box-shadow: var(--shadow-2);"><b>Elevado</b><span>painéis, toasts</span></div>
+        </div>
+        <p class="t-caption muted">No claro, sombra morna bem suave. No escuro, sem sombra: a superfície sobe ficando mais clara, com um fio de luz no topo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÍCONES -->
+  <section class="section" aria-labelledby="h-icones">
+    <div class="section-head">
+      <p class="eyebrow">Ícones</p>
+      <h2 id="h-icones">Phosphor</h2>
+      <p>Duotone com a cor do pilar nos ícones de hábito, Regular ao lado de texto e Fill na aba ativa. Abaixo, os ícones dos pilares atuais. Para criar pilares e hábitos há uma biblioteca com <span class="num" id="icon-total"></span> ícones em 10 categorias, com busca em português: veja o editor no fim de Componentes.</p>
+    </div>
+    <div class="icon-weights">
+      <div><i class="ph ph-moon-stars"></i>Regular · ao lado de texto</div>
+      <div><i class="ph-duotone ph-moon-stars"></i>Duotone · hábitos</div>
+      <div><i class="ph-fill ph-moon-stars"></i>Fill · aba ativa</div>
+    </div>
+    <div class="icons" id="icons"></div>
+  </section>
+
+  <!-- COMPONENTES -->
+  <section class="section" aria-labelledby="h-comp">
+    <div class="section-head">
+      <p class="eyebrow">Componentes</p>
+      <h2 id="h-comp">Peças do app, funcionando</h2>
+      <p>Toque, marque e adicione: tudo aqui reage. Os números são de exemplo.</p>
+    </div>
+
+    <div class="specimens">
+
+      <div class="spec">
+        <div class="spec-head"><p class="eyebrow">Hábito do dia</p><span class="spec-note">um toque marca · desfazer por 5 s</span></div>
+        <div class="habits">
+          <div class="habit-row" data-pillar="mente">
+            <div class="bubble"><i class="ph-duotone ph-device-mobile-slash"></i></div>
+            <div class="habit-text"><span class="t-headline">Telas desligadas às 21h</span>
+              <div class="week-dots" data-done="5"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span></span></div></div>
+            <button type="button" class="check-btn" aria-pressed="false" aria-label="Marcar telas desligadas" data-name="Telas desligadas"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+          </div>
+          <div class="habit-row" data-pillar="familia">
+            <div class="bubble"><i class="pk-icon pk-duo pk-salsicha" aria-hidden="true"></i></div>
+            <div class="habit-text"><span class="t-headline">Caminhada com o cachorro</span>
+              <div class="week-dots" data-done="4"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span></span></div></div>
+            <button type="button" class="check-btn" aria-pressed="false" aria-label="Marcar caminhada com o cachorro" data-name="Caminhada"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+          </div>
+          <div class="habit-row" data-pillar="alim">
+            <div class="bubble"><i class="ph-duotone ph-drop"></i></div>
+            <div class="habit-text"><span class="t-headline">Zero refrigerante</span>
+              <div class="week-dots" data-done="6"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span></span></div></div>
+            <button type="button" class="check-btn" aria-pressed="true" aria-label="Marcar zero refrigerante" data-name="Zero refrigerante"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec" data-pillar="alim" id="protein">
+        <div class="p-head">
+          <p class="eyebrow">Proteína</p>
+          <div class="p-total"><span class="t-hero live-num" id="p-num">40</span><span class="t-sub muted">g de <span class="num">80</span> g</span></div>
+        </div>
+        <div class="pbar">
+          <div class="pbar-track" id="p-track"></div>
+          <div class="pbar-target" id="p-target"><span>meta 80 g</span></div>
+        </div>
+        <div class="chips" id="p-chips"></div>
+        <div class="p-foot"><span id="p-status"></span><button type="button" class="link-btn" id="p-undo">Desfazer último</button></div>
+      </div>
+
+      <div class="spec" data-pillar="alim">
+        <div class="spec-head"><p class="eyebrow">Água</p><span class="spec-note">anel · traço de 10% do diâmetro</span></div>
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg viewBox="0 0 128 128" aria-hidden="true"><circle class="r-track" cx="64" cy="64" r="54"/><circle class="r-val" id="w-ring" cx="64" cy="64" r="54"/></svg>
+            <div class="ring-center"><span class="t-stat live-num" id="w-num">1,5 L</span><span class="t-caption faint">de 3 L</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="chips">
+              <button type="button" class="chip-btn" data-ml="500"><i class="ph ph-plus"></i>500 ml</button>
+              <button type="button" class="chip-btn" data-ml="1000"><i class="ph ph-plus"></i>1 L</button>
+            </div>
+            <button type="button" class="link-btn" id="w-reset" style="align-self:flex-start">Zerar exemplo</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec" data-pillar="mente">
+        <div class="spec-head"><p class="eyebrow">Check-in · 20h30</p><span class="spec-note">cor primária · humor muda a boca, energia muda os olhos</span></div>
+        <div class="rating" data-kind="mood" data-label="Humor" data-value="4"></div>
+        <div class="rating" data-kind="energy" data-label="Energia" data-value="2"></div>
+        <label class="t-sub" for="grat-1">3 coisas boas de hoje</label>
+        <input class="field" id="grat-1" type="text" value="Fim de tarde com o cachorro no parque">
+        <input class="field" id="grat-2" type="text" placeholder="Mais uma, se quiser">
+      </div>
+
+      <div class="spec" data-pillar="alim">
+        <div class="spec-head"><p class="eyebrow">Dias sem</p><span class="spec-note">o recorde nunca some</span></div>
+        <div class="streak-card">
+          <div class="streak-num"><span class="big" id="s-num">12</span><span class="t-headline">dias sem refrigerante</span></div>
+          <div class="streak-stats">
+            <div><b id="s-best">12</b>recorde</div>
+            <div><b id="s-total">40</b>dias no total</div>
+          </div>
+          <p class="streak-msg" id="s-msg"></p>
+          <div class="btns">
+            <button type="button" class="btn btn-secondary" id="s-slip">Registrar deslize</button>
+            <button type="button" class="btn btn-ghost" id="s-undo" hidden>Desfazer</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-head"><p class="eyebrow">Metas e orçamentos da semana</p><span class="spec-note">estouro fica neutro</span></div>
+        <div class="targets">
+          <div class="target-row" data-pillar="corpo"><div><span class="t-headline">Academia</span><br><span class="t-caption">2 vezes por semana</span></div><div class="slots"><i class="on"></i><i></i><span>1 de 2</span></div></div>
+          <div class="target-row" data-pillar="corpo"><div><span class="t-headline">Corrida</span><br><span class="t-caption">semana 3 do plano</span></div><div class="slots"><i class="on"></i><i class="on"></i><span>feito</span></div></div>
+          <div class="target-row" data-pillar="alim"><div><span class="t-headline">Refeições livres</span><br><span class="t-caption">até 2 por semana</span></div><div class="slots"><i class="used"></i><i></i><span>1 de 2 usadas</span></div></div>
+          <div class="target-row" data-pillar="alim"><div><span class="t-headline">Tranqueiras</span><br><span class="t-caption">até 2 dias por semana</span></div><div class="slots"><i></i><i></i><span>0 de 2 usados</span></div></div>
+        </div>
+      </div>
+
+      <div class="spec" data-pillar="familia">
+        <div class="spec-head"><p class="eyebrow">Últimas 4 semanas</p><span class="spec-note">cor e forma, nunca só cor</span></div>
+        <div class="heat-wrap">
+          <div class="heat" id="heat"></div>
+          <div class="strength">
+            <span class="t-headline">Caminhada com o cachorro</span>
+            <span class="t-caption muted">Força do hábito</span>
+            <span class="t-stat num" id="str-num">0%</span>
+            <div class="mini-bar"><i id="str-bar" style="width:0"></i></div>
+            <span class="t-caption faint">Sobe devagar com constância e desce devagar com faltas. Não zera.</span>
+          </div>
+        </div>
+        <div class="heat-legend">
+          <span><i class="cell done"></i>feito</span>
+          <span><i class="cell partial"></i>parcial</span>
+          <span><i class="cell"></i>não feito</span>
+          <span><i class="cell paused"></i>pausado</span>
+          <span><i class="cell unsched"></i>fora da agenda</span>
+          <span><i class="cell future"></i>ainda vai chegar</span>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-head"><p class="eyebrow">Linha do tempo do dia</p><span class="spec-note">feito, planejado e agora</span></div>
+        <div class="tl">
+          <div class="tl-item done" data-pillar="mente"><time>06h52</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Acordar</b><span>meta 6h50</span></div></div>
+          <div class="tl-item done" data-pillar="familia"><time>07h30</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Passeio com o cachorro</b><span>25 min, com sol</span></div></div>
+          <div class="tl-item done" data-pillar="mente"><time>14h00</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Fim da cafeína</b></div></div>
+          <div class="tl-item done" data-pillar="alim"><time>19h20</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Jantar</b><span>nota 4</span></div></div>
+          <div class="tl-now"><time>20h12</time><span class="tl-rail"><i></i></span><hr></div>
+          <div class="tl-item" data-pillar="familia"><time>20h30</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Louça e lixo</b><span>coleta hoje</span></div></div>
+          <div class="tl-item" data-pillar="mente"><time>20h30</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Check-in</b></div></div>
+          <div class="tl-item" data-pillar="mente"><time>21h00</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Telas desligadas</b></div></div>
+          <div class="tl-item" data-pillar="mente"><time>22h00</time><span class="tl-rail"><i class="tl-dot"></i></span><div class="tl-body"><b>Deitar</b></div></div>
+        </div>
+      </div>
+
+      <div class="spec chart" data-pillar="alim">
+        <div class="spec-head"><p class="eyebrow">Peso · tendência</p><span class="spec-note">dados de exemplo</span></div>
+        <p class="t-headline" id="wt-head"></p>
+        <svg id="wt-svg" viewBox="0 0 340 170" role="img" aria-label="Gráfico de peso com pontos diários e linha de tendência de 7 dias"></svg>
+        <p class="t-caption muted">Pontos claros são as pesagens do dia. A linha forte é a média de 7 dias, que é o que importa. O peso do dia oscila até 2 kg por água e sal.</p>
+      </div>
+
+      <div class="spec">
+        <div class="spec-head"><p class="eyebrow">O que os seus dados mostram</p><span class="spec-note">frase, não gráfico</span></div>
+        <div class="insight" data-pillar="familia">
+          <i class="ph-duotone ph-sparkle"></i>
+          <div><p>Nos dias com passeio com o cachorro, seu humor médio foi <b class="num">4,1</b>. Nos outros, <b class="num">3,4</b>.</p><small class="num">14 dias com · 12 dias sem · mostra uma relação, não uma causa</small></div>
+        </div>
+        <div class="insight" data-pillar="mente">
+          <i class="ph-duotone ph-moon-stars"></i>
+          <div><p>Quando as telas desligaram às 21h, você dormiu em média <b class="num">35 min</b> mais cedo.</p><small class="num">9 noites com · 8 noites sem</small></div>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-head"><p class="eyebrow">Botões e controles</p><span class="spec-note">altura mínima 44</span></div>
+        <div class="btns">
+          <button type="button" class="btn btn-primary"><i class="ph ph-check"></i>Salvar check-in</button>
+          <button type="button" class="btn btn-secondary">Editar hábito</button>
+          <button type="button" class="btn btn-ghost">Desfazer</button>
+        </div>
+        <div class="btns">
+          <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Lembrete do check-in"><i></i></button>
+          <span class="t-sub">Lembrete do check-in</span>
+        </div>
+        <div class="pill-tags">
+          <span class="pill-tag" data-pillar="mente">Mente</span>
+          <span class="pill-tag" data-pillar="alim">Alimentação</span>
+          <span class="pill-tag" data-pillar="corpo">Corpo</span>
+          <span class="pill-tag" data-pillar="familia">Família</span>
+        </div>
+        <div class="tabbar-demo" role="tablist" aria-label="Abas do app">
+          <button type="button" role="tab" aria-selected="true" data-icon="sun"><i class="ph-fill ph-sun"></i>Hoje</button>
+          <button type="button" role="tab" aria-selected="false" data-icon="chart-line-up"><i class="ph ph-chart-line-up"></i>Progresso</button>
+          <button type="button" role="tab" aria-selected="false" data-icon="path"><i class="ph ph-path"></i>Jornada</button>
+          <button type="button" role="tab" aria-selected="false" data-icon="gear-six"><i class="ph ph-gear-six"></i>Ajustes</button>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-head"><p class="eyebrow">Revisão de domingo</p><span class="spec-note">convite, sem pressão</span></div>
+        <div class="invite" data-pillar="alim">
+          <span class="t-label upper" style="color: var(--ink);">Fase 2 disponível</span>
+          <h3 class="t-title">Alimentação</h3>
+          <p class="t-sub" style="font-weight:400;">A base fechou a semana com <b class="num">78%</b> de constância. Quando quiser, proteína, água e as notas das refeições entram no seu dia.</p>
+          <div class="btns">
+            <button type="button" class="btn btn-primary">Começar fase 2</button>
+            <button type="button" class="btn btn-secondary">Ficar mais uma semana</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec spec-wide">
+        <div class="spec-head"><p class="eyebrow">Ajustes · novo pilar</p><span class="spec-note">cor e ícone escolhidos de listas prontas</span></div>
+        <div class="np-grid">
+          <div class="np-form hued" id="np-form">
+            <div class="np-field">
+              <label class="t-sub" for="np-name">Nome</label>
+              <input class="field" id="np-name" type="text" value="Finanças" maxlength="24" autocomplete="off">
+            </div>
+            <div class="np-field">
+              <div class="np-label"><span class="t-sub">Cor</span><span class="t-caption muted" id="np-color-name"></span></div>
+              <div class="np-colors" id="np-colors" role="radiogroup" aria-label="Cor do pilar"></div>
+            </div>
+            <div class="np-field">
+              <div class="np-label"><span class="t-sub">Ícone</span><span class="t-caption muted num" id="np-count"></span></div>
+              <input class="field" id="np-search" type="search" placeholder="Buscar: sono, água, cachorro, dinheiro…" autocomplete="off" aria-label="Buscar ícone">
+              <div class="np-cats" id="np-cats"></div>
+              <div class="np-icons" id="np-icons" role="radiogroup" aria-label="Ícone do pilar"></div>
+            </div>
+          </div>
+          <div class="np-preview hued" id="np-preview">
+            <p class="eyebrow">Prévia</p>
+            <div class="hue-head"><span class="hb" id="pv-icon"></span><h3 id="pv-name">Finanças</h3></div>
+            <div class="habit-row">
+              <div class="bubble" id="pv-habit-icon"></div>
+              <div class="habit-text"><span class="t-headline">Anotar os gastos do dia</span>
+                <div class="week-dots" data-done="3"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span></span></div></div>
+              <button type="button" class="check-btn" aria-pressed="false" aria-label="Marcar anotar os gastos" data-name="Gastos anotados"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+            </div>
+            <div class="pv-week" aria-hidden="true"><i class="cell done"></i><i class="cell done"></i><i class="cell partial"></i><i class="cell"></i><i class="cell done"></i><i class="cell future"></i><i class="cell future"></i></div>
+            <div class="pill-tags"><span class="pill-tag" id="pv-tag">Finanças</span></div>
+            <button type="button" class="btn btn-primary" id="np-save">Criar pilar</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MOTION -->
+  <section class="section" aria-labelledby="h-motion">
+    <div class="section-head">
+      <p class="eyebrow">Movimento</p>
+      <h2 id="h-motion">Calmo e imediato</h2>
+      <p>Todo toque responde na hora. O movimento confirma o que aconteceu e para por aí.</p>
+    </div>
+    <div class="motion-grid">
+      <div class="motion-cell"><b>150 ms</b><span>toque, hover, chips</span></div>
+      <div class="motion-cell"><b>240 ms</b><span>padrão: check, troca de tema, toasts</span></div>
+      <div class="motion-cell"><b>400 ms</b><span>barras enchendo, números rolando</span></div>
+      <div class="motion-cell"><b>600 ms</b><span>anéis e o fechamento do dia</span></div>
+    </div>
+    <ul class="rules">
+      <li><i class="ph ph-hand-tap"></i><p><b>Mola no check.</b> O círculo encolhe e volta com uma mola curta (no app: Motion com stiffness 500 e damping 30), e o ✓ se desenha em seguida.</p></li>
+      <li><i class="ph ph-number-circle-four"></i><p><b>Números rolam, nunca saltam.</b> Gramas, litros e dias mudam dígito por dígito com NumberFlow, sempre em números tabulares.</p></li>
+      <li><i class="ph ph-confetti"></i><p><b>Uma celebração por momento grande.</b> Brilho suave no anel quando o dia fecha. Confete só quando uma fase é desbloqueada.</p></li>
+      <li><i class="ph ph-vibrate"></i><p><b>Vibração no iPhone é bônus.</b> O Safari não tem API de vibração. Existe um truque com o interruptor nativo que dá um toque leve, mas pode parar de funcionar em qualquer atualização.</p></li>
+      <li><i class="ph ph-person-simple-walk"></i><p><b>Movimento reduzido respeitado.</b> Com essa opção ligada no iPhone, tudo vira troca de cor e opacidade, sem deslocamento.</p></li>
+    </ul>
+  </section>
+
+  <!-- STACK -->
+  <section class="section" aria-labelledby="h-stack">
+    <div class="section-head">
+      <p class="eyebrow">Ferramentas</p>
+      <h2 id="h-stack">Bibliotecas escolhidas</h2>
+      <p>Versões estáveis verificadas em 22 de outubro de 2026.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th scope="col">Para quê</th><th scope="col">Biblioteca</th><th scope="col">Por quê</th></tr></thead>
+        <tbody>
+          <tr><td>Base</td><td><code>react 19.3</code> · <code>vite 8</code> · <code>typescript</code></td><td class="why">React 19.3 trouxe transições de tela estáveis.</td></tr>
+          <tr><td>Estilo e tokens</td><td><code>tailwindcss 4.3</code></td><td class="why">Configuração em CSS, cores em OKLCH, tema claro e escuro por variável.</td></tr>
+          <tr><td>Componentes</td><td><code>shadcn/ui</code> sobre <code>@base-ui/react 1.9</code></td><td class="why">Acessíveis, com painel deslizante nativo. O Vaul foi abandonado.</td></tr>
+          <tr><td>Movimento</td><td><code>motion 14.6</code></td><td class="why">Molas, layout animado, entrada e saída. Carregado em partes para pesar pouco.</td></tr>
+          <tr><td>Números</td><td><code>@number-flow/react 0.6</code></td><td class="why">Números que rolam, formatados em pt-BR.</td></tr>
+          <tr><td>Avisos</td><td><code>sonner 2.0</code></td><td class="why">Toasts com “Desfazer”.</td></tr>
+          <tr><td>Gráficos</td><td>SVG próprio + <code>d3-shape</code> · <code>d3-scale</code></td><td class="why">Barras, anéis, heatmap e linha de tendência sob medida, animados com Motion.</td></tr>
+          <tr><td>Ícones</td><td><code>@phosphor-icons/react</code></td><td class="why">Pesos Regular, Duotone e Fill combinando com a Figtree.</td></tr>
+          <tr><td>Datas</td><td><code>date-fns 4.4</code> + <code>@date-fns/tz</code></td><td class="why">pt-BR, semana começando na segunda, fuso de São Paulo.</td></tr>
+          <tr><td>Dados</td><td><code>firebase 13.1</code></td><td class="why">Firestore com cache offline e login Google. Cada pessoa vê só os próprios dados.</td></tr>
+          <tr><td>Estado da tela</td><td><code>zustand 5</code></td><td class="why">Tema, painéis abertos, preferências locais.</td></tr>
+          <tr><td>Rotas</td><td><code>react-router 8.5</code></td><td class="why">Navegação entre abas com transição.</td></tr>
+          <tr><td>App instalável</td><td><code>vite-plugin-pwa 2.0</code></td><td class="why">Ícone na Tela de Início, funciona offline, avisa quando há versão nova.</td></tr>
+          <tr><td>Hospedagem</td><td>Firebase Hosting + GitHub Actions</td><td class="why">Mesmo domínio do login, então o Google funciona no app instalado no iPhone.</td></tr>
+          <tr><td>Testes</td><td><code>vitest 5</code> · <code>playwright 1.64</code></td><td class="why">Playwright tira prints no tamanho do iPhone, no claro e no escuro.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- EM ABERTO -->
+  <section class="section" aria-labelledby="h-aberto">
+    <div class="section-head">
+      <p class="eyebrow">Registro</p>
+      <h2 id="h-aberto">Decisões</h2>
+    </div>
+    <div class="open-list">
+      <div class="open-item"><b>Fontes: Fraunces + Onest</b><p>Fraunces macia nos títulos. Onest na interface e em todo número que anima. O grego do nome vem da Literata.</p></div>
+      <div class="open-item"><b>Neutros: pedra</b><p>Papel quente de dia e carvão morno à noite.</p></div>
+      <div class="open-item"><b>Hospedagem: Firebase Hosting</b><p>O código continua no GitHub e é publicado pelo GitHub Actions. O login com Google funciona direto no app instalado no iPhone.</p></div>
+      <div class="open-item"><b>Check-in com rostinhos</b><p>Na cor primária do app, com o selecionado em fundo cinza claro. No humor muda a boca, na energia mudam os olhos.</p></div>
+      <div class="open-item"><b>Pilares personalizáveis</b><p>Cada pessoa cria os próprios pilares, escolhendo uma das 12 cores da paleta e um dos ícones da biblioteca. Cor e ícone podem se repetir.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Prokopē · design system v0.1</span>
+    <span>22 de outubro de 2026</span>
+  </footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-undo">Desfazer</button></div>
+<div class="probe" id="probe" aria-hidden="true"></div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function fmt(n, d) { return n.toLocaleString('pt-BR', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  var customIcons = { salsicha: true };
+  function iconHtml(name) {
+    return customIcons[name]
+      ? '<i class="pk-icon pk-duo pk-' + name + '" aria-hidden="true"></i>'
+      : '<i class="ph-duotone ph-' + name + '"></i>';
+  }
+
+  /* ---------- controles ---------- */
+  function syncControls() {
+    var theme = root.getAttribute('data-theme') || 'system';
+    document.querySelectorAll('.segmented button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === theme)); });
+  }
+  document.querySelectorAll('.segmented').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var v = b.dataset.v;
+      if (v === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', v);
+      store('pk-theme', v);
+      syncControls();
+      requestAnimationFrame(updateRatios);
+    });
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { requestAnimationFrame(updateRatios); });
+
+  /* ---------- contraste ---------- */
+  var probe = document.getElementById('probe');
+  function lin(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function oklabToLin(L, a, b) {
+    var l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+    var m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+    var s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+    var l = l_ * l_ * l_, m = m_ * m_ * m_, s = s_ * s_ * s_;
+    return [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+    ].map(function (v) { return Math.min(1, Math.max(0, v)); });
+  }
+  function parse(str) {
+    var m;
+    if ((m = str.match(/oklch\(\s*([\d.]+)(%?)\s+([\d.]+|none)\s+([\d.]+|none)/i))) {
+      var L = parseFloat(m[1]); if (m[2]) L /= 100;
+      var C = m[3] === 'none' ? 0 : parseFloat(m[3]);
+      var h = (m[4] === 'none' ? 0 : parseFloat(m[4])) * Math.PI / 180;
+      return oklabToLin(L, C * Math.cos(h), C * Math.sin(h));
+    }
+    if ((m = str.match(/oklab\(\s*([\d.]+)(%?)\s+([-\d.]+)\s+([-\d.]+)/i))) {
+      var L2 = parseFloat(m[1]); if (m[2]) L2 /= 100;
+      return oklabToLin(L2, parseFloat(m[3]), parseFloat(m[4]));
+    }
+    if ((m = str.match(/color\(srgb\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)/i))) return [m[1], m[2], m[3]].map(function (v) { return lin(parseFloat(v)); });
+    if ((m = str.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i))) return [m[1], m[2], m[3]].map(function (v) { return lin(parseFloat(v) / 255); });
+    return null;
+  }
+  function resolve(token) { probe.style.backgroundColor = 'var(' + token + ')'; return getComputedStyle(probe).backgroundColor; }
+  function lum(rgb) { return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]; }
+  function ratio(a, b) {
+    var x = parse(resolve(a)), y = parse(resolve(b)); if (!x || !y) return null;
+    var l1 = lum(x), l2 = lum(y); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+  function updateRatios() {
+    document.querySelectorAll('[data-ratio]').forEach(function (el) {
+      var parts = el.dataset.ratio.split('|'), need = parseFloat(el.dataset.need || '0');
+      var r = ratio(parts[0], parts[1]);
+      if (r == null) { el.textContent = ''; return; }
+      var txt = fmt(r, 1) + ':1';
+      if (need) { txt += r >= need ? (need >= 4.5 ? ' · texto ok' : ' · gráfico ok') : ' · abaixo de ' + fmt(need, 1); }
+      else txt += ' · decorativo';
+      el.textContent = txt;
+      el.classList.toggle('ok', need > 0 && r >= need);
+    });
+  }
+
+  /* ---------- neutros e pilares ---------- */
+  var neutrals = [
+    ['--bg', 'Fundo', ''], ['--surface', 'Superfície', ''], ['--raised', 'Elevado', ''], ['--sunken', 'Rebaixado', ''],
+    ['--track', 'Trilho', ''], ['--border', 'Borda', ''], ['--border-strong', 'Borda forte', ''],
+    ['--text', 'Texto', '4.5'], ['--text-2', 'Texto 2', '4.5'], ['--text-3', 'Texto 3', '4.5']
+  ];
+  document.getElementById('neutrals').innerHTML = neutrals.map(function (n) {
+    return '<div class="swatch"><div class="swatch-chip" style="background:var(' + n[0] + ')"></div><div class="swatch-meta"><b class="t-sub">' + n[1] + '</b><code>' + n[0] + '</code>' +
+      (n[2] ? '<span class="ratio" data-ratio="' + n[0] + '|--surface" data-need="' + n[2] + '"></span>' : '') + '</div></div>';
+  }).join('');
+
+  var pillars = [
+    ['mente', 'Mente', 'ph-moon-stars'], ['alim', 'Alimentação', 'ph-bowl-food'],
+    ['corpo', 'Corpo', 'ph-person-simple-run'], ['familia', 'Família', 'ph-heart']
+  ];
+  var roles = [
+    ['wash', 'fundo tingido', '', ''], ['fill', 'barras e bolinhas', '--surface', ''],
+    ['mark', 'traço de gráfico', '--surface', '3'], ['ink', 'texto e ícone', '--surface', '4.5']
+  ];
+  document.getElementById('hues').innerHTML = pillars.map(function (p) {
+    return '<div class="hue" data-pillar="' + p[0] + '"><div class="hue-head"><span class="hb"><i class="ph-duotone ' + p[2] + '"></i></span><h3>' + p[1] + '</h3></div>' +
+      roles.map(function (r) {
+        var tok = '--' + p[0] + '-' + r[0];
+        var badge = r[2] ? '<span class="ratio" data-ratio="' + tok + '|' + r[2] + '"' + (r[3] ? ' data-need="' + r[3] + '"' : '') + '></span>' : '';
+        return '<div class="hue-row"><span class="chip-c" style="background:var(' + tok + ')"></span><div><b>' + r[0] + '</b><span class="role">' + r[1] + '</span></div>' + badge + '</div>';
+      }).join('') + '</div>';
+  }).join('');
+
+  /* ---------- espaços e ícones ---------- */
+  document.getElementById('spaces').innerHTML = [4, 8, 12, 16, 20, 24, 32, 40, 48, 64].map(function (s) {
+    return '<div class="space-row"><span>' + s + ' px</span><i style="width:' + (s * 3) + 'px"></i></div>';
+  }).join('');
+  var icons = [
+    ['mente', 'moon-stars', 'sono'], ['mente', 'device-mobile-slash', 'telas'], ['mente', 'book-open', 'leitura'], ['mente', 'coffee', 'cafeína'],
+    ['alim', 'egg', 'ovo'], ['alim', 'drop', 'água'], ['alim', 'bowl-food', 'refeição'], ['alim', 'cookie', 'tranqueira'],
+    ['corpo', 'barbell', 'academia'], ['corpo', 'person-simple-run', 'corrida'], ['corpo', 'soccer-ball', 'futebol'], ['corpo', 'sun-horizon', 'luz do sol'],
+    ['familia', 'salsicha', 'cachorro'], ['familia', 'hand-heart', 'gesto'], ['familia', 'broom', 'casa'], ['familia', 'heart', 'a dois']
+  ];
+  document.getElementById('icons').innerHTML = icons.map(function (i) {
+    return '<div class="icon-cell" data-pillar="' + i[0] + '">' + iconHtml(i[1]) + '<span>' + i[2] + '</span></div>';
+  }).join('');
+
+  /* ---------- toast ---------- */
+  var toast = document.getElementById('toast'), toastTimer = null, undoFn = null;
+  function showToast(msg, onUndo) {
+    document.getElementById('toast-msg').textContent = msg;
+    undoFn = onUndo || null;
+    document.getElementById('toast-undo').hidden = !onUndo;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 5000);
+  }
+  document.getElementById('toast-undo').addEventListener('click', function () {
+    if (undoFn) undoFn();
+    toast.classList.remove('show');
+  });
+
+  /* ---------- hábitos ---------- */
+  function paintDots(row, extra) {
+    var dots = row.querySelector('.week-dots');
+    var done = parseInt(dots.dataset.done, 10) + (extra ? 1 : 0);
+    dots.querySelectorAll('i').forEach(function (d, i) { d.classList.toggle('on', i < done); });
+    dots.querySelector('span').textContent = done + ' de 7';
+  }
+  document.querySelectorAll('.habit-row').forEach(function (row) {
+    var btn = row.querySelector('.check-btn');
+    var startOn = btn.getAttribute('aria-pressed') === 'true';
+    if (startOn) row.querySelector('.week-dots').dataset.done = String(parseInt(row.querySelector('.week-dots').dataset.done, 10) - 1);
+    paintDots(row, startOn);
+    function set(on) {
+      btn.setAttribute('aria-pressed', String(on));
+      paintDots(row, on);
+      if (on && !reduce) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+    }
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'true';
+      set(on);
+      if (on) showToast(btn.dataset.name + ' registrado', function () { set(false); });
+    });
+  });
+
+  /* ---------- números animados ---------- */
+  function animateNumber(el, from, to, format) {
+    if (reduce || from === to) { el.textContent = format(to); return; }
+    var start = null, dur = 400;
+    function step(t) {
+      if (start === null) start = t;
+      var k = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = format(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ---------- proteína ---------- */
+  var foods = [['Ovo', 6], ['Queijo', 5], ['Feijão', 7], ['Leite', 6], ['Whey', 22], ['Iogurte', 10], ['Frango', 30]];
+  var pEntries = [['Ovo', 6], ['Ovo', 6], ['Leite', 6], ['Whey', 22]];
+  var pTarget = 80, pShown = 40;
+  var pTrack = document.getElementById('p-track');
+  document.getElementById('p-chips').innerHTML = foods.map(function (f, i) {
+    return '<button type="button" class="chip-btn" data-i="' + i + '"><i class="ph ph-plus"></i>' + f[0] + ' <small>' + f[1] + ' g</small></button>';
+  }).join('');
+  function renderProtein(animateLast) {
+    var total = pEntries.reduce(function (s, e) { return s + e[1]; }, 0);
+    var scale = Math.max(pTarget * 1.5, total * 1.05);
+    var html = pEntries.map(function (e, i) {
+      var w = (e[1] / scale * 100).toFixed(3);
+      var startW = (animateLast && i === pEntries.length - 1 && !reduce) ? 0 : w;
+      return '<div class="pbar-seg" title="' + e[0] + ' ' + e[1] + ' g" style="width:' + startW + '%" data-w="' + w + '"></div>';
+    }).join('');
+    pTrack.innerHTML = html;
+    if (animateLast && !reduce) {
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        var last = pTrack.lastElementChild; if (last) last.style.width = last.dataset.w + '%';
+      }); });
+    }
+    document.getElementById('p-target').style.left = (pTarget / scale * 100) + '%';
+    var numEl = document.getElementById('p-num');
+    animateNumber(numEl, pShown, total, function (v) { return fmt(Math.round(v)); });
+    pShown = total;
+    var st = document.getElementById('p-status');
+    if (total >= pTarget) {
+      st.innerHTML = '<span class="done"><i class="ph-fill ph-check-circle"></i>Meta do dia' + (total > pTarget ? ' · +' + (total - pTarget) + ' g' : '') + '</span>';
+    } else {
+      st.textContent = 'Faltam ' + (pTarget - total) + ' g · ' + pEntries.length + ' registros';
+    }
+  }
+  document.getElementById('p-chips').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var f = foods[parseInt(b.dataset.i, 10)];
+    pEntries.push([f[0], f[1]]);
+    renderProtein(true);
+    showToast(f[0] + ' · +' + f[1] + ' g', function () { pEntries.pop(); renderProtein(false); });
+  });
+  document.getElementById('p-undo').addEventListener('click', function () {
+    if (pEntries.length) { pEntries.pop(); renderProtein(false); }
+  });
+  renderProtein(false);
+
+  /* ---------- água ---------- */
+  var water = 1500, waterGoal = 3000, waterShown = 1500;
+  var ring = document.getElementById('w-ring'), C = 2 * Math.PI * 54;
+  ring.style.strokeDasharray = C;
+  function fmtL(v) { return fmt(v / 1000, v % 1000 === 0 ? 0 : 1) + ' L'; }
+  function renderWater() {
+    ring.style.strokeDashoffset = C * (1 - Math.min(1, water / waterGoal));
+    animateNumber(document.getElementById('w-num'), waterShown, water, function (v) { return fmt(Math.round(v / 100) / 10, 1).replace(/,0$/, '') + ' L'; });
+    waterShown = water;
+  }
+  document.querySelectorAll('[data-ml]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var ml = parseInt(b.dataset.ml, 10); water += ml; renderWater();
+      showToast('Água · +' + (ml >= 1000 ? fmtL(ml) : ml + ' ml'), function () { water -= ml; renderWater(); });
+    });
+  });
+  document.getElementById('w-reset').addEventListener('click', function () { water = 0; renderWater(); });
+  ring.style.strokeDashoffset = C;
+  requestAnimationFrame(function () { requestAnimationFrame(renderWater); });
+
+  /* ---------- notas com rostinhos ---------- */
+  var words = {
+    mood: ['Muito mal', 'Mal', 'Ok', 'Bem', 'Muito bem'],
+    energy: ['Esgotado', 'Baixa', 'Ok', 'Boa', 'Alta']
+  };
+  function mouth(d, closed) {
+    return closed ? '<path class="solid" d="' + d + '"/>' : '<path class="ln" d="' + d + '"/>';
+  }
+  function face(kind, l) {
+    var s = '<svg class="face" viewBox="0 0 32 32" aria-hidden="true"><circle class="f" cx="16" cy="16" r="13"/>';
+    if (kind === 'mood') {
+      s += '<circle class="dot" cx="11.8" cy="13.4" r="1.15"/><circle class="dot" cx="20.2" cy="13.4" r="1.15"/>';
+      s += [
+        mouth('M11 22.2 Q16 17.4 21 22.2'),
+        mouth('M11.6 21.4 Q16 19.3 20.4 21.4'),
+        mouth('M11.6 20.6 L20.4 20.6'),
+        mouth('M11 19.6 Q16 23.8 21 19.6'),
+        mouth('M10.6 18.8 Q16 26.2 21.4 18.8 Z', true)
+      ][l - 1];
+    } else {
+      s += [
+        '<path class="ln" d="M9.7 14 Q11.8 15.8 13.9 14"/><path class="ln" d="M18.1 14 Q20.2 15.8 22.3 14"/>',
+        '<path class="ln" d="M9.8 13.2 L13.8 13.2"/><path class="ln" d="M18.2 13.2 L22.2 13.2"/><ellipse class="dot" cx="11.8" cy="14.3" rx="1.25" ry=".75"/><ellipse class="dot" cx="20.2" cy="14.3" rx="1.25" ry=".75"/>',
+        '<circle class="dot" cx="11.8" cy="13.6" r="1.25"/><circle class="dot" cx="20.2" cy="13.6" r="1.25"/>',
+        '<ellipse class="dot" cx="11.8" cy="13.3" rx="1.35" ry="1.8"/><ellipse class="dot" cx="20.2" cy="13.3" rx="1.35" ry="1.8"/>',
+        '<ellipse class="dot" cx="11.8" cy="13" rx="1.5" ry="2.3"/><ellipse class="dot" cx="20.2" cy="13" rx="1.5" ry="2.3"/><path class="ln" d="M27.4 4.6 L29.2 2.8"/><path class="ln" d="M29.4 8.6 L31.6 8.2"/>'
+      ][l - 1];
+      s += [
+        mouth('M13.4 21.4 L18.6 21.4'),
+        mouth('M12.6 21.2 Q16 20.4 19.4 21.2'),
+        mouth('M11.8 20.6 L20.2 20.6'),
+        mouth('M11.2 19.8 Q16 23.2 20.8 19.8'),
+        mouth('M10.8 18.8 Q16 25.6 21.2 18.8 Z', true)
+      ][l - 1];
+    }
+    return s + '</svg>';
+  }
+  document.querySelectorAll('.rating[data-kind]').forEach(function (el) {
+    var kind = el.dataset.kind, label = el.dataset.label, value = parseInt(el.dataset.value, 10), w = words[kind];
+    var opts = [1, 2, 3, 4, 5].map(function (l) {
+      return '<button type="button" role="radio" aria-checked="' + (l === value) + '" aria-label="' + l + ', ' + w[l - 1] + '" data-l="' + l + '">' + face(kind, l) + '<span>' + w[l - 1] + '</span></button>';
+    }).join('');
+    el.innerHTML = '<div class="rating-head"><span class="t-sub">' + label + '</span><span class="t-caption muted num" data-out></span></div>' +
+      '<div class="rating-opts" role="radiogroup" aria-label="' + label + '">' + opts + '</div>';
+    var out = el.querySelector('[data-out]');
+    function show(v) { out.textContent = v + ' de 5 · ' + w[v - 1]; }
+    show(value);
+    el.querySelector('.rating-opts').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      el.querySelectorAll('.rating-opts button').forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
+      show(parseInt(b.dataset.l, 10));
+    });
+  });
+
+  /* ---------- dias sem ---------- */
+  var sPrev = null;
+  document.getElementById('s-slip').addEventListener('click', function () {
+    var n = document.getElementById('s-num');
+    sPrev = parseInt(n.textContent, 10);
+    n.textContent = '0';
+    document.getElementById('s-msg').textContent = 'Tudo bem. Seu recorde de ' + document.getElementById('s-best').textContent + ' dias continua aqui. Amanhã é o dia 1.';
+    document.getElementById('s-slip').hidden = true;
+    document.getElementById('s-undo').hidden = false;
+  });
+  document.getElementById('s-undo').addEventListener('click', function () {
+    document.getElementById('s-num').textContent = String(sPrev);
+    document.getElementById('s-msg').textContent = '';
+    document.getElementById('s-slip').hidden = false;
+    document.getElementById('s-undo').hidden = true;
+  });
+
+  /* ---------- heatmap e força ---------- */
+  var states = [
+    'done', 'done', 'partial', 'done', 'done', '', 'done',
+    'done', '', 'done', 'done', 'done', 'paused', 'paused',
+    'done', 'done', 'done', '', 'partial', 'done', 'done',
+    'done', 'done', 'done', 'done today', 'future', 'future', 'future'
+  ];
+  var dows = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  document.getElementById('heat').innerHTML = dows.map(function (d) { return '<span class="dow">' + d + '</span>'; }).join('') +
+    states.map(function (s) { return '<i class="cell ' + s + '"></i>'; }).join('');
+  var mult = Math.pow(0.5, 1 / 13), score = 0;
+  states.forEach(function (s) {
+    if (s.indexOf('future') > -1 || s === 'paused') return;
+    var v = s.indexOf('done') > -1 ? 1 : (s === 'partial' ? 0.5 : 0);
+    score = score * mult + v * (1 - mult);
+  });
+  var pct = Math.round(score * 100);
+  document.getElementById('str-bar').style.width = pct + '%';
+  document.getElementById('str-num').textContent = pct + '%';
+
+  /* ---------- peso ---------- */
+  var seed = 11; function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  var days = 28, w = [];
+  for (var i = 0; i < days; i++) w.push(78.6 - i * 0.05 + (rnd() - 0.5) * 1.1);
+  var ma = w.map(function (_, i) { var a = w.slice(Math.max(0, i - 6), i + 1); return a.reduce(function (s, x) { return s + x; }, 0) / a.length; });
+  var mn = Math.floor(Math.min.apply(null, w)), mx = Math.ceil(Math.max.apply(null, w));
+  var W = 340, H = 170, pl = 30, pr = 10, pt = 10, pb = 24;
+  function X(i) { return pl + i * (W - pl - pr) / (days - 1); }
+  function Y(v) { return pt + (mx - v) / (mx - mn) * (H - pt - pb); }
+  var ticks = [mn, (mn + mx) / 2, mx];
+  var svg = '';
+  ticks.forEach(function (t) {
+    svg += '<line class="grid" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/>';
+    svg += '<text class="axis" x="' + (pl - 6) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + fmt(t, t % 1 ? 1 : 0) + '</text>';
+  });
+  var trend = ma.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
+  svg += '<path class="area" d="' + trend + ' L' + X(days - 1) + ' ' + (H - pb) + ' L' + X(0) + ' ' + (H - pb) + ' Z"/>';
+  w.forEach(function (v, i) { svg += '<circle class="pts" cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="2.6"/>'; });
+  svg += '<path class="trend" d="' + trend + '"/>';
+  svg += '<circle class="end" cx="' + X(days - 1) + '" cy="' + Y(ma[days - 1]) + '" r="5"/>';
+  svg += '<text class="axis" x="' + pl + '" y="' + (H - 6) + '">há 4 semanas</text>';
+  svg += '<text class="axis" x="' + (W - pr) + '" y="' + (H - 6) + '" text-anchor="end">hoje</text>';
+  document.getElementById('wt-svg').innerHTML = svg;
+  var delta = ma[days - 1] - ma[6];
+  document.getElementById('wt-head').textContent = 'Tendência ' + (delta < 0 ? '−' : '+') + fmt(Math.abs(delta), 1) + ' kg nas últimas 3 semanas';
+
+  /* ---------- abas e interruptor ---------- */
+  document.querySelector('.tabbar-demo').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    this.querySelectorAll('button').forEach(function (x) {
+      var on = x === b;
+      x.setAttribute('aria-selected', String(on));
+      x.querySelector('i').className = (on ? 'ph-fill' : 'ph') + ' ph-' + x.dataset.icon;
+    });
+  });
+  document.querySelectorAll('.switch').forEach(function (s) {
+    s.addEventListener('click', function () { s.setAttribute('aria-checked', String(s.getAttribute('aria-checked') !== 'true')); });
+  });
+
+  /* ---------- paleta de pilares ---------- */
+  var palette = [
+    ['coral', 'Coral', 25], ['damasco', 'Damasco', 60, { fl: '81.5%', ml: '61%', il: '46.5%', dfl: '73%' }], ['mel', 'Mel', 90],
+    ['oliva', 'Oliva', 120], ['salvia', 'Sálvia', 150, { fl: '90.5%', ml: '64.5%', il: '45.5%', dfl: '82%' }], ['menta', 'Menta', 175],
+    ['agua', 'Água', 205], ['ceu', 'Céu', 235], ['indigo', 'Índigo', 262],
+    ['lavanda', 'Lavanda', 285], ['ameixa', 'Ameixa', 320], ['rosa', 'Rosa', 355]
+  ];
+  var inUse = { lavanda: 'Mente', salvia: 'Alimentação', damasco: 'Corpo', rosa: 'Família' };
+  function hueStyle(p) {
+    var t = p[3] || {};
+    return '--h:' + p[2] + ';--fl:' + (t.fl || '85%') + ';--ml:' + (t.ml || '64%') + ';--il:' + (t.il || '47.5%') + ';--dfl:' + (t.dfl || '78%');
+  }
+  document.getElementById('palette').innerHTML = palette.map(function (p) {
+    return '<div class="pal hued" style="' + hueStyle(p) + '"><div class="pal-dots"><i style="background:var(--fill)"></i><i style="background:var(--mark)"></i><i style="background:var(--ink)"></i></div>' +
+      '<div><b>' + p[1] + '</b><br><span>' + (inUse[p[0]] ? 'em uso: ' + inUse[p[0]] : 'matiz ' + p[2] + '°') + '</span></div></div>';
+  }).join('');
+
+  /* ---------- biblioteca de ícones ---------- */
+  var iconCats = [
+    ['mente', 'Mente e sono', [
+      ['brain', 'Cérebro mente pensar'], ['moon-stars', 'Sono noite dormir'], ['bed', 'Cama dormir descanso'], ['alarm', 'Despertador acordar'],
+      ['sun-horizon', 'Manhã nascer do sol luz'], ['book-open', 'Leitura ler livro'], ['notebook', 'Diário anotar escrever'], ['lightbulb', 'Ideia aprender'],
+      ['flower-lotus', 'Meditação calma'], ['yin-yang', 'Equilíbrio'], ['wind', 'Respirar respiração'], ['sparkle', 'Gratidão coisas boas'],
+      ['device-mobile-slash', 'Sem celular telas'], ['television-simple', 'TV televisão telas'], ['headphones', 'Fones música'], ['hourglass-medium', 'Tempo paciência pausa']
+    ]],
+    ['alim', 'Alimentação', [
+      ['bowl-food', 'Refeição prato comida'], ['fork-knife', 'Almoço jantar comer'], ['cooking-pot', 'Cozinhar panela'], ['egg', 'Ovo proteína'],
+      ['cheese', 'Queijo proteína'], ['bread', 'Pão café da manhã'], ['grains', 'Grãos feijão arroz'], ['carrot', 'Legumes cenoura salada'],
+      ['avocado', 'Abacate gordura boa'], ['orange-slice', 'Fruta laranja suco'], ['cherries', 'Frutas cereja'], ['fish', 'Peixe'],
+      ['drop', 'Água beber hidratação'], ['pint-glass', 'Copo bebida suco refrigerante'], ['coffee', 'Café cafeína'], ['cookie', 'Bolacha doce tranqueira'],
+      ['ice-cream', 'Sorvete doce'], ['hamburger', 'Lanche hambúrguer fast food'], ['pizza', 'Pizza refeição livre'], ['wine', 'Vinho álcool']
+    ]],
+    ['corpo', 'Corpo e movimento', [
+      ['person-simple-run', 'Corrida correr'], ['person-simple-walk', 'Caminhada andar'], ['person-simple-hike', 'Trilha'], ['person-simple-bike', 'Pedalar bicicleta'],
+      ['person-simple-swim', 'Natação nadar'], ['person-simple-tai-chi', 'Alongamento yoga'], ['barbell', 'Academia musculação peso'], ['sneaker-move', 'Tênis passos'],
+      ['footprints', 'Passos pegadas'], ['soccer-ball', 'Futebol'], ['basketball', 'Basquete'], ['tennis-ball', 'Tênis esporte'],
+      ['volleyball', 'Vôlei'], ['heartbeat', 'Cardio batimentos'], ['scales', 'Peso balança'], ['lightning', 'Energia disposição'],
+      ['fire', 'Calorias queimar'], ['medal', 'Conquista medalha'], ['trophy', 'Troféu meta'], ['target', 'Alvo foco meta']
+    ]],
+    ['familia', 'Família e casa', [
+      ['house', 'Casa lar'], ['salsicha', 'Cachorro salsicha dachshund passeio pet'], ['cat', 'Gato pet'], ['paw-print', 'Pet animal'],
+      ['baby', 'Bebê filho'], ['users-three', 'Família pessoas'], ['heart', 'Amor casal a dois'], ['hand-heart', 'Gesto carinho ajudar'],
+      ['gift', 'Presente surpresa'], ['broom', 'Limpar faxina casa'], ['trash', 'Lixo recicláveis'], ['washing-machine', 'Roupa lavar'],
+      ['t-shirt', 'Roupas'], ['couch', 'Sala descanso'], ['potted-plant', 'Plantas regar'], ['shopping-cart', 'Mercado compras'],
+      ['car', 'Carro trajeto'], ['key', 'Chaves organização']
+    ]],
+    ['saude', 'Saúde', [
+      ['pill', 'Remédio vitamina suplemento'], ['first-aid-kit', 'Primeiros socorros'], ['stethoscope', 'Médico consulta'], ['syringe', 'Vacina exame'],
+      ['thermometer', 'Febre temperatura'], ['tooth', 'Dentes escovar fio dental'], ['bandaids', 'Curativo'], ['eyeglasses', 'Óculos visão'],
+      ['heart-straight', 'Coração saúde'], ['hospital', 'Hospital'], ['virus', 'Doença gripe'], ['prescription', 'Receita médica']
+    ]],
+    ['trabalho', 'Trabalho e estudo', [
+      ['briefcase', 'Trabalho'], ['laptop', 'Computador notebook'], ['desktop', 'PC tela'], ['code', 'Programar código'],
+      ['graduation-cap', 'Curso formatura'], ['student', 'Estudar aluno'], ['chalkboard-teacher', 'Aula professor'], ['pen-nib', 'Escrever caneta'],
+      ['books', 'Livros estudo'], ['calendar-check', 'Agenda planejar'], ['list-checks', 'Tarefas lista'], ['kanban', 'Projetos quadro'],
+      ['presentation-chart', 'Apresentação reunião'], ['translate', 'Idiomas inglês'], ['microphone', 'Falar podcast'], ['envelope', 'E-mail mensagens']
+    ]],
+    ['dinheiro', 'Dinheiro', [
+      ['wallet', 'Carteira gastos'], ['piggy-bank', 'Poupar economizar cofrinho'], ['coins', 'Moedas'], ['money', 'Dinheiro'],
+      ['bank', 'Banco'], ['credit-card', 'Cartão crédito'], ['receipt', 'Recibo contas'], ['hand-coins', 'Pagar investir'],
+      ['chart-pie-slice', 'Orçamento divisão'], ['chart-line-up', 'Investimentos crescer'], ['shopping-bag', 'Compras'], ['tag', 'Preço desconto']
+    ]],
+    ['lazer', 'Lazer e natureza', [
+      ['tree-evergreen', 'Árvore natureza'], ['park', 'Parque'], ['mountains', 'Montanhas'], ['waves', 'Mar praia'],
+      ['tent', 'Acampar'], ['campfire', 'Fogueira'], ['compass', 'Explorar'], ['airplane', 'Viagem avião'],
+      ['camera', 'Foto fotografia'], ['guitar', 'Violão tocar'], ['piano-keys', 'Piano música'], ['music-notes', 'Música cantar'],
+      ['paint-brush', 'Pintar arte'], ['palette', 'Desenhar arte'], ['game-controller', 'Videogame jogos'], ['puzzle-piece', 'Quebra-cabeça'],
+      ['film-slate', 'Filme cinema'], ['binoculars', 'Observar'], ['bird', 'Pássaros'], ['butterfly', 'Borboleta'],
+      ['cloud-sun', 'Ar livre tempo'], ['umbrella', 'Chuva']
+    ]],
+    ['relacoes', 'Relações e fé', [
+      ['hands-praying', 'Oração fé'], ['church', 'Igreja culto missa'], ['handshake', 'Amizade parceria'], ['hands-clapping', 'Celebrar'],
+      ['chat-teardrop-text', 'Conversar'], ['phone', 'Ligar telefonar'], ['users', 'Amigos'], ['smiley-wink', 'Bom humor']
+    ]],
+    ['parar', 'Deixar de lado', [
+      ['prohibit', 'Parar evitar'], ['cigarette-slash', 'Parar de fumar'], ['cigarette', 'Cigarro'], ['phone-slash', 'Sem ligações'],
+      ['bell-slash', 'Sem notificações'], ['speaker-slash', 'Silêncio sem música'], ['eye-slash', 'Sem redes sociais'], ['grains-slash', 'Sem glúten carboidrato'],
+      ['beer-stein', 'Álcool cerveja'], ['prohibit-inset', 'Bloquear']
+    ]]
+  ];
+  var allIcons = [];
+  iconCats.forEach(function (c) { c[2].forEach(function (it) { allIcons.push({ cat: c[0], name: it[0], words: it[1] }); }); });
+  document.getElementById('icon-total').textContent = allIcons.length;
+  function norm(s) { return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase(); }
+
+  /* ---------- editor de pilar ---------- */
+  var np = { color: 'mel', icon: 'piggy-bank', cat: 'todos', q: '' };
+  var npForm = document.getElementById('np-form'), npPreview = document.getElementById('np-preview');
+  document.getElementById('np-colors').innerHTML = palette.map(function (p) {
+    return '<button type="button" class="hued" role="radio" aria-checked="false" aria-label="' + p[1] + '" data-c="' + p[0] + '" style="' + hueStyle(p) + '"><i class="ph ph-check"></i></button>';
+  }).join('');
+  document.getElementById('np-cats').innerHTML = '<button type="button" class="cat-btn" data-cat="todos">Todos</button>' +
+    iconCats.map(function (c) { return '<button type="button" class="cat-btn" data-cat="' + c[0] + '">' + c[1] + '</button>'; }).join('');
+
+  function renderIcons() {
+    var q = norm(np.q.trim()), html = '', shown = 0;
+    if (q) {
+      allIcons.forEach(function (ic) {
+        if (norm(ic.words).indexOf(q) === -1 && ic.name.indexOf(q) === -1) return;
+        html += iconBtn(ic); shown++;
+      });
+      if (!shown) html = '<p class="np-empty">Nenhum ícone para “' + np.q.trim().replace(/[<>&"]/g, '') + '”. Tente outra palavra, como “casa” ou “comida”.</p>';
+    } else {
+      iconCats.forEach(function (c) {
+        if (np.cat !== 'todos' && np.cat !== c[0]) return;
+        if (np.cat === 'todos') html += '<span class="np-cat-title">' + c[1] + '</span>';
+        c[2].forEach(function (it) { html += iconBtn({ name: it[0], words: it[1] }); shown++; });
+      });
+    }
+    document.getElementById('np-icons').innerHTML = html;
+    document.getElementById('np-count').textContent = q ? shown + (shown === 1 ? ' resultado' : ' resultados') : shown + ' ícones';
+    document.querySelectorAll('#np-cats .cat-btn').forEach(function (b) { b.setAttribute('aria-pressed', String(!q && b.dataset.cat === np.cat)); });
+  }
+  function iconBtn(ic) {
+    var label = ic.words.split(' ')[0];
+    return '<button type="button" class="ic" role="radio" aria-checked="' + (ic.name === np.icon) + '" aria-label="' + label + '" title="' + ic.words + '" data-ic="' + ic.name + '">' + iconHtml(ic.name) + '</button>';
+  }
+  function renderNp() {
+    var p = palette.filter(function (x) { return x[0] === np.color; })[0];
+    var st = hueStyle(p);
+    npForm.setAttribute('style', st);
+    npPreview.setAttribute('style', st);
+    document.querySelectorAll('#np-colors button').forEach(function (b) { b.setAttribute('aria-checked', String(b.dataset.c === np.color)); });
+    document.getElementById('np-color-name').textContent = p[1] + (inUse[p[0]] ? ' · também usada em ' + inUse[p[0]] : '');
+    document.getElementById('pv-icon').innerHTML = iconHtml(np.icon);
+    document.getElementById('pv-habit-icon').innerHTML = iconHtml(np.icon);
+    var name = document.getElementById('np-name').value.trim() || 'Novo pilar';
+    document.getElementById('pv-name').textContent = name;
+    document.getElementById('pv-tag').textContent = name;
+  }
+  document.getElementById('np-colors').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    np.color = b.dataset.c; renderNp();
+  });
+  document.getElementById('np-cats').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    np.cat = b.dataset.cat; np.q = ''; document.getElementById('np-search').value = ''; renderIcons();
+  });
+  document.getElementById('np-search').addEventListener('input', function (e) { np.q = e.target.value; renderIcons(); });
+  document.getElementById('np-icons').addEventListener('click', function (e) {
+    var b = e.target.closest('button.ic'); if (!b) return;
+    np.icon = b.dataset.ic;
+    document.querySelectorAll('#np-icons .ic').forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
+    renderNp();
+  });
+  document.getElementById('np-name').addEventListener('input', renderNp);
+  document.getElementById('np-save').addEventListener('click', function () {
+    showToast('Pilar ' + (document.getElementById('np-name').value.trim() || 'novo') + ' criado');
+  });
+  renderIcons();
+  renderNp();
+
+  syncControls();
+  updateRatios();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateRatios);
+})();
+</script>
+</body>
+</html>

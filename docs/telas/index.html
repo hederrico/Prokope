@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prokopē Telas</title>
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search), t = p.get('theme');
+    try { t = t || localStorage.getItem('pk-telas-theme'); } catch (e) {}
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;1,400&text=%CF%80%CF%81%CE%BF%CE%BA%CE%BF%CF%80%CE%AE&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="tt"><b>Prokopē</b><span>Telas v0.2 · <span id="count"></span></span></div>
+  <div class="tools">
+    <div class="cv-seg" role="group" aria-label="Tema">
+      <button type="button" data-theme-btn="system">Sistema</button><button type="button" data-theme-btn="light">Claro</button><button type="button" data-theme-btn="dark">Escuro</button>
+    </div>
+    <div class="cv-seg" role="group" aria-label="Zoom">
+      <button type="button" class="cv-btn" id="zout" aria-label="Diminuir zoom">−</button>
+      <span class="zoomv cv-btn" id="zoomv">100%</span>
+      <button type="button" class="cv-btn" id="zin" aria-label="Aumentar zoom">+</button>
+      <button type="button" class="cv-btn" id="zfit">Ajustar</button>
+      <button type="button" class="cv-btn" id="z100">100%</button>
+    </div>
+  </div>
+</header>
+<aside class="side" id="side"></aside>
+<main class="canvas" id="canvas"><div class="board" id="board"></div></main>
+
+<script src="base.js"></script>
+<script src="f-entrada.js"></script>
+<script src="f-hoje.js"></script>
+<script src="f-registros.js"></script>
+<script src="f-habito-progresso.js"></script>
+<script src="f-jornada.js"></script>
+<script src="f-ajustes-1.js"></script>
+<script src="f-ajustes-2.js"></script>
+<script src="f-estados.js"></script>
+<script>Board.render();</script>
+</body>
+</html>
