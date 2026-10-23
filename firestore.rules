@@ -1,0 +1,150 @@
+rules_version = '2';
+
+// Regras do Prokopē (sem Cloud Functions: tudo cabe no plano gratuito).
+// 1. Só entra quem tem o e-mail (em minúsculas) como id de um documento em allowlist/{email}.
+//    A lista é editada só pelo console do Firebase: o app não consegue escrever nela.
+// 2. Cada pessoa lê e escreve só users/{uid}/**.
+// 3. A dois (docs/interacao/telas/ajustes-rotina-conta.md): invites/{id} se lê pelo id, sem listar os dos outros;
+//    links/{id} só para as duas pessoas ligadas. Nenhuma regra abre users/{uid} para a outra pessoa:
+//    o que é compartilhado é copiado para links/{id}/share/{uid}.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function email() {
+      return request.auth.token.email.lower();
+    }
+
+    // conta com e-mail verificado (o Google sempre verifica) e presente na lista
+    function allowed() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/allowlist/$(email()));
+    }
+
+    function isOwner(uid) {
+      return allowed() && request.auth.uid == uid;
+    }
+
+    // A dois: a pessoa é uma das duas ligadas em links/{linkId}
+    function isMember(linkId) {
+      return allowed()
+        && request.auth.uid in get(/databases/$(database)/documents/links/$(linkId)).data.members;
+    }
+
+    // ---------- lista de e-mails permitidos ----------
+    match /allowlist/{entry} {
+      // a pessoa pode ver só a própria entrada (a tela "Conta sem acesso" usa isso); ninguém lista nem escreve
+      allow get: if signedIn() && request.auth.token.email != null && email() == entry;
+      allow list, write: if false;
+    }
+
+    // ---------- dados de cada pessoa ----------
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /{document=**} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ---------- A dois: convites ----------
+    // invites/{id}: fromUid, fromName, status ('pending' | 'accepted' | 'declined' | 'cancelled'),
+    // createdAt, expiresAt (7 dias); ao responder: toUid, toName, respondedAt; ao abrir: seenAt.
+    // O id é um código aleatório longo, que vai no link /convite/:id.
+    match /invites/{inviteId} {
+      function pending() {
+        return resource.data.status == 'pending' && resource.data.expiresAt > request.time;
+      }
+      function onlyChanges(keys) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+      }
+
+      // ler um convite pelo id; listar, só os próprios (where fromUid == uid)
+      allow get: if allowed();
+      allow list: if allowed() && resource.data.fromUid == request.auth.uid;
+
+      allow create: if allowed()
+        && inviteId.size() >= 20
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(8, 'd')
+        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'status', 'createdAt', 'expiresAt']);
+
+      allow update: if allowed() && (
+        // quem convidou cancela
+        (resource.data.fromUid == request.auth.uid
+          && request.resource.data.status == 'cancelled'
+          && onlyChanges(['status']))
+        // quem recebeu aceita ou recusa, só enquanto o convite vale
+        || (resource.data.fromUid != request.auth.uid
+          && pending()
+          && request.resource.data.status in ['accepted', 'declined']
+          && request.resource.data.toUid == request.auth.uid
+          && request.resource.data.respondedAt == request.time
+          && onlyChanges(['status', 'toUid', 'toName', 'respondedAt']))
+        // quem recebeu abriu e escolheu "Agora não"
+        || (resource.data.fromUid != request.auth.uid
+          && pending()
+          && onlyChanges(['seenAt']))
+      );
+
+      // quem convidou apaga (ao cancelar ou ao apagar todos os dados)
+      allow delete: if allowed() && resource.data.fromUid == request.auth.uid;
+    }
+
+    // ---------- A dois: ligação entre duas pessoas ----------
+    // links/{id} (o mesmo id do convite): members [uidQueConvidou, uidQueAceitou], names, createdAt.
+    // Criado por quem aceita, na mesma transação que marca o convite como aceito.
+    // Quem convidou descobre a ligação ouvindo links (where members array-contains uid) e grava o linkId no próprio perfil.
+    match /links/{linkId} {
+      allow get, list: if allowed() && request.auth.uid in resource.data.members;
+
+      allow create: if allowed()
+        && request.resource.data.members is list
+        && request.resource.data.members.size() == 2
+        && request.resource.data.members[1] == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/invites/$(linkId)).data.status == 'accepted'
+        && getAfter(/databases/$(database)/documents/invites/$(linkId)).data.toUid == request.auth.uid
+        && get(/databases/$(database)/documents/invites/$(linkId)).data.status == 'pending'
+        && get(/databases/$(database)/documents/invites/$(linkId)).data.fromUid == request.resource.data.members[0];
+
+      // as duas pessoas não mudam; o resto (nomes) pode ser atualizado por elas
+      allow update: if allowed()
+        && request.auth.uid in resource.data.members
+        && request.resource.data.members == resource.data.members;
+
+      // desfazer a ligação: qualquer uma das duas. Apague antes as subcoleções (share, hugs, habits)
+      allow delete: if allowed() && request.auth.uid in resource.data.members;
+
+      // o que cada pessoa escolheu mostrar (por exemplo, o humor de hoje): só a dona escreve
+      match /share/{uid} {
+        allow read: if isMember(linkId);
+        allow write: if isMember(linkId) && request.auth.uid == uid;
+      }
+
+      // carinhos: quem manda cria; qualquer uma das duas apaga (ao desfazer a ligação)
+      match /hugs/{hugId} {
+        allow read: if isMember(linkId);
+        allow create: if isMember(linkId)
+          && request.resource.data.fromUid == request.auth.uid
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if isMember(linkId);
+      }
+
+      // hábitos a dois: cada pessoa liga o próprio interruptor; o hábito vira a dois quando os dois estão ligados
+      match /habits/{habitId} {
+        allow read, write: if isMember(linkId);
+      }
+    }
+  }
+}

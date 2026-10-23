@@ -1,0 +1,38 @@
+/* Fontes hospedadas no app (design-system.md › Tipografia).
+   - Fraunces: recortada por nós a partir de docs/fonts (o Google Fonts desenha o "ē" de Prokopē com o traço deslocado).
+     Mantém os eixos opsz, wght, SOFT e WONK, o latim com os acentos do português e o "ē". Licença em public/fonts/OFL-Fraunces.txt.
+   - Literata: só as letras de "προκοπή" (e as maiúsculas), logo depois da Fraunces na pilha. Licença em public/fonts/OFL-Literata.txt.
+   - Onest: pelo @fontsource-variable/onest (família "Onest Variable"). */
+@import '@fontsource-variable/onest';
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/Fraunces.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/Fraunces-Italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Literata';
+  src: url('/fonts/Literata-greek.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0301, U+0389, U+038C, U+0397, U+039A, U+039F-03A1, U+03AE, U+03B7, U+03BA, U+03BF-03C1, U+03CC;
+}
+@font-face {
+  font-family: 'Literata';
+  src: url('/fonts/Literata-Italic-greek.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0301, U+0389, U+038C, U+0397, U+039A, U+039F-03A1, U+03AE, U+03B7, U+03BA, U+03BF-03C1, U+03CC;
+}

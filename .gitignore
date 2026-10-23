@@ -1,0 +1,31 @@
+# dependências e build
+node_modules/
+dist/
+dev-dist/
+*.tsbuildinfo
+
+# ambiente: a configuração do Firebase vai no .env.local (o .env.example é o modelo)
+.env.local
+.env.*.local
+
+# testes
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+
+# logs e sistema
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json

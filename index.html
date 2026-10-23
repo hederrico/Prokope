@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Prokopē</title>
+    <meta name="description" content="Um pouco de progresso, todo dia. Poucos hábitos por vez, no seu ritmo." />
+
+    <!-- cor da barra do navegador e do app instalado, nos dois temas (--bg) -->
+    <meta name="theme-color" content="#fbf9f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#110f0d" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- app instalado pela Tela de Início do iPhone -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Prokopē" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icons/pwa-192.png" type="image/png" sizes="192x192" />
+
+    <!-- Fraunces recortada por nós (o "ē" certo); a Onest vem do @fontsource-variable -->
+    <link rel="preload" href="/fonts/Fraunces.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- tema e animações antes da primeira pintura, para não piscar.
+         O app grava em localStorage: pk-theme = light | dark (sem chave = sistema) e pk-motion = off -->
+    <script>
+      (function () {
+        var r = document.documentElement;
+        try {
+          var t = localStorage.getItem('pk-theme');
+          if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t);
+          if (localStorage.getItem('pk-motion') === 'off') r.setAttribute('data-motion', 'off');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>O Prokopē precisa de JavaScript para funcionar.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

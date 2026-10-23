@@ -1,0 +1,197 @@
+/* Base do app: reset complementar ao preflight do Tailwind, foco, toque e os utilitários de texto do quadro.
+   Os nomes dos utilitários são os do quadro (docs/telas/base.css), para a tradução das telas ser direta. */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    background: var(--bg);
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font: var(--t-body);
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* toque duplo não dá zoom; o toque longo não seleciona texto nem abre o menu do iOS nos controles */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label,
+  summary,
+  [role='button'],
+  [role='tab'],
+  [role='switch'],
+  [role='checkbox'] {
+    touch-action: manipulation;
+  }
+  button,
+  [role='button'],
+  [role='tab'] {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  button:disabled {
+    cursor: default;
+  }
+
+  /* campos com 16 px ou mais: o iPhone não dá zoom ao focar */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+
+  /* anel de foco (teclado no PC e Controle Total no iPhone): 2,5 px em --accent-mark, afastado 2 px */
+  :focus-visible {
+    outline: 2.5px solid var(--accent-mark);
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--accent-fill);
+    color: var(--text);
+  }
+
+  /* no computador, por enquanto, o app vive numa coluna central de até 480 px com o --bg em volta */
+  #root {
+    position: relative;
+    isolation: isolate;
+    max-width: var(--app-max);
+    min-height: 100dvh;
+    margin-inline: auto;
+  }
+}
+
+/* ---------- números ---------- */
+/* todo número que anima ou se alinha em coluna usa a Onest com algarismos tabulares */
+@utility num {
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- títulos (Fraunces macia) ---------- */
+@utility lt {
+  font: 500 32px/38px var(--font-display);
+  font-variation-settings: var(--display-vs);
+  letter-spacing: -0.015em;
+}
+@utility ttl2 {
+  font: 500 26px/32px var(--font-display);
+  font-variation-settings: var(--display-vs);
+  letter-spacing: -0.01em;
+}
+@utility ttl3 {
+  font: 500 22px/28px var(--font-display);
+  font-variation-settings: var(--display-vs);
+}
+@utility disp {
+  font-family: var(--font-display);
+  font-variation-settings: var(--display-vs);
+  font-weight: 400;
+}
+@utility disp-num {
+  font: 400 72px/1 var(--font-display);
+  font-variation-settings: var(--display-vs);
+}
+
+/* ---------- escala do design system (design-system.html: --t-*) ---------- */
+@utility t-display {
+  font: var(--t-display);
+  font-variation-settings: var(--display-vs);
+}
+@utility t-hero {
+  font: var(--t-hero);
+  font-variation-settings: var(--display-vs);
+}
+@utility t-title {
+  font: var(--t-title);
+  font-variation-settings: var(--display-vs);
+}
+@utility t-headline {
+  font: var(--t-headline);
+}
+@utility t-body {
+  font: var(--t-body);
+}
+@utility t-label {
+  font: var(--t-label);
+}
+
+/* ---------- números grandes (Onest) ---------- */
+@utility big {
+  font: 600 44px/48px var(--font-ui);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+@utility stat {
+  font: 600 28px/32px var(--font-ui);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- textos de apoio ---------- */
+@utility sub {
+  font: var(--t-sub);
+}
+@utility cap {
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+@utility micro {
+  font: var(--t-micro);
+  color: var(--text-3);
+}
+@utility lead {
+  font: 400 16px/23px var(--font-ui);
+  color: var(--text-2);
+}
+@utility foot {
+  padding: 8px 20px 0;
+  font: 400 13px/18px var(--font-ui);
+  color: var(--text-3);
+}
+/* sobretítulo em caixa alta, na cor do pilar (ou da primária) */
+@utility eyebrow {
+  display: block;
+  font: 600 12px/16px var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, var(--accent-ink));
+}
+@utility muted {
+  color: var(--text-2);
+}
+@utility faint {
+  color: var(--text-3);
+}
+
+/* ---------- acessibilidade ---------- */
+/* área de toque de pelo menos 44 × 44 sem mudar o desenho (acessibilidade.md › Alvo de toque) */
+@utility hit {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, var(--hit));
+    height: max(100%, var(--hit));
+    transform: translate(-50%, -50%);
+  }
+}

@@ -1,0 +1,292 @@
+/* Prokopē · tokens do design system
+   Fonte: docs/telas/base.css (cores revisadas, pilares, paleta .hued, --dim, toast) e docs/interacao/movimento.md.
+   Padrão de tema: claro no :root; escuro pelo sistema (:root:not([data-theme="light"])) ou forçado ([data-theme="dark"]).
+   data-motion="off" no <html> reduz o movimento como o prefers-reduced-motion.
+
+   Duas camadas:
+   1. Variáveis cruas (--bg, --mente-ink, --dur-base...): usadas no CSS e nos componentes, como no quadro.
+   2. @theme do Tailwind 4: dá nome de utilitário às mesmas variáveis (bg-surface, text-ink, rounded-lg, duration-base, ease-spring).
+      Cores usam @theme inline (o utilitário lê a variável do próprio elemento, então bg-wash segue o [data-pillar] e o tema). */
+
+/* ---------- Tailwind: o que tem valor fixo (não muda com o tema) ---------- */
+@theme {
+  /* sem a paleta padrão do Tailwind: nada de vermelho por acaso */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+}
+
+@theme static {
+  /* a Fraunces não tem grego: as letras de προκοπή caem na Literata, carregada só com esses glifos */
+  --font-display: "Fraunces", "Literata", "Iowan Old Style", Georgia, serif;
+  --font-ui: "Onest Variable", "Onest", -apple-system, system-ui, "Segoe UI", sans-serif;
+  --font-sans: var(--font-ui);
+  --font-serif: var(--font-display);
+
+  /* curvas (movimento.md). A mola de verdade fica no Motion (src/motion/tokens.ts) */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* grade de 4 pontos: p-4 = 16px, gap-3 = 12px */
+  --spacing: 4px;
+
+  /* escala de tipos do iPhone (design-system.md). A família vem dos utilitários de texto em global.css */
+  --text-micro: 11px;
+  --text-micro--line-height: 13px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-label: 13px;
+  --text-label--line-height: 16px;
+  --text-sub: 15px;
+  --text-sub--line-height: 20px;
+  --text-body: 16px;
+  --text-body--line-height: 22px;
+  --text-headline: 17px;
+  --text-headline--line-height: 22px;
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-stat: 28px;
+  --text-stat--line-height: 32px;
+  --text-display: 34px;
+  --text-display--line-height: 40px;
+  --text-hero: 44px;
+  --text-hero--line-height: 48px;
+
+  --breakpoint-app: 480px;
+}
+
+/* ---------- Tailwind: o que muda com o tema ou com o pilar ---------- */
+@theme inline {
+  --color-white: oklch(100% 0 0);
+  --color-black: oklch(0% 0 0);
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-track: var(--track);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+
+  /* cor do pilar do elemento ([data-pillar] ou .hued): bg-wash, bg-fill, border-mark, text-ink, text-on */
+  --color-wash: var(--wash);
+  --color-fill: var(--fill);
+  --color-mark: var(--mark);
+  --color-ink: var(--ink);
+  --color-on: var(--on);
+
+  --color-mente-wash: var(--mente-wash);
+  --color-mente-fill: var(--mente-fill);
+  --color-mente-mark: var(--mente-mark);
+  --color-mente-ink: var(--mente-ink);
+  --color-mente-on: var(--mente-on);
+  --color-alim-wash: var(--alim-wash);
+  --color-alim-fill: var(--alim-fill);
+  --color-alim-mark: var(--alim-mark);
+  --color-alim-ink: var(--alim-ink);
+  --color-alim-on: var(--alim-on);
+  --color-corpo-wash: var(--corpo-wash);
+  --color-corpo-fill: var(--corpo-fill);
+  --color-corpo-mark: var(--corpo-mark);
+  --color-corpo-ink: var(--corpo-ink);
+  --color-corpo-on: var(--corpo-on);
+  --color-familia-wash: var(--familia-wash);
+  --color-familia-fill: var(--familia-fill);
+  --color-familia-mark: var(--familia-mark);
+  --color-familia-ink: var(--familia-ink);
+  --color-familia-on: var(--familia-on);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-mark: var(--accent-mark);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-on: var(--accent-on);
+  --color-success-wash: var(--success-wash);
+  --color-success-fill: var(--success-fill);
+  --color-success-ink: var(--success-ink);
+  --color-warning-wash: var(--warning-wash);
+  --color-warning-fill: var(--warning-fill);
+  --color-warning-ink: var(--warning-ink);
+
+  --color-btn: var(--btn-bg);
+  --color-btn-fg: var(--btn-fg);
+  --color-dim: var(--dim);
+  --color-toast: var(--toast-bg);
+  --color-toast-fg: var(--toast-fg);
+  --color-toast-2: var(--toast-2);
+  --color-toast-act: var(--toast-act);
+
+  /* raios: 6 células, 10 e 14 botões e campos, 20 cartões, 28 painéis, pílula */
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-full: var(--r-full);
+
+  /* sombras: card = --shadow-1 (cartões), float = --shadow-2 (folhas, toast) */
+  --shadow-card: var(--shadow-1);
+  --shadow-float: var(--shadow-2);
+
+  /* durações: duration-press, duration-micro, duration-base, duration-fill, duration-ring */
+  --transition-duration-press: var(--dur-press);
+  --transition-duration-micro: var(--dur-micro);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-fill: var(--dur-fill);
+  --transition-duration-ring: var(--dur-ring);
+  --transition-duration-glow: var(--dur-glow);
+  --default-transition-duration: var(--dur-micro);
+  --default-transition-timing-function: var(--ease-out);
+}
+
+@layer base {
+  /* ---------- Tokens (claro) ---------- */
+  :root {
+    color-scheme: light;
+    --display-vs: "SOFT" 100;
+
+    /* tipos em forma de font: (família + peso + tamanho/linha) */
+    --t-display: 450 34px/40px var(--font-display);
+    --t-hero: 400 44px/48px var(--font-display);
+    --t-title: 500 22px/28px var(--font-display);
+    --t-headline: 600 17px/22px var(--font-ui);
+    --t-body: 400 16px/22px var(--font-ui);
+    --t-sub: 500 15px/20px var(--font-ui);
+    --t-stat: 600 28px/32px var(--font-ui);
+    --t-label: 600 13px/16px var(--font-ui);
+    --t-caption: 500 12px/16px var(--font-ui);
+    --t-micro: 500 11px/13px var(--font-ui);
+
+    /* espaço (grade de 4), raios, toque */
+    --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+    --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-full: 999px;
+    --hit: 44px;
+    /* coluna do app no computador, por enquanto (o layout próprio do PC vem na etapa 8) */
+    --app-max: 480px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+
+    /* neutros: pedra quente */
+    --bg: oklch(98.2% .004 75); --surface: oklch(100% 0 0); --raised: oklch(100% 0 0); --sunken: oklch(95.8% .006 75);
+    --track: oklch(93% .007 75); --border: oklch(90.5% .008 75); --border-strong: oklch(80% .01 75);
+    /* --text-3 a 53%: 4,6:1 ou mais sobre --sunken e --wash (55% dava 4,3:1) */
+    --text: oklch(25.5% .012 75); --text-2: oklch(47.5% .012 75); --text-3: oklch(53% .01 75);
+    --shadow-1: 0 1px 2px oklch(25% .02 75 / .06), 0 2px 8px oklch(25% .02 75 / .05);
+    --shadow-2: 0 8px 24px oklch(25% .02 75 / .10), 0 2px 6px oklch(25% .02 75 / .06);
+
+    /* pilares: wash (fundo) · fill (pastel) · mark (traço, 3:1) · ink (texto, 4,5:1) · on (texto sobre o fill) */
+    --mente-wash: oklch(95.5% .022 285); --mente-fill: oklch(85% .075 285); --mente-mark: oklch(64% .115 285); --mente-ink: oklch(47.5% .10 285); --mente-on: oklch(40% .09 285);
+    --alim-wash: oklch(95.5% .022 150); --alim-fill: oklch(90.5% .075 150); --alim-mark: oklch(64.5% .115 150); --alim-ink: oklch(45.5% .10 150); --alim-on: oklch(40% .09 150);
+    --corpo-wash: oklch(95.5% .022 60); --corpo-fill: oklch(81.5% .075 60); --corpo-mark: oklch(61% .115 60); --corpo-ink: oklch(46.5% .10 60); --corpo-on: oklch(40% .09 60);
+    --familia-wash: oklch(95.5% .022 355); --familia-fill: oklch(85% .075 355); --familia-mark: oklch(64% .115 355); --familia-ink: oklch(47.5% .10 355); --familia-on: oklch(40% .09 355);
+    --accent-wash: oklch(95.5% .022 230); --accent-fill: oklch(85% .075 230); --accent-mark: oklch(64% .115 230); --accent-ink: oklch(47.5% .09 230); --accent-on: oklch(40% .08 230);
+    --success-wash: oklch(95.5% .022 170); --success-fill: oklch(85% .075 170); --success-ink: oklch(47.5% .085 170);
+    --warning-wash: oklch(95.5% .022 85); --warning-fill: oklch(89% .075 85); --warning-ink: oklch(44.5% .085 85);
+    --btn-bg: var(--accent-ink); --btn-fg: oklch(100% 0 0);
+    --dim: oklch(20% .01 75 / .38);
+    /* aviso com Desfazer: escuro nos dois temas */
+    --toast-bg: oklch(27% .012 75); --toast-fg: oklch(97.5% .004 75); --toast-2: oklch(80% .01 75); --toast-act: var(--accent-fill); --toast-ring: 0 0 0 0 transparent;
+
+    /* movimento (movimento.md). As curvas --ease-* ficam no @theme acima; as molas, em src/motion/tokens.ts */
+    --dur-press: 100ms; --dur-micro: 150ms; --dur-base: 240ms; --dur-fill: 400ms; --dur-ring: 600ms; --dur-glow: 900ms; --dur-confetti: 1600ms;
+    --dur-1: var(--dur-micro); --dur-2: var(--dur-base); --dur-3: var(--dur-fill); --dur-4: var(--dur-ring);
+    --ease: var(--ease-out);
+    --rise: 8px; --press-scale: .97; --check-scale: .9; --cascade: 30ms;
+  }
+
+  /* ---------- Tokens (escuro): pelo sistema, a menos que o app peça claro ---------- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: oklch(17% .006 75); --surface: oklch(21.2% .007 75); --raised: oklch(25.5% .008 75); --sunken: oklch(14.5% .005 75);
+      --track: oklch(29% .008 75); --border: oklch(30% .008 75); --border-strong: oklch(40% .01 75);
+      --text: oklch(93.5% .008 75); --text-2: oklch(76% .01 75); --text-3: oklch(66% .01 75);
+      --shadow-1: inset 0 1px 0 oklch(100% 0 0 / .05);
+      --shadow-2: 0 8px 24px oklch(0% 0 0 / .5), inset 0 1px 0 oklch(100% 0 0 / .06);
+      --mente-wash: oklch(27% .03 285); --mente-fill: oklch(78% .08 285); --mente-mark: var(--mente-fill); --mente-ink: oklch(85% .065 285); --mente-on: var(--bg);
+      --alim-wash: oklch(27% .03 150); --alim-fill: oklch(82% .08 150); --alim-mark: var(--alim-fill); --alim-ink: oklch(85% .065 150); --alim-on: var(--bg);
+      --corpo-wash: oklch(27% .03 60); --corpo-fill: oklch(73% .08 60); --corpo-mark: var(--corpo-fill); --corpo-ink: oklch(85% .065 60); --corpo-on: var(--bg);
+      --familia-wash: oklch(27% .03 355); --familia-fill: oklch(78% .08 355); --familia-mark: var(--familia-fill); --familia-ink: oklch(85% .065 355); --familia-on: var(--bg);
+      --accent-wash: oklch(27% .03 230); --accent-fill: oklch(78% .08 230); --accent-mark: var(--accent-fill); --accent-ink: oklch(85% .065 230); --accent-on: var(--bg);
+      --success-wash: oklch(27% .03 170); --success-fill: oklch(78% .08 170); --success-ink: oklch(85% .065 170);
+      --warning-wash: oklch(27% .03 85); --warning-fill: oklch(78% .08 85); --warning-ink: oklch(85% .065 85);
+      --btn-bg: var(--accent-fill); --btn-fg: var(--bg);
+      --dim: oklch(5% 0 0 / .55);
+      --toast-bg: oklch(31% .01 75); --toast-fg: var(--text); --toast-2: var(--text-2); --toast-act: var(--accent-ink); --toast-ring: inset 0 0 0 1px var(--border-strong);
+    }
+  }
+
+  /* ---------- Tokens (escuro): escolhido em Ajustes › Aparência ---------- */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: oklch(17% .006 75); --surface: oklch(21.2% .007 75); --raised: oklch(25.5% .008 75); --sunken: oklch(14.5% .005 75);
+    --track: oklch(29% .008 75); --border: oklch(30% .008 75); --border-strong: oklch(40% .01 75);
+    --text: oklch(93.5% .008 75); --text-2: oklch(76% .01 75); --text-3: oklch(66% .01 75);
+    --shadow-1: inset 0 1px 0 oklch(100% 0 0 / .05);
+    --shadow-2: 0 8px 24px oklch(0% 0 0 / .5), inset 0 1px 0 oklch(100% 0 0 / .06);
+    --mente-wash: oklch(27% .03 285); --mente-fill: oklch(78% .08 285); --mente-mark: var(--mente-fill); --mente-ink: oklch(85% .065 285); --mente-on: var(--bg);
+    --alim-wash: oklch(27% .03 150); --alim-fill: oklch(82% .08 150); --alim-mark: var(--alim-fill); --alim-ink: oklch(85% .065 150); --alim-on: var(--bg);
+    --corpo-wash: oklch(27% .03 60); --corpo-fill: oklch(73% .08 60); --corpo-mark: var(--corpo-fill); --corpo-ink: oklch(85% .065 60); --corpo-on: var(--bg);
+    --familia-wash: oklch(27% .03 355); --familia-fill: oklch(78% .08 355); --familia-mark: var(--familia-fill); --familia-ink: oklch(85% .065 355); --familia-on: var(--bg);
+    --accent-wash: oklch(27% .03 230); --accent-fill: oklch(78% .08 230); --accent-mark: var(--accent-fill); --accent-ink: oklch(85% .065 230); --accent-on: var(--bg);
+    --success-wash: oklch(27% .03 170); --success-fill: oklch(78% .08 170); --success-ink: oklch(85% .065 170);
+    --warning-wash: oklch(27% .03 85); --warning-fill: oklch(78% .08 85); --warning-ink: oklch(85% .065 85);
+    --btn-bg: var(--accent-fill); --btn-fg: var(--bg);
+    --dim: oklch(5% 0 0 / .55);
+    --toast-bg: oklch(31% .01 75); --toast-fg: var(--text); --toast-2: var(--text-2); --toast-act: var(--accent-ink); --toast-ring: inset 0 0 0 1px var(--border-strong);
+  }
+
+  /* ---------- Movimento reduzido ----------
+     Quando o iPhone pede ou quando "Animações" está desligado em Ajustes › Aparência (data-motion="off" no html).
+     Deslocamento e escala viram troca de opacidade de 150 ms; barras, anéis e números vão direto ao valor;
+     brilho e confete ficam parados; a mola perde o quique. */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --dur-base: 150ms; --dur-fill: 0ms; --dur-ring: 0ms; --dur-glow: 0ms; --dur-confetti: 0ms;
+      --ease-spring: var(--ease-out); --rise: 0px; --press-scale: 1; --check-scale: 1; --cascade: 0ms;
+    }
+  }
+  :root[data-motion="off"] {
+    --dur-base: 150ms; --dur-fill: 0ms; --dur-ring: 0ms; --dur-glow: 0ms; --dur-confetti: 0ms;
+    --ease-spring: var(--ease-out); --rise: 0px; --press-scale: 1; --check-scale: 1; --cascade: 0ms;
+  }
+
+  /* ---------- Cor por pilar ----------
+     data-pillar="mente|alim|corpo|familia|accent" define --wash --fill --mark --ink --on para o elemento e os filhos */
+  [data-pillar="mente"] { --wash: var(--mente-wash); --fill: var(--mente-fill); --mark: var(--mente-mark); --ink: var(--mente-ink); --on: var(--mente-on); }
+  [data-pillar="alim"] { --wash: var(--alim-wash); --fill: var(--alim-fill); --mark: var(--alim-mark); --ink: var(--alim-ink); --on: var(--alim-on); }
+  [data-pillar="corpo"] { --wash: var(--corpo-wash); --fill: var(--corpo-fill); --mark: var(--corpo-mark); --ink: var(--corpo-ink); --on: var(--corpo-on); }
+  [data-pillar="familia"] { --wash: var(--familia-wash); --fill: var(--familia-fill); --mark: var(--familia-mark); --ink: var(--familia-ink); --on: var(--familia-on); }
+  [data-pillar="accent"] { --wash: var(--accent-wash); --fill: var(--accent-fill); --mark: var(--accent-mark); --ink: var(--accent-ink); --on: var(--accent-on); }
+
+  /* ---------- Paleta de 12 cores dos pilares ----------
+     class="hued" com --h (matiz) e, nas cores com ajuste fino, --fl --ml --il --dfl.
+     No React: <div className="hued" style={hueStyle('mel')}> (src/styles/palette.ts) ou data-hue="mel". */
+  .hued {
+    --wash: oklch(95.5% .022 var(--h)); --fill: oklch(var(--fl, 85%) .075 var(--h)); --mark: oklch(var(--ml, 64%) .115 var(--h));
+    --ink: oklch(var(--il, 47.5%) .10 var(--h)); --on: oklch(40% .09 var(--h));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .hued { --wash: oklch(27% .03 var(--h)); --fill: oklch(var(--dfl, 78%) .08 var(--h)); --mark: var(--fill); --ink: oklch(85% .065 var(--h)); --on: var(--bg); }
+  }
+  :root[data-theme="dark"] .hued { --wash: oklch(27% .03 var(--h)); --fill: oklch(var(--dfl, 78%) .08 var(--h)); --mark: var(--fill); --ink: oklch(85% .065 var(--h)); --on: var(--bg); }
+
+  [data-hue="coral"] { --h: 25; }
+  [data-hue="damasco"] { --h: 60; --fl: 81.5%; --ml: 61%; --il: 46.5%; --dfl: 73%; }
+  [data-hue="mel"] { --h: 90; }
+  [data-hue="oliva"] { --h: 120; }
+  [data-hue="salvia"] { --h: 150; --fl: 90.5%; --ml: 64.5%; --il: 45.5%; --dfl: 82%; }
+  [data-hue="menta"] { --h: 175; }
+  [data-hue="agua"] { --h: 205; }
+  [data-hue="ceu"] { --h: 235; }
+  [data-hue="indigo"] { --h: 262; }
+  [data-hue="lavanda"] { --h: 285; }
+  [data-hue="ameixa"] { --h: 320; }
+  [data-hue="rosa"] { --h: 355; }
+}

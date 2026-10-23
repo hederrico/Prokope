@@ -1,0 +1,11 @@
+dist
+dev-dist
+docs
+public
+coverage
+test-results
+playwright-report
+package-lock.json
+src/icons/registry.ts
+src/styles/tokens.css
+*.md

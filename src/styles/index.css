@@ -1,0 +1,5 @@
+/* Entrada de estilos do app: Tailwind 4, fontes, tokens (com o @theme) e a base. */
+@import 'tailwindcss';
+@import './fonts.css';
+@import './tokens.css';
+@import './global.css';
