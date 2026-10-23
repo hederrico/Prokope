@@ -9,6 +9,10 @@
     flex-direction: column;
     gap: 12px;
   }
+  /* um grupo de cartões que é alvo do tutorial: o anel acompanha o canto dos cartões */
+  .pg-stack[data-tour] {
+    border-radius: var(--r-lg);
+  }
   .pg-two {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

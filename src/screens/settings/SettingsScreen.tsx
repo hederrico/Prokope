@@ -53,7 +53,8 @@ export default function SettingsScreen() {
   return (
     <div className="st-screen st-tab">
       <ScreenHeader title="Ajustes" />
-      <div className="st-pad">
+      {/* os data-tour são os alvos do capítulo "Os ajustes" (tutorial.md) */}
+      <div className="st-pad" data-tour="ajustes-conta">
         <ProfileCard
           name={session.user?.name || profile?.name || 'Você'}
           detail={demo ? 'Demonstração · seus dados' : 'Conta Google · seus dados'}
@@ -63,7 +64,7 @@ export default function SettingsScreen() {
       </div>
 
       <SectionLabel>Meu plano</SectionLabel>
-      <div className="st-pad">
+      <div className="st-pad" data-tour="ajustes-plano">
         <ListGroup>
           <ListItem
             icon="list-checks"
@@ -77,17 +78,19 @@ export default function SettingsScreen() {
             value={String(pillars.length)}
             onClick={() => void navigate('/ajustes/pilares')}
           />
-          <ListItem
-            icon="pause-circle"
-            title="Pausar"
-            subtitle={pauseLine}
-            onClick={() => void navigate('/ajustes/pausar')}
-          />
+          <div data-tour="ajustes-pausar">
+            <ListItem
+              icon="pause-circle"
+              title="Pausar"
+              subtitle={pauseLine}
+              onClick={() => void navigate('/ajustes/pausar')}
+            />
+          </div>
         </ListGroup>
       </div>
 
       <SectionLabel>Rotina</SectionLabel>
-      <div className="st-pad">
+      <div className="st-pad" data-tour="ajustes-rotina">
         <ListGroup>
           <ListItem
             icon="clock"
@@ -107,18 +110,22 @@ export default function SettingsScreen() {
       <SectionLabel>App</SectionLabel>
       <div className="st-pad">
         <ListGroup>
-          <ListItem
-            icon="circle-half"
-            title="Aparência"
-            value={THEME_LABEL[prefs.theme] ?? 'Sistema'}
-            onClick={() => void navigate('/ajustes/aparencia')}
-          />
-          <ListItem
-            icon="heart"
-            title="A dois"
-            value={togetherValue}
-            onClick={() => void navigate('/ajustes/a-dois')}
-          />
+          <div data-tour="ajustes-aparencia">
+            <ListItem
+              icon="circle-half"
+              title="Aparência"
+              value={THEME_LABEL[prefs.theme] ?? 'Sistema'}
+              onClick={() => void navigate('/ajustes/aparencia')}
+            />
+          </div>
+          <div data-tour="ajustes-a-dois">
+            <ListItem
+              icon="heart"
+              title="A dois"
+              value={togetherValue}
+              onClick={() => void navigate('/ajustes/a-dois')}
+            />
+          </div>
           {/* o fim do grupo App: é sobre o app em si, e é o que menos se abre (o alvo do capítulo "Os ajustes") */}
           <div data-tour="ajustes-tutorial">
             <ListItem

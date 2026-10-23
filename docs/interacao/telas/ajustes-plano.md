@@ -18,6 +18,7 @@ Como se comportam as telas onde a pessoa monta o próprio plano: a lista de Ajus
 **Como sai:** pelas abas, ou empurrando um item.
 **Acessibilidade:** perfil: "Henrique, conta Google, seus dados. Botão." Linha com valor: "Hábitos, 16. Botão." Os rótulos de grupo são `h2`. Com letra grande, o valor da direita desce para baixo do título.
 **Implementação:** `ScreenHeader`, `ProfileCard`, `SectionLabel`, `ListGroup` e `ListItem` com bolha neutra. "16" conta hábitos ativos não arquivados, e a caminhada conta uma vez só.
+**Alvos do tutorial** (capítulo "Os ajustes", [tutorial.md](tutorial.md)): `ajustes-conta` (em volta do perfil), `ajustes-plano` e `ajustes-rotina` (em volta dos grupos), `ajustes-pausar`, `ajustes-aparencia`, `ajustes-a-dois` e `ajustes-tutorial` (em volta das linhas).
 
 ## Pilares  (rota: `/ajustes/pilares`)
 
@@ -126,7 +127,7 @@ Como se comportam as telas onde a pessoa monta o próprio plano: a lista de Ajus
 **Estados desta tela:** hábito pausado ganha o selo "Pausado até 5 nov" ([estados.md](../estados.md)); aba vazia diz "Nenhum hábito arquivado."; hábito recém-criado entra no grupo com `fadeUp` quando a lista volta à frente. Numa conta sem fases, o controle fica com Ativos e Arquivados, e as linhas perdem o "· fase N". O Treino guiado diz os dias e o horário: "Treino guiado · seg e qua, 7h10 · fase 3". Arquivar um treino guiado (na tela do hábito, como qualquer hábito) tira o cartão da Jornada e a linha do Hoje; os treinos feitos ficam.
 
 **Acessibilidade:** "Acordar. Horário, meta 6h50, fase 1. Botão." O selo é lido junto: "principal em Família". O rótulo de grupo diz "Mente, 5 hábitos". Com letra grande, a linha de baixo quebra, e o selo vai para uma linha própria.
-**Implementação:** o seletor agrupa pela ordem dos pilares. A caminhada aparece no grupo do principal e no do `alsoIn`, com a chave `${pillarId}-${habitId}` e sempre na cor do principal.
+**Implementação:** o seletor agrupa pela ordem dos pilares. A caminhada aparece no grupo do principal e no do `alsoIn`, com a chave `${pillarId}-${habitId}` e sempre na cor do principal. O + leva `data-tour="ajustes-novo-habito"` (pela `action.tour` da `NavBar`), o alvo do capítulo "Os ajustes".
 
 ## Novo hábito · tipo  (rota: `/ajustes/habitos/novo/tipo`)
 

@@ -15,7 +15,8 @@ export interface NavBarProps {
   /** sem voltar (raiz de um fluxo) */
   noBack?: boolean;
   title?: string;
-  action?: { label: string; icon?: IconName; onClick: () => void; disabled?: boolean };
+  /** a ação à direita; `tour` é o alvo do tutorial (data-tour), como o ⋯ do hábito */
+  action?: { label: string; icon?: IconName; onClick: () => void; disabled?: boolean; tour?: string };
   className?: string;
 }
 
@@ -57,6 +58,7 @@ export function NavBar({ back, onBack, cancel, noBack, title, action, className 
           className="sh-nb-act hit"
           aria-label={action.icon ? action.label : undefined}
           aria-disabled={action.disabled || undefined}
+          data-tour={action.tour}
           onClick={() => {
             if (!action.disabled) action.onClick();
           }}

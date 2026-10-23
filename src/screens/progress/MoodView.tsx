@@ -76,7 +76,7 @@ export function MoodView({ p, today, selected, onOpenDay }: MoodViewProps) {
     <m.div {...cascade}>
       <div className="pg-pad pg-stack">
         <m.div variants={fadeUpItem}>
-          <Card padded className="mc-mood">
+          <Card padded className="mc-mood" data-tour="progresso-humor">
             <CardHeader title="Humor de cada dia" subtitle={count} />
             <MonthCalendar
               variant="mood"

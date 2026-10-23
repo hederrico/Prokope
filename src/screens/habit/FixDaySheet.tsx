@@ -137,7 +137,12 @@ export default function FixDaySheet({ params, close }: SheetScreenProps) {
             </span>
           </span>
         </div>
-        <div className="pk-lg hb-opts" role="radiogroup" aria-label={`Como foi ${article(short)} ${short}`}>
+        <div
+          className="pk-lg hb-opts"
+          role="radiogroup"
+          aria-label={`Como foi ${article(short)} ${short}`}
+          data-tour="habito-corrigir"
+        >
           {options.map((o) => {
             const on = selected === o.key;
             return (

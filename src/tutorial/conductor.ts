@@ -116,6 +116,9 @@ export interface TourState {
 export function createConductor(deps: ConductorDeps) {
   let token = 0;
   let active: Active | null = null;
+  // a saída do roteiro que terminou, até os dados da pessoa voltarem: um roteiro novo espera ela, para a saída de
+  // antes não levar junto o exemplo do novo
+  let closing: Promise<void> = Promise.resolve();
   let path = '/';
   const pathListeners = new Set<() => void>();
   const nextListeners = new Set<() => void>();
@@ -496,8 +499,11 @@ export function createConductor(deps: ConductorDeps) {
     }
   }
 
-  /** Limpa o que o roteiro ligou. `keepZeno`: o próximo roteiro continua com o Zeno em cena. */
-  async function cleanup(a: Active, reason: 'done' | 'stop', keepZeno: boolean) {
+  /**
+   * Limpa o que o roteiro ligou. `keepZeno`: o próximo roteiro continua com o Zeno em cena. `dataBack` avisa quando
+   * os dados da pessoa voltaram (antes de o Zeno ir embora, que pode demorar).
+   */
+  async function cleanup(a: Active, reason: 'done' | 'stop', keepZeno: boolean, dataBack?: () => void) {
     try {
       await a.script.leave?.(a.ctx, reason);
     } catch (err) {
@@ -513,6 +519,7 @@ export function createConductor(deps: ConductorDeps) {
       }
       await ex.leave().catch(() => undefined);
     }
+    dataBack?.();
     const z = deps.zeno();
     if (!keepZeno && z.available && z.present) await z.leave().catch(() => undefined);
   }
@@ -554,8 +561,15 @@ export function createConductor(deps: ConductorDeps) {
       useTourView.setState(IDLE);
       useTour.setState({ run: null, step: 0, practice: false });
     }
-    if (reason === 'done' && isChapter(run) && a.shown > 0) await deps.markDone(run).catch(() => undefined);
-    await cleanup(a, reason, chain);
+    // um roteiro novo espera só os dados da pessoa voltarem (o exemplo sair), e não o Zeno ir embora
+    let dataBack: () => void = () => undefined;
+    closing = new Promise<void>((resolve) => (dataBack = resolve));
+    try {
+      if (reason === 'done' && isChapter(run) && a.shown > 0) await deps.markDone(run).catch(() => undefined);
+      await cleanup(a, reason, chain, dataBack);
+    } finally {
+      dataBack();
+    }
     if (chain && next) start(next, { keepZeno: true });
   }
 
@@ -574,8 +588,12 @@ export function createConductor(deps: ConductorDeps) {
     useTourView.setState(IDLE);
     useTour.setState({ run, step: 0, practice: false });
     const keepZeno = opts.keepZeno || (!!prev && deps.zeno().present);
+    const before = closing;
     void (async () => {
-      // o roteiro de antes sai primeiro (do exemplo, na raiz da aba), e o novo começa depois
+      // o roteiro de antes sai primeiro (do exemplo, na raiz da aba), e o novo começa depois; com um que acabou de
+      // terminar e ainda está saindo (o último passo de "Os ajustes" abre a lista dos capítulos), o novo espera os
+      // dados da pessoa voltarem
+      await before;
       if (prev) await cleanup(prev, 'stop', true);
       if (live(t)) await runScript(a, { keepZeno });
     })();

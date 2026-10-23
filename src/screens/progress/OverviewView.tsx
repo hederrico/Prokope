@@ -140,7 +140,7 @@ export function OverviewView({ p, today, onTheme, onPhase, onMonth }: OverviewVi
   return (
     <m.div {...cascade}>
       <m.div className="pg-pad" variants={fadeUpItem}>
-        <Card padded>
+        <Card padded data-tour="progresso-semana">
           <CardHeader title={title} subtitle={context || undefined} />
           <div className="pg-wkr" ref={ringObserve}>
             <Ring
@@ -189,7 +189,7 @@ export function OverviewView({ p, today, onTheme, onPhase, onMonth }: OverviewVi
             Pilares
           </SectionLabel>
           <div className="pg-pad">
-            <Card>
+            <Card data-tour="progresso-pilares">
               <ul className="pg-pils" ref={barsObserve}>
                 {p.pillars.map((row, i) => {
                   const focus = focusOf(row.pillar.name);
@@ -223,36 +223,39 @@ export function OverviewView({ p, today, onTheme, onPhase, onMonth }: OverviewVi
       {(cards.length > 0 || waiting) && (
         <m.section variants={fadeUpItem} aria-labelledby="pg-dados">
           <SectionLabel id="pg-dados">O que os seus dados mostram</SectionLabel>
-          <div className="pg-pad pg-stack">
-            {cards.map((c) => {
-              const h = c.habitId ? data.habitById.get(c.habitId) : null;
-              return (
-                <InsightItem
-                  key={c.key}
-                  text={c.text}
-                  basis={c.basis}
-                  icon={c.icon ?? 'sparkle'}
-                  pillar={h ? pillarColor(data.pillarById.get(h.pillarId)) : undefined}
-                />
-              );
-            })}
-            {waiting && waitHabit && (
-              <>
-                <PatternWaitCard
-                  habitName={waitHabit.name}
-                  short={shortOf(waitHabit)}
-                  words={habitPatternWords(waitHabit, data, today)}
-                  icon={waitHabit.icon}
-                  pillar={pillarColor(data.pillarById.get(waitHabit.pillarId))}
-                  metric={waiting.metric}
-                  withDays={waiting.withDays}
-                  withoutDays={waiting.withoutDays}
-                  needed={waiting.needed}
-                  onOpen={() => navigate(`/progresso/habito/${encodeURIComponent(waitHabit.id)}`)}
-                />
-                <MorePatterns count={others} />
-              </>
-            )}
+          {/* o alvo do tutorial são as comparações, sem a margem da tela */}
+          <div className="pg-pad">
+            <div className="pg-stack" data-tour="progresso-dados">
+              {cards.map((c) => {
+                const h = c.habitId ? data.habitById.get(c.habitId) : null;
+                return (
+                  <InsightItem
+                    key={c.key}
+                    text={c.text}
+                    basis={c.basis}
+                    icon={c.icon ?? 'sparkle'}
+                    pillar={h ? pillarColor(data.pillarById.get(h.pillarId)) : undefined}
+                  />
+                );
+              })}
+              {waiting && waitHabit && (
+                <>
+                  <PatternWaitCard
+                    habitName={waitHabit.name}
+                    short={shortOf(waitHabit)}
+                    words={habitPatternWords(waitHabit, data, today)}
+                    icon={waitHabit.icon}
+                    pillar={pillarColor(data.pillarById.get(waitHabit.pillarId))}
+                    metric={waiting.metric}
+                    withDays={waiting.withDays}
+                    withoutDays={waiting.withoutDays}
+                    needed={waiting.needed}
+                    onOpen={() => navigate(`/progresso/habito/${encodeURIComponent(waitHabit.id)}`)}
+                  />
+                  <MorePatterns count={others} />
+                </>
+              )}
+            </div>
           </div>
         </m.section>
       )}
