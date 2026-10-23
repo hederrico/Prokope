@@ -3,11 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { clockOf } from '@/domain/day';
 import { newProfile } from '@/domain/planTemplate';
-import { connectSource, disconnectSource, useDataStore, whenReady } from '@/stores/data';
+import { baseState, connectSource, disconnectSource, useDataStore, whenReady } from '@/stores/data';
 import { installAgoraParam, nowMs, startClock } from '@/stores/clock';
 import { startTogether } from '@/stores/together';
 import { setPreferences } from '@/app/preferences';
 import { startDraftWatcher } from '@/actions/drafts';
+import { leaveExample } from './example';
 import { isFirebaseConfigured } from './firebaseConfig';
 import { LocalSource } from './localSource';
 import { PROFILE_ID, type DataSource } from './source';
@@ -101,10 +102,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const profile = useDataStore((s) => s.profile);
   const profileLoaded = useDataStore((s) => s.profileLoaded);
   const dataError = useDataStore((s) => s.error);
+  // modo exemplo (data/example.ts): o store mostra a história de exemplo; a sessão continua sendo a da pessoa
+  const example = useDataStore((s) => s.example);
   const firebaseUnsub = useRef<(() => void) | null>(null);
   const firebaseSource = useRef<{ clearCache(): Promise<void> } | null>(null);
 
   const openDemo = useCallback(async (how: DemoOpen) => {
+    await leaveExample();
     const previous = useDataStore.getState().source;
     if (previous) {
       disconnectSource();
@@ -190,15 +194,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Demonstração sem perfil (depois de "Apagar todos os dados"): grava um perfil novo, sem plano, como no primeiro
   // login. Assim o primeiro acesso continua depois de recarregar, em vez de a história voltar sozinha.
+  // (no modo exemplo, o perfil na tela é o da cópia: nada aqui vale para ele)
   useEffect(() => {
-    if (mode !== 'demo' || !profileLoaded || profile) return;
+    if (mode !== 'demo' || example || !profileLoaded || profile) return;
     const source = useDataStore.getState().source;
     if (source?.kind === 'demo') blankDemoProfile(source).catch(() => undefined);
-  }, [mode, profile, profileLoaded]);
+  }, [mode, example, profile, profileLoaded]);
 
   // Firebase, primeiro login: grava o perfil (nome, fuso e virada às 4h); o plano vem no primeiro acesso
   useEffect(() => {
-    if (mode !== 'firebase' || isPermissionDenied(dataError) || !profileLoaded) return;
+    if (mode !== 'firebase' || example || isPermissionDenied(dataError) || !profileLoaded) return;
     const source = useDataStore.getState().source;
     if (!profile && source) {
       // primeiro login: nome, fuso e virada às 4h; o plano vem no primeiro acesso
@@ -220,7 +225,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ])
         .catch(() => undefined);
     }
-  }, [mode, profile, profileLoaded, dataError, authUser]);
+  }, [mode, example, profile, profileLoaded, dataError, authUser]);
 
   const enterDemo = useCallback(
     async (opts: { empty?: boolean } = {}) => {
@@ -246,6 +251,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // no modo exemplo, sai dele antes (a fonte a fechar é a da pessoa)
+    await leaveExample();
     const source = useDataStore.getState().source;
     disconnectSource();
     await source?.close();
@@ -261,11 +268,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setStatus('signedOut');
   }, [mode]);
 
-  // a aparência do perfil (deste ou de outro aparelho) vai para a cópia local da casca
+  // a aparência do perfil (deste ou de outro aparelho) vai para a cópia local da casca; no modo exemplo, ficam as da
+  // pessoa (a volta aplica as dela de novo)
   const prefs = profile?.prefs;
   useEffect(() => {
-    if (prefs) setPreferences({ theme: prefs.theme, animations: prefs.motion, sound: prefs.sound });
-  }, [prefs]);
+    if (prefs && !example) setPreferences({ theme: prefs.theme, animations: prefs.motion, sound: prefs.sound });
+  }, [prefs, example]);
 
   const value = useMemo<Session>(() => {
     // no Firebase, a sessão fica pronta quando o perfil chega (ou a conta não tem acesso)
@@ -275,12 +283,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       else if (status === 'loading' && profileLoaded) effective = 'ready';
     }
     const ready = effective === 'ready';
-    const name = profile?.name || authUser?.name || (mode === 'demo' ? 'Henrique' : '');
+    // no modo exemplo, a conta, o nome e o primeiro acesso seguem o perfil da pessoa (estacionado por baixo)
+    const own = example ? baseState().profile : profile;
+    const name = own?.name || authUser?.name || (mode === 'demo' ? 'Henrique' : '');
     return {
       status: effective,
       mode,
-      user: mode ? { name, email: profile?.email ?? authUser?.email } : null,
-      needsOnboarding: ready && profileLoaded && (!profile || !profile.planSetupAt),
+      user: mode ? { name, email: own?.email ?? authUser?.email } : null,
+      needsOnboarding: ready && profileLoaded && (!own || !own.planSetupAt),
       firebaseAvailable: isFirebaseConfigured,
       error,
       enterDemo,
@@ -288,7 +298,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       signOut,
       resetDemo,
     };
-  }, [status, mode, profile, profileLoaded, dataError, authUser, error, enterDemo, signIn, signOut, resetDemo]);
+  }, [
+    status,
+    mode,
+    example,
+    profile,
+    profileLoaded,
+    dataError,
+    authUser,
+    error,
+    enterDemo,
+    signIn,
+    signOut,
+    resetDemo,
+  ]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

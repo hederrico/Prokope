@@ -27,6 +27,7 @@ import { trainingPlanPath } from '@/screens/run/paths';
 import { PhasePath } from './PhasePath';
 import { countsInTheDay } from './shared';
 import './journey.css';
+import { isExampleActive } from '@/data/example';
 
 export default function JourneyScreen() {
   const j = useJourney();
@@ -216,9 +217,10 @@ function TrainingCard({ t, pillar, onOpen }: { t: TrainingSummary; pillar?: Pill
   );
 }
 
-// a última fase atual vista nesta tela (só uma lembrança da interface, neste aparelho)
+// a última fase atual vista nesta tela (só uma lembrança da interface, neste aparelho); o modo exemplo não lê nem grava
 const SEEN_KEY = 'pk-jornada-fase-vista';
 function readSeenPhase(): number | null {
+  if (isExampleActive()) return null;
   try {
     const v = localStorage.getItem(SEEN_KEY);
     return v ? Number(v) : null;
@@ -227,6 +229,7 @@ function readSeenPhase(): number | null {
   }
 }
 function writeSeenPhase(n: number) {
+  if (isExampleActive()) return;
   try {
     localStorage.setItem(SEEN_KEY, String(n));
   } catch {

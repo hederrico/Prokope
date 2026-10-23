@@ -92,16 +92,25 @@ export class LocalSource implements DataSource {
   private constructor(
     uid: string,
     private db: IDBDatabase | null,
+    shared = true,
   ) {
     this.uid = uid;
     this.together = new LocalTogether(this);
-    if (typeof BroadcastChannel !== 'undefined') {
+    if (shared && typeof BroadcastChannel !== 'undefined') {
       this.channel = new BroadcastChannel(DB_PREFIX + uid);
       this.channel.onmessage = (ev: MessageEvent<{ ops: LocalOp[] }>) => {
         if (this.closed || !ev.data?.ops) return;
         this.applyInMemory(ev.data.ops, { hasPendingWrites: false, fromCache: true });
       };
     }
+  }
+
+  /**
+   * Uma fonte só na memória (o modo exemplo): não abre o IndexedDB nem conversa com outras abas, e some ao fechar
+   * ou ao recarregar o app.
+   */
+  static memory(uid: string): LocalSource {
+    return new LocalSource(uid, null, false);
   }
 
   /** Abre (ou cria) a base do aparelho e carrega tudo na memória. */

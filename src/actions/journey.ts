@@ -208,7 +208,9 @@ export async function finishReview(weekOrDay: DayKey, opts: { decision?: ReviewD
 
 const RUN_KEY = 'pk-run-active';
 
+// no modo exemplo, um treino começado na cópia não toca a cópia local do treino da pessoa
 function saveRunCopy(run: Run | null) {
+  if (useDataStore.getState().example) return;
   try {
     if (run && (run.status === 'running' || run.status === 'paused'))
       localStorage.setItem(RUN_KEY, JSON.stringify(run));
@@ -220,6 +222,7 @@ function saveRunCopy(run: Run | null) {
 
 /** A cópia local do treino em andamento (para retomar antes de os dados chegarem). */
 export function readRunCopy(): Run | null {
+  if (useDataStore.getState().example) return null;
   try {
     const raw = localStorage.getItem(RUN_KEY);
     return raw ? (JSON.parse(raw) as Run) : null;

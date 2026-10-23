@@ -398,6 +398,39 @@
     flex: none;
     padding: 0 16px;
   }
+
+  /* ---------- faixa do modo exemplo (telas/tutorial.md › Modo exemplo) ----------
+     Fica logo abaixo da área segura e empurra o conteúdo: a área segura de cima soma a altura da faixa, e as barras
+     do topo (nb, hd, o Hoje, as folhas altas) já descem por --safe-top. Acima das folhas (40), abaixo do tutorial (60+). */
+  .sh-app {
+    --sh-example-h: 28px;
+  }
+  .sh-app[data-example] {
+    --safe-top: calc(env(safe-area-inset-top, 0px) + var(--sh-example-h));
+  }
+  .sh-example-slot {
+    position: absolute;
+    top: env(safe-area-inset-top, 0px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    pointer-events: none;
+  }
+  .sh-example {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--sh-example-h);
+    padding: 0 var(--s-4);
+    background: var(--accent-wash);
+    border-bottom: 1px solid var(--border);
+    color: var(--accent-ink);
+    font: var(--t-label);
+    white-space: nowrap;
+    pointer-events: auto;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 /* ---------- toasts (Sonner, com o conteúdo do quadro) ----------

@@ -233,15 +233,18 @@ export function useWeek(day?: DayKey): WeekView {
 
 /**
  * Congela uma leitura até um evento de aparição (a "arrumação adiada" do Hoje):
- * recalcula quando `refreshKey` muda (ex.: a folha fechou) e quando o app volta para a frente.
+ * recalcula quando `refreshKey` muda (ex.: a folha fechou) e quando o app volta para a frente. Trocar a fonte (entrar
+ * ou sair do modo exemplo) também recalcula: os dados são outros, com outros ids.
  */
 export function useFrozen<T>(value: T, refreshKey: unknown): T {
-  const [state, setState] = useState({ value, key: refreshKey });
+  const source = useDataStore((s) => s.source);
+  const [state, setState] = useState({ value, key: refreshKey, source });
   const latest = useRef(value);
   useEffect(() => {
     latest.current = value;
   });
-  if (state.key !== refreshKey) setState({ value, key: refreshKey });
+  const stale = state.key !== refreshKey || state.source !== source;
+  if (stale) setState({ value, key: refreshKey, source });
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') setState((s) => ({ ...s, value: latest.current }));
@@ -253,7 +256,7 @@ export function useFrozen<T>(value: T, refreshKey: unknown): T {
       window.removeEventListener('focus', onVisible);
     };
   }, []);
-  return state.key !== refreshKey ? value : state.value;
+  return stale ? value : state.value;
 }
 
 /** O cartão ou a folha de um contador (proteína, água): total, meta, linhas e botões. */

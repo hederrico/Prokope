@@ -5,6 +5,8 @@ import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, type FeatureBu
 import { useLocation, useNavigate, useNavigationType, useOutlet } from 'react-router';
 import { useSession } from '@/data/session';
 import { usePillars, useProfile } from '@/data/hooks';
+import { useExample } from '@/data/example';
+import { ExampleBanner } from '@/components/shell/ExampleBanner';
 import { SheetHost } from '@/components/shell/SheetHost';
 import { AppToaster } from '@/components/shell/toast';
 import { ScreenLayer, TransitionContext, type TransitionInfo } from '@/components/shell/ScreenLayer';
@@ -39,6 +41,8 @@ function SplashMemory() {
 export function RootLayout() {
   useApplyPreferences();
   const session = useSession();
+  // modo exemplo: a faixa no topo, e a abertura não guarda os pilares da história
+  const example = useExample().active;
   // o app fechou no meio de "Apagar todos os dados": a guarda leva de volta para a tela de apagar, que retoma
   const deleting = useProfile()?.deleting === true;
   const location = useLocation();
@@ -109,7 +113,7 @@ export function RootLayout() {
   return (
     <LazyMotion features={features}>
       <MotionConfig reducedMotion={animationsOff ? 'always' : 'user'}>
-        <div className="sh-app" data-tabs={tabs || undefined}>
+        <div className="sh-app" data-tabs={tabs || undefined} data-example={example || undefined}>
           <div className="sh-main" inert={sheetOpen || undefined}>
             {waiting ? (
               <Splash />
@@ -132,7 +136,8 @@ export function RootLayout() {
           <ZenoHost />
           <AppToaster />
           <WriteErrorToast />
-          {session.status === 'ready' && <SplashMemory />}
+          <ExampleBanner active={example} />
+          {session.status === 'ready' && !example && <SplashMemory />}
         </div>
       </MotionConfig>
     </LazyMotion>

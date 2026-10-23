@@ -4,7 +4,9 @@ import { PROFILE_ID } from '@/data/source';
 import { buildPlan, newProfile, type PlanDraft } from '@/domain/planTemplate';
 import { formatNumber } from '@/domain/format';
 import { logicalDay } from '@/domain/day';
-import { getSource, useDataStore } from '@/stores/data';
+import { buildDomainData } from '@/domain/context';
+import { baseState, getSource, useDataStore } from '@/stores/data';
+import { leaveExample } from '@/data/example';
 import { commit, now, setOp, snapshot, type Undo } from './core';
 import { PREFERENCE_KEYS } from '@/app/preferences';
 
@@ -49,10 +51,13 @@ function csvCell(v: unknown): string {
   return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-/** Gera o arquivo dos dados que já estão na memória (funciona sem internet). */
+/**
+ * Gera o arquivo dos dados que já estão na memória (funciona sem internet). Sempre os da pessoa: no modo exemplo,
+ * os dela estão guardados por baixo da cópia.
+ */
 export async function exportData(format: 'csv' | 'json'): Promise<ExportFile> {
-  const s = useDataStore.getState();
-  const data = snapshot();
+  const s = baseState();
+  const data = buildDomainData(s);
   const day = logicalDay(now(), data.clock);
   if (format === 'json') {
     const payload = {
@@ -137,9 +142,10 @@ export async function exportData(format: 'csv' | 'json'): Promise<ExportFile> {
 /**
  * Apaga todos os dados, sem desfazer (a palavra "apagar" é a proteção): marca o perfil como apagando,
  * desfaz o A dois, apaga as coleções em lotes e o perfil, e limpa o localStorage (fica só a cópia do tema).
- * Depois disso a sessão pede o primeiro acesso.
+ * Depois disso a sessão pede o primeiro acesso. No modo exemplo, sai dele antes: apagar age sobre os dados da pessoa.
  */
 export async function deleteAllData(onProgress?: (done: number, total: number) => void): Promise<void> {
+  await leaveExample();
   const source = getSource();
   const profile = useDataStore.getState().profile;
   if (profile) await source.write([{ op: 'merge', col: 'profile', id: PROFILE_ID, data: { deleting: true } }]);

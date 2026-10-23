@@ -52,6 +52,22 @@ const memoryStorage = (() => {
   };
 })();
 
+// Modo exemplo: os rascunhos da pessoa ficam guardados à parte, e os do exemplo só na memória (nunca no localStorage).
+// Assim o check-in ou a revisão começados no exemplo não aparecem nos dados da pessoa, e recarregar no meio do exemplo
+// encontra os rascunhos dela como estavam.
+type Kept = Pick<DraftsState, 'checkins' | 'reviews' | 'habitForm'>;
+let isolated: { kept: Kept; closed: Set<DayKey> } | null = null;
+
+const draftStorage = {
+  getItem: (k: string) => (typeof localStorage !== 'undefined' ? localStorage : memoryStorage).getItem(k),
+  setItem: (k: string, v: string) => {
+    if (!isolated) (typeof localStorage !== 'undefined' ? localStorage : memoryStorage).setItem(k, v);
+  },
+  removeItem: (k: string) => {
+    if (!isolated) (typeof localStorage !== 'undefined' ? localStorage : memoryStorage).removeItem(k);
+  },
+};
+
 export const useDrafts = create<DraftsState>()(
   persist(
     (set) => ({
@@ -100,7 +116,7 @@ export const useDrafts = create<DraftsState>()(
     }),
     {
       name: 'pk-drafts',
-      storage: createJSONStorage(() => (typeof localStorage !== 'undefined' ? localStorage : memoryStorage)),
+      storage: createJSONStorage(() => draftStorage),
       partialize: (s) => ({
         checkins: s.checkins,
         reviews: s.reviews,
@@ -115,8 +131,9 @@ export const useDrafts = create<DraftsState>()(
 
 const closedKey = (day: DayKey) => `pk-dia-fechado-${day}`;
 
-/** O dia fechado já celebrou (o brilho acontece uma vez por dia). */
+/** O dia fechado já celebrou (o brilho acontece uma vez por dia). No modo exemplo, conta só o do exemplo. */
 export function wasDayCelebrated(day: DayKey): boolean {
+  if (isolated) return isolated.closed.has(day);
   try {
     return localStorage.getItem(closedKey(day)) === '1';
   } catch {
@@ -125,9 +142,33 @@ export function wasDayCelebrated(day: DayKey): boolean {
 }
 
 export function markDayCelebrated(day: DayKey) {
+  if (isolated) {
+    isolated.closed.add(day);
+    return;
+  }
   try {
     localStorage.setItem(closedKey(day), '1');
   } catch {
     /* sem armazenamento */
   }
+}
+
+// ---------- modo exemplo ----------
+
+/**
+ * Liga (true) ou desliga (false) os rascunhos do modo exemplo. Ao ligar, os da pessoa (check-in, revisão e o
+ * formulário de hábito) saem da tela e ficam guardados; nada vai para o localStorage até desligar. Ao desligar, os
+ * do exemplo somem e os da pessoa voltam como estavam. O primeiro acesso (por conta) não muda.
+ */
+export function isolateDrafts(on: boolean): void {
+  if (on === !!isolated) return;
+  if (on) {
+    const { checkins, reviews, habitForm } = useDrafts.getState();
+    isolated = { kept: { checkins, reviews, habitForm }, closed: new Set() };
+    useDrafts.setState({ checkins: {}, reviews: {}, habitForm: null });
+    return;
+  }
+  const { kept } = isolated!;
+  isolated = null;
+  useDrafts.setState(kept);
 }

@@ -1,6 +1,6 @@
 # Estados
 
-Regras para os momentos fora do caminho feliz: carregando, vazio, poucos dados, sem internet, erro, pausado, fora da agenda e os outros. Cada estado diz quando aparece, o que mostra e como entra e sai. As telas desenhadas estão na seção "Estados e feedback" do quadro (`docs/telas/index.html`), e o comportamento de cada uma está em [telas/estados.md](telas/estados.md).
+Regras para os momentos fora do caminho feliz: carregando, vazio, poucos dados, o modo exemplo, sem internet, erro, pausado, fora da agenda e os outros. Cada estado diz quando aparece, o que mostra e como entra e sai. As telas desenhadas estão na seção "Estados e feedback" do quadro (`docs/telas/index.html`), e o comportamento de cada uma está em [telas/estados.md](telas/estados.md).
 
 ## Abertura
 
@@ -36,6 +36,17 @@ A tela de quando o app abre. A comparação das três propostas está em [abertu
 - **O que mostra:** quanto falta, em frase e com uma barrinha: "Os padrões aparecem com 7 dias com e 7 sem. Faltam 4 dias com caminhada."
 - **Tom:** expectativa, nunca erro. Sem ícone de alerta.
 - **Saída:** no dia em que o dado fica suficiente, o insight entra com `fadeUp` na primeira vez que a pessoa abre a tela.
+
+## Modo exemplo
+
+- **Quando:** nos capítulos do tutorial que pedem dados ("O hábito e os padrões", "O progresso" e "A jornada"). Uma conta nova ainda não tem histórico, então as telas mostram a história de exemplo da demonstração ([telas/tutorial.md](telas/tutorial.md) › Modo exemplo).
+- **Como é:** a faixa "Exemplo · nada aqui é seu", fixa no topo, logo abaixo da área segura. Ela tem 28 px, fundo `accent-wash`, texto `accent-ink` em `label`, centralizado, e um fio `border` embaixo. Nada de vermelho, ícone de alerta ou cor de aviso: é informação, não problema.
+- **Empurra o conteúdo:** com a faixa, a área segura de cima (`--safe-top`) soma a altura dela. Todas as barras do topo já descem por esse token (o cabeçalho das abas, a barra das telas empurradas, o topo do Hoje, as folhas altas), então nenhum título fica por baixo. Ocupar só a área de cima não serve: no iPhone ela é do relógio e da bateria, e no computador ela não existe.
+- **Camadas:** z-index 50, acima do conteúdo e das folhas (40), abaixo do véu do tutorial (60), do Zeno (70) e do balão (80).
+- **Entrada e saída:** opacidade em `base`. O conteúdo troca de uma vez, na mesma hora: o store nunca passa por vazio (sem esqueleto), nada celebra na troca, e o Hoje arruma de novo sem animação. O toast da hora sai, porque o Desfazer de um lado não vale do outro.
+- **Leitor de tela:** `role="status"`, que anuncia "Exemplo · nada aqui é seu" quando a faixa aparece.
+- **O que é da pessoa continua dela:** o tema e a aparência, a abertura, o A dois (desligado no exemplo), os rascunhos, exportar e apagar. Nada do que ela toca no exemplo fica salvo.
+- **Saída:** no fim do capítulo, ou ao recarregar o app (o exemplo fica só na memória). Recarregar abre onde a pessoa estava antes do exemplo. Ir para o fundo e voltar mantém o exemplo.
 
 ## Sem internet
 

@@ -17,7 +17,7 @@ import type { Habit, DayKey } from '@/types';                  // tipos do model
 
 ## Sumário
 
-1. [Sessão](#sessão)
+1. [Sessão](#sessão) (e o [modo exemplo](#modo-exemplo))
 2. [Hora do app e capturas](#hora-do-app-e-capturas)
 3. [Hooks de leitura](#hooks-de-leitura)
 4. [Ações e o desfazer](#ações-e-o-desfazer)
@@ -54,6 +54,26 @@ await s.resetDemo(); // apaga a demonstração e semeia de novo
 - `useDataStatus()` → `{ status: 'idle' | 'loading' | 'ready', pendingWrites, error }`: use `status !== 'ready'` para o esqueleto do Hoje (espere 300 ms antes de mostrar). `pendingWrites` volta a `false` quando a escrita termina de gravar (no aparelho, na demonstração; no servidor, no Firebase), por um aviso só de metadados (`SnapshotMeta.metadataOnly`), que não troca os documentos nem a origem da mudança.
 - `useConnection()` → `{ online, pending }`: o aviso "Sem internet" do Hoje e "registros esperando internet" em Dados e conta.
 - `onWriteError((error, retry?) => ...)` e `WRITE_ERROR_MESSAGE`: a casca (`src/app/WriteErrorToast.tsx`) mostra o toast "Não deu para salvar. Tente de novo em instantes." quando o servidor recusa uma escrita; "Tentar de novo" chama `retry`, que grava o mesmo lote.
+
+### Modo exemplo
+
+O tutorial mostra o hábito, o Progresso e a Jornada com a história de exemplo da demonstração, porque uma conta nova ainda não tem dados (`docs/interacao/telas/tutorial.md › Modo exemplo`).
+
+```ts
+const example = useExample();
+example.active;        // as telas estão mostrando o exemplo
+await example.enter(); // troca para o exemplo; resolve com os dados dele já na tela
+await example.leave(); // volta para os dados da pessoa; resolve com eles já na tela
+```
+
+- **A cópia:** uma `LocalSource` só na memória (`LocalSource.memory('exemplo')`), semeada com a história relativa à hora de agora, no fuso e na virada da pessoa. O perfil leva o nome da pessoa, as preferências dela (tema, movimento, som, jeito do Hoje, o Zeno) e o tutorial dela. Nada vai para o IndexedDB, para outras abas nem para o Firestore.
+- **A troca:** a fonte da pessoa não fecha. Ela fica estacionada (`stores/data.ts › overlaySource`), com os ouvintes ligados, e o que chega de outro aparelho entra no estado guardado dela. O store troca de uma vez, sem passar por vazio e sem celebrar. A volta (`restoreSource`) é instantânea.
+- **As escritas** vão para a cópia (`getSource()` é a do exemplo) e somem na saída. A exceção é `profile.tutorial` por mescla, que também vai para a pessoa: um capítulo terminado no meio do exemplo fica como visto. Depois da saída, um Desfazer atrasado do exemplo não grava em lugar nenhum. Escritas pendentes: sempre 0.
+- **O que fica com a pessoa:** a sessão (`user`, `needsOnboarding`, o perfil do primeiro login e o da demonstração vazia), a cópia da aparência na casca (`setPreferences`), a abertura (`rememberPillars` não guarda os pilares do exemplo), o A dois (não liga com o exemplo), os rascunhos de check-in, revisão e hábito e o brilho do dia fechado (os do exemplo ficam só na memória), a cópia do treino em andamento, a fase vista da Jornada, o último caminho (`pk-last`) e as pilhas das abas.
+- **Exportar e apagar** agem sempre sobre a pessoa: `exportData` lê o estado guardado dela, e `deleteAllData` e `signOut` saem do exemplo antes.
+- **Recarregar sai do exemplo**, e o app abre onde a pessoa estava ao entrar (`sessionStorage`, lido pelo roteador): as telas do exemplo levam ids que não existem nos dados dela. Ir para o fundo e voltar mantém o exemplo.
+- **Antes de `leave()`**, quem conduz volta para uma tela sem id do exemplo (a raiz da aba): um hábito do exemplo aberto vira "Este hábito não existe mais." na volta. Na troca, o toast da hora sai, e o Hoje e as leituras congeladas (`useFrozen`) arrumam de novo, sem animação.
+- **Fora do React:** `enterExample()`, `leaveExample()` e `isExampleActive()` (de `@/data/example`). Nos testes, `window.__pkExample` (`enter`, `leave`, `active`), sempre ligado.
 
 ## Hora do app e capturas
 

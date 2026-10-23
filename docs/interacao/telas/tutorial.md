@@ -112,10 +112,14 @@ Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"),
 
 ## Modo exemplo
 
-- **Faixa fixa no topo:** "Exemplo · nada aqui é seu". Ela fica enquanto o modo durar.
-- **Dados:** uma cópia em memória da história de exemplo, com o nome da pessoa. As escritas vão para a cópia e somem na saída. Recarregar o app sai do exemplo.
-- **Fica de fora:** o tema e a aparência da pessoa continuam os dela. A abertura não guarda os pilares do exemplo. O A dois não liga.
+- **Faixa fixa no topo:** "Exemplo · nada aqui é seu". Ela fica enquanto o modo durar, logo abaixo da área segura, e empurra o conteúdo (a área segura de cima soma a altura dela), então nenhum cabeçalho fica por baixo. O desenho e as camadas estão em [../estados.md](../estados.md) › Modo exemplo.
+- **Dados:** uma cópia em memória da história de exemplo, com o nome da pessoa, contada a partir da hora de agora. As escritas vão para a cópia e somem na saída. Recarregar o app sai do exemplo e abre onde a pessoa estava antes dele.
+- **A troca:** `useExample().enter()` e `leave()` (`src/data/example.ts`) resolvem com os dados novos já na tela. A fonte da pessoa não fecha: fica guardada por baixo, em dia, e a volta é instantânea. O conteúdo troca de uma vez, sem esqueleto e sem celebrar, e o toast da hora sai.
+- **Fica de fora:** o tema e a aparência da pessoa continuam os dela. A abertura não guarda os pilares do exemplo. O A dois não liga. Os rascunhos (check-in, revisão, hábito) e o brilho do dia fechado do exemplo ficam só na memória. Exportar e apagar agem sobre a pessoa, e sair da conta sai do exemplo antes.
+- **O tutorial é da pessoa:** o perfil do exemplo começa com o `tutorial` dela, e gravar o progresso do tutorial no exemplo (por mescla) grava também na pessoa. Um capítulo que termina dentro do exemplo fica como visto.
+- **Para o condutor:** antes de `leave()`, volte para uma tela sem id do exemplo (a raiz da aba). Um hábito do exemplo aberto na volta mostra "Este hábito não existe mais.".
 - **Na demonstração**, o exemplo também é uma cópia, e a história da demonstração não muda.
+- **Nos testes:** `window.__pkExample` (`enter()`, `leave()` e `active`), sempre ligado, como em `tests/e2e/exemplo.spec.ts`.
 
 ## Ajustes
 
