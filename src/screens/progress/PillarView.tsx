@@ -19,7 +19,7 @@ import {
 } from '@/components/ui';
 import { Icon } from '@/icons';
 import { fadeUpItem, useCascadeOnce } from '@/motion';
-import { formatVolume, useDomain, type ProgressView, type WeekProgress } from '@/data';
+import { formatVolume, isWeeklyKind, useDomain, type ProgressView, type WeekProgress } from '@/data';
 import type { DayKey } from '@/types';
 import type { Habit } from '@/types';
 import { DailyBarsChart } from './DailyBarsChart';
@@ -34,7 +34,7 @@ export interface PillarViewProps {
 }
 
 function weekText(habit: Habit, w: WeekProgress, today: DayKey): string {
-  if (habit.type === 'weekly') return `${w.done} de ${w.target} na semana`;
+  if (isWeeklyKind(habit)) return `${w.done} de ${w.target} na semana`;
   if (habit.type === 'time') {
     const counted = w.days.filter(
       (d) => d.day <= today && (d.state === 'done' || d.state === 'partial' || d.state === 'notDone') && !(d.day === today && d.state === 'notDone'),
@@ -164,7 +164,7 @@ export function PillarView({ p, today, onOpenDay }: PillarViewProps) {
                   habit={{ name: habit.name, icon: habit.icon, pillar: colorOf(habit) }}
                   subtitle={
                     <>
-                      {habit.type !== 'time' && <WeekDots total={habit.type === 'weekly' ? week.target : week.scheduled} done={week.done} />}
+                      {habit.type !== 'time' && <WeekDots total={isWeeklyKind(habit) ? week.target : week.scheduled} done={week.done} />}
                       {weekText(habit, week, today)}
                     </>
                   }

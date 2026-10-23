@@ -1,4 +1,4 @@
-// IntervalStrip: a fileira de blocos proporcionais do treino (quadro: strip()). Trote alto e cheio, caminhada baixa,
+// IntervalStrip: a fileira de blocos proporcionais do treino (quadro: strip()). Esforço alto e cheio, descanso baixo,
 // aquecimento e volta à calma num tom mais claro. Com `current`, os feitos ficam cheios, o atual ganha o contorno
 // e os seguintes ficam vazados; o contorno anda de um bloco para o outro com layout calma. Decorativa: o texto ao
 // lado diz o mesmo.
@@ -19,7 +19,7 @@ export interface IntervalStripProps {
   className?: string;
 }
 
-const KIND_CLASS: Record<RunBlock['kind'], string> = { run: 't', walk: 'w', warmup: 'c', cooldown: 'c' };
+const KIND_CLASS: Record<RunBlock['kind'], string> = { effort: 't', rest: 'w', warmup: 'c', cooldown: 'c' };
 
 export function IntervalStrip({ blocks, current, doneUntil, outlineId, className }: IntervalStripProps) {
   return (

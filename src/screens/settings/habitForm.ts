@@ -1,8 +1,19 @@
 // O formulário de hábito (Novo hábito · tipo e detalhes, Editar hábito): os tipos em 3 grupos, os padrões de cada
 // tipo, as unidades, o passo do − e +, a escada do "Subir aos poucos" e a conversão do estado para o rascunho e para
 // a ação. Funções puras (testadas em __tests__/habitForm.test.ts).
-import type { HabitFormDraft } from '@/data';
-import type { ChecklistItem, DayKey, DayMoment, Habit, HabitGoal, HabitType, QuickAdd, Weekday } from '@/types';
+import { clonePlan, runTemplatePlan, RUN_TEMPLATE, trainingOf, type HabitFormDraft } from '@/data';
+import type {
+  ChecklistItem,
+  DayKey,
+  DayMoment,
+  Habit,
+  HabitGoal,
+  HabitType,
+  QuickAdd,
+  TimeHM,
+  TrainingPlan,
+  Weekday,
+} from '@/types';
 import type { IconName } from '@/icons';
 import { goalAmount, TYPE_LABELS } from './habitText';
 
@@ -14,7 +25,7 @@ export interface TypeOption {
   badge?: string;
 }
 
-/** Os 9 tipos agrupados pelo que a pessoa quer: fazer, medir ou deixar algo. */
+/** Os 10 tipos agrupados pelo que a pessoa quer: fazer, medir ou deixar algo. */
 export const TYPE_GROUPS: { title: string; types: TypeOption[] }[] = [
   {
     title: 'Fazer algo',
@@ -23,6 +34,12 @@ export const TYPE_GROUPS: { title: string; types: TypeOption[] }[] = [
       { type: 'weekly', icon: 'calendar-check', title: 'Vezes por semana', example: 'Academia 2×' },
       { type: 'time', icon: 'clock', title: 'Horário', example: 'Acordei às 6h52' },
       { type: 'checklist', icon: 'list-checks', title: 'Lista de passos', example: 'Ritual do sono' },
+      {
+        type: 'guided',
+        icon: 'person-simple-run',
+        title: 'Treino guiado',
+        example: 'Corrida do zero aos 30 min, em semanas',
+      },
     ],
   },
   {
@@ -119,11 +136,26 @@ export interface FormState {
   start: 'now' | number | DayKey;
   /** fase (Editar hábito) */
   phase: number | null;
+  /** o plano do Treino guiado (null nos outros tipos) */
+  training: TrainingPlan | null;
+  /** horário dos treinos na agenda (Treino guiado: "Seg e qua · 7h10") */
+  time: TimeHM | null;
 }
 
 /** Meta, unidade e botões padrão de cada tipo (voltam ao padrão só quando o tipo muda). */
-export function typeDefaults(type: HabitType): Pick<FormState, 'goal' | 'quickAdds' | 'checklist' | 'moment'> {
+export function typeDefaults(
+  type: HabitType,
+): Pick<FormState, 'goal' | 'quickAdds' | 'checklist' | 'moment'> & { training?: TrainingPlan } {
   switch (type) {
+    case 'guided':
+      // o modelo pronto: a corrida do zero aos 30 minutos (dá para trocar por um plano montado do zero)
+      return {
+        goal: { perWeek: RUN_TEMPLATE.perWeek },
+        quickAdds: [],
+        checklist: [],
+        moment: 'morning',
+        training: runTemplatePlan(),
+      };
     case 'counter':
       return { goal: { value: 5, unit: 'vezes' }, quickAdds: [], checklist: [], moment: 'day' };
     case 'weekly':
@@ -152,6 +184,9 @@ export function newForm(
 ): FormState {
   const sameType = keep.type === type;
   const d = typeDefaults(type);
+  const guided = type === 'guided';
+  // treino guiado: 2 dias na agenda (seg e qua), como a corrida, se a pessoa ainda não escolheu os dias
+  const days = keep.days && !(guided && !sameType && keep.days.length === 7) ? keep.days : guided ? [0, 2] : null;
   return {
     type,
     name: keep.name ?? '',
@@ -162,9 +197,11 @@ export function newForm(
     quickAdds: sameType && keep.quickAdds ? keep.quickAdds : d.quickAdds,
     checklist: sameType && keep.checklist ? keep.checklist : d.checklist,
     moment: keep.moment ?? d.moment,
-    days: keep.days ?? [...ALL_WEEKDAYS],
+    days: (days as Weekday[] | null) ?? [...ALL_WEEKDAYS],
     start: keep.start ?? start,
     phase: null,
+    training: guided ? (sameType && keep.training ? keep.training : (d.training ?? runTemplatePlan())) : null,
+    time: guided ? (keep.time ?? '07:00') : null,
   };
 }
 
@@ -183,6 +220,8 @@ export function formFromHabit(h: Habit): FormState {
     days: [...h.schedule.days],
     start: 'now',
     phase: h.phase,
+    training: h.type === 'guided' ? clonePlan(trainingOf(h)) : null,
+    time: h.type === 'guided' ? (h.schedule.time ?? null) : null,
   };
 }
 
@@ -197,8 +236,9 @@ export function formToDraft(f: FormState): HabitFormDraft {
     goal: f.goal,
     quickAdds: f.quickAdds,
     checklist: f.checklist,
-    schedule: { days: f.days, moment: f.moment },
+    schedule: { days: f.days, moment: f.moment, ...(f.time ? { time: f.time } : {}) },
     start: f.start,
+    ...(f.training ? { training: f.training } : {}),
   };
 }
 
@@ -215,6 +255,8 @@ export function draftToForm(d: HabitFormDraft): Partial<FormState> {
     moment: d.schedule?.moment,
     days: d.schedule?.days,
     start: d.start,
+    training: d.training ?? null,
+    time: d.schedule?.time ?? null,
   };
 }
 

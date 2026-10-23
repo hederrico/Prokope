@@ -18,6 +18,7 @@ import type {
   WeekKey,
 } from '@/types';
 import { clockOf, type Clock } from './day';
+import { normalizeHabit } from './normalize';
 import { newProfile } from './planTemplate';
 
 export interface RawData {
@@ -84,7 +85,10 @@ export function buildDomainData(raw: RawData): DomainData {
   const clock = clockOf(raw.profile);
   const profile = raw.profile ?? newProfile('', 0, clock);
   const pillars = list(raw.pillars).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
-  const habits = list(raw.habits).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  // documentos antigos chegam no formato de hoje (a corrida de antes vira Treino guiado)
+  const habits = list(raw.habits)
+    .map(normalizeHabit)
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   const marks = new Map<string, Mark>();
   const marksByHabit = new Map<string, Mark[]>();
   const marksByDay = new Map<DayKey, Mark[]>();

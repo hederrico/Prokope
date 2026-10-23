@@ -25,6 +25,8 @@ import type { DayKey, Pause } from '@/types';
 import { distance, dur, spring, tween } from '@/motion/tokens';
 import { haptic } from '@/motion/haptics';
 import { startRunEngine } from '@/screens/run/engine';
+import { runDonePath, runPath } from '@/screens/run/paths';
+import { blockWord } from '@/screens/run/words';
 
 // ---------- outro dia ----------
 
@@ -292,16 +294,9 @@ export function PauseCard({ pause, onEnd, past }: { pause: Pause; onEnd: () => v
   );
 }
 
-// ---------- corrida minimizada ----------
+// ---------- treino minimizado ----------
 
-const BLOCK_NAMES: Record<string, string> = {
-  run: 'Trote',
-  walk: 'Caminhada',
-  warmup: 'Aquecimento',
-  cooldown: 'Volta à calma',
-};
-
-/** A faixa da corrida em andamento, fixa no topo do Hoje, na cor do pilar da corrida. */
+/** A faixa do treino guiado em andamento, fixa no topo do Hoje, na cor do pilar do treino. */
 export function RunStrip({ pillar }: { pillar?: string }) {
   const live = useRunLive();
   const navigate = useNavigate();
@@ -312,9 +307,10 @@ export function RunStrip({ pillar }: { pillar?: string }) {
   }, [runId]);
   if (!live) return null;
   const { run, position, paused } = live;
-  const base = `/corrida/${run.week}/${run.session}`;
   const done = position.done;
-  const phase = BLOCK_NAMES[position.block.kind] ?? 'Treino';
+  // os nomes do plano do hábito ("Pedalar", "Pedalar leve")
+  const phase = blockWord(position.block.kind, live.names);
+  const name = live.habit?.name ?? 'Treino';
   const hued = pillar && !['mente', 'alim', 'corpo', 'familia', 'accent'].includes(pillar);
   return (
     <m.button
@@ -324,11 +320,11 @@ export function RunStrip({ pillar }: { pillar?: string }) {
       data-hue={hued ? pillar : undefined}
       initial={{ y: '-100%' }}
       animate={{ y: 0, transition: tween.base }}
-      onClick={() => void navigate(done ? `${base}/feito` : base)}
+      onClick={() => void navigate((done ? runDonePath : runPath)(run.habitId, run.week, run.session))}
       aria-label={
         done
           ? 'Treino completo. Ver resumo'
-          : `Corrida em andamento, ${phase.toLocaleLowerCase('pt-BR')}, faltam ${Math.ceil(position.remaining)} segundos${position.interval > 0 ? `, intervalo ${position.interval} de ${position.intervals}` : ''}. Abrir`
+          : `${name} em andamento, ${phase.toLocaleLowerCase('pt-BR')}, faltam ${Math.ceil(position.remaining)} segundos${position.interval > 0 ? `, intervalo ${position.interval} de ${position.intervals}` : ''}. Abrir`
       }
     >
       {done ? (
@@ -339,7 +335,7 @@ export function RunStrip({ pillar }: { pillar?: string }) {
       ) : (
         <>
           <span className="td-run-t" aria-live="polite">
-            <Icon name="person-simple-run" weight="fill" />
+            <Icon name={live.habit?.icon ?? 'person-simple-run'} weight="fill" />
             {phase}
             {paused ? ' · pausado' : ''}
           </span>

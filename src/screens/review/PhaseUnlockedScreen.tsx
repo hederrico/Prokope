@@ -24,14 +24,16 @@ import {
 } from '@/data';
 import { distance, spring, tween, usePrefersReducedMotion } from '@/motion';
 import { RunScheduleSheet } from '@/screens/journey/RunScheduleSheet';
-import { habitsPhrase, nextScheduledDay } from '@/screens/journey/shared';
+import { habitsPhrase, nextScheduledDay, shortName } from '@/screens/journey/shared';
 import { Confetti } from './Confetti';
 import './review.css';
 
 export default function PhaseUnlockedScreen() {
   const n = Number(useParams().numero) || 0;
   const j = useJourney();
-  const plan = useRunPlan();
+  // o primeiro treino guiado que entra com esta fase (a corrida, no plano base)
+  const training = j.trainings.find((t) => t.habit.phase === n) ?? null;
+  const plan = useRunPlan(training?.habit.id ?? null);
   const pillars = usePillars();
   const { today } = useNow();
   const { status } = useDataStatus();
@@ -80,11 +82,11 @@ export default function PhaseUnlockedScreen() {
     .filter(Boolean)
     .join(' ');
 
-  const runHabit = plan.habit && plan.habit.phase === n ? plan.habit : null;
+  const runHabit = training && plan.habit?.id === training.habit.id ? plan.habit : null;
   const runPillar = runHabit ? pillars.find((p) => p.pillar.id === runHabit.pillarId)?.pillar : undefined;
   const firstRun = runHabit ? nextScheduledDay(plan.schedule.days, start) : null;
   const firstRunLabel = firstRun
-    ? `${capitalize(weekdayName(firstRun))}${plan.schedule.time ? `, ${formatTime(plan.schedule.time)}` : ''} · ${runHabit?.goal.value ?? 30} min`
+    ? `${capitalize(weekdayName(firstRun))}${plan.schedule.time ? `, ${formatTime(plan.schedule.time)}` : ''} · ${Math.round((plan.weeks[0]?.totalSeconds ?? 0) / 60)} min`
     : 'Escolher os dias';
 
   const enter = (delay: number, festa = false) =>
@@ -108,9 +110,9 @@ export default function PhaseUnlockedScreen() {
         <m.div ref={footRef} className="rv-wfoot" {...enter(0.6)}>
           {runHabit && (
             <button type="button" className="rv-firstrun" onClick={() => setScheduleOpen(true)}>
-              <PillarBubble icon="person-simple-run" pillar={runPillar?.color} />
+              <PillarBubble icon={runHabit.icon} pillar={runPillar?.color} />
               <span>
-                <b>Primeiro treino de corrida</b>
+                <b>Primeiro treino de {shortName(runHabit)}</b>
                 <small>{firstRunLabel}</small>
               </span>
               <Icon name="caret-right" weight="bold" />
@@ -168,8 +170,9 @@ export default function PhaseUnlockedScreen() {
           onOpenChange={setScheduleOpen}
           days={plan.schedule.days}
           time={plan.schedule.time}
-          perWeek={runHabit.goal.perWeek ?? 2}
+          perWeek={plan.perWeek}
           pillar={runPillar?.color}
+          habitId={runHabit.id}
         />
       )}
     </FullScreen>

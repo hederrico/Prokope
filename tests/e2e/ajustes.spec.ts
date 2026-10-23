@@ -157,6 +157,55 @@ test.describe('ajustes', () => {
     await expect(page.getByRole('button', { name: /^Leitura\./ })).toBeVisible();
   });
 
+  test('treino guiado: editar o plano da corrida e arquivar (sai da Jornada)', async ({ page }) => {
+    await enterDemo(page);
+    // a corrida do plano base é um Treino guiado da fase 3 (Próximas fases)
+    await go(page, '/ajustes/habitos?ver=proximas');
+    const row = page.getByRole('button', { name: /^Corrida\./ });
+    await expect(row).toContainText('Treino guiado');
+    await row.click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/[^/]+$/);
+    await expect(page.getByText(/2 treinos por semana · do zero aos 30 minutos/)).toBeVisible();
+    await page.getByRole('button', { name: 'Editar', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Editar hábito' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Esforço, Correr/ })).toBeVisible();
+
+    // o editor do plano, empurrado dentro do formulário: a semana 13 vira 35 min contínuos
+    const save = page.getByRole('button', { name: 'Salvar' });
+    await expect(save).toHaveAttribute('aria-disabled', 'true');
+    await page.getByRole('button', { name: /^Plano, 13 semanas/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Plano', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /^Semana 13:/ }).click();
+    const week = page.getByRole('dialog', { name: 'Semana 13' });
+    for (let i = 0; i < 5; i++) await week.getByRole('button', { name: 'Aumentar correr' }).click();
+    await week.getByRole('button', { name: 'Pronto' }).click();
+    // duplicar e remover uma semana, com Desfazer
+    await page.getByRole('button', { name: /^Semana 2:/ }).click();
+    await page.getByRole('dialog', { name: 'Semana 2' }).getByRole('button', { name: 'Remover' }).click();
+    await expect(page.getByText('Semana 2 removida')).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Semanas do plano' }).getByRole('listitem')).toHaveCount(12);
+    await page.getByRole('button', { name: 'Desfazer' }).click();
+    await expect(page.getByRole('list', { name: 'Semanas do plano' }).getByRole('listitem')).toHaveCount(13);
+    await page.getByRole('button', { name: 'Voltar para Editar hábito' }).click();
+    await expect(page.getByRole('button', { name: /^Plano, 13 semanas/ })).toBeVisible();
+    await expect(save).not.toHaveAttribute('aria-disabled', 'true');
+    await save.click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/[^/]+$/);
+
+    // o plano novo aparece na Jornada
+    const id = new URL(page.url()).pathname.split('/').pop()!;
+    await go(page, `/jornada/treino/${id}`);
+    await page.getByRole('button', { name: /^Semana 13:/ }).click();
+    await expect(page.getByRole('list', { name: /^Semana 13: correr 35 minutos sem parar/ })).toBeVisible();
+
+    // arquivar: some da Jornada (o histórico fica)
+    await go(page, `/ajustes/habitos/${id}`);
+    await page.getByRole('button', { name: /^Arquivar/ }).click();
+    await go(page, '/jornada');
+    await expect(page.getByRole('heading', { level: 1, name: 'Jornada' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Corrida, plano de treino/ })).toHaveCount(0);
+  });
+
   test('horários: mudar um horário grava ao fechar a roda e avisa com Desfazer', async ({ page }) => {
     await enterDemo(page);
     await go(page, '/ajustes/horarios');

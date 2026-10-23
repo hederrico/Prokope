@@ -1,12 +1,12 @@
-// Jornada: fases (começar, ficar mais uma semana, editar), Revisão da semana e corrida.
+// Jornada: fases (começar, ficar mais uma semana, editar), Revisão da semana e os treinos guiados.
 import type { DayKey, Phase, Review, ReviewDecision, Run, TimeHM, WeekKey, Weekday } from '@/types';
 import type { WriteOp } from '@/data/source';
 import { markId, measurementId } from '@/domain/context';
 import { addDays, weekStart } from '@/domain/day';
-import { goalOn, valueStatus } from '@/domain/habitState';
 import { reviewSummary } from '@/domain/review';
-import { intervalsCompleted, runElapsed, runWeek } from '@/domain/runPlan';
+import { intervalsCompleted, runElapsed, sessionStatus, weekOfHabit } from '@/domain/runPlan';
 import { constancy } from '@/domain/stats';
+import { guidedHabits } from '@/domain/views';
 import { useDataStore } from '@/stores/data';
 import { commit, mergeOp, newId, noUndo, now, profileMerge, setOp, snapshot, today, withId, type Undo } from './core';
 
@@ -204,7 +204,7 @@ export async function finishReview(weekOrDay: DayKey, opts: { decision?: ReviewD
   return commit([setOp('reviews', week, doc)]);
 }
 
-// ---------- corrida ----------
+// ---------- treino guiado ----------
 
 const RUN_KEY = 'pk-run-active';
 
@@ -228,12 +228,16 @@ export function readRunCopy(): Run | null {
   }
 }
 
-function runHabitId(): string | null {
-  return Object.values(useDataStore.getState().habits).find((h) => h.role === 'run' && !h.archived)?.id ?? null;
+/** O primeiro treino guiado que aparece (o das rotas antigas /corrida/... e /jornada/corrida). */
+export function firstGuidedHabitId(): string | null {
+  return guidedHabits(snapshot(), today())[0]?.id ?? null;
 }
 
-/** Dias e horário dos treinos (no hábito Corrida). */
-export async function setRunSchedule(input: { days: Weekday[]; time: TimeHM }, habitId = runHabitId()): Promise<Undo> {
+/** Dias e horário dos treinos de um treino guiado (sem `habitId`, o primeiro). */
+export async function setRunSchedule(
+  input: { days: Weekday[]; time: TimeHM },
+  habitId: string | null = firstGuidedHabitId(),
+): Promise<Undo> {
   if (!habitId) return noUndo();
   const h = useDataStore.getState().habits[habitId];
   if (!h) return noUndo();
@@ -242,9 +246,9 @@ export async function setRunSchedule(input: { days: Weekday[]; time: TimeHM }, h
   ]);
 }
 
-/** Começa um treino. O id vem em `undo.id`. */
-export async function startRun(input: { week: number; session: number; habitId?: string }): Promise<Undo> {
-  const habitId = input.habitId ?? runHabitId() ?? '';
+/** Começa um treino de um treino guiado (sem `habitId`, o primeiro). O id vem em `undo.id`. */
+export async function startRun(input: { week: number; session: number; habitId?: string | null }): Promise<Undo> {
+  const habitId = input.habitId ?? firstGuidedHabitId() ?? '';
   const run: Run = {
     id: newId(),
     habitId,
@@ -289,15 +293,17 @@ export async function resumeRun(id: string): Promise<Undo> {
 }
 
 /**
- * Termina o treino (no fim do último bloco ou em "Salvar o que fiz") e marca a Corrida no dia:
- * a partir da meta é feito, a partir do mínimo é parcial, abaixo do mínimo fica registrado sem contar.
+ * Termina o treino (no fim do último bloco ou em "Salvar o que fiz") e marca o hábito no dia, pelos blocos do plano
+ * dele: o treino inteiro é feito, a partir da metade é parcial, abaixo fica registrado sem contar.
  */
 export async function finishRun(id: string, opts: { endedAt?: number } = {}): Promise<Undo> {
   const run = runOrNull(id);
   if (!run) return noUndo();
   const endedAt = opts.endedAt ?? now();
   const closedPauses = run.pauses.map((p) => (p.to === null ? { ...p, to: endedAt } : p));
-  const week = runWeek(run.week);
+  const data = snapshot();
+  const habit = data.habitById.get(run.habitId);
+  const week = weekOfHabit(habit, run.week);
   const seconds = Math.min(
     week.totalSeconds,
     Math.round(runElapsed({ ...run, pauses: closedPauses, endedAt }, endedAt)),
@@ -311,13 +317,9 @@ export async function finishRun(id: string, opts: { endedAt?: number } = {}): Pr
     intervalsDone: intervalsCompleted(week, seconds),
   };
   const ops: WriteOp[] = [setOp('runs', id, next)];
-  const data = snapshot();
-  const habit = data.habitById.get(run.habitId);
   if (habit) {
     const mid = markId(run.day, habit.id);
     const prev = data.marks.get(mid);
-    const goal = goalOn(habit, run.day, data, prev);
-    const s = valueStatus(seconds / 60, goal);
     const t = now();
     ops.push(
       setOp('marks', mid, {
@@ -325,11 +327,11 @@ export async function finishRun(id: string, opts: { endedAt?: number } = {}): Pr
         id: mid,
         day: run.day,
         habitId: habit.id,
-        status: s === 'notDone' ? 'logged' : s,
+        status: sessionStatus(week, seconds),
         skipped: false,
         value: Math.round(seconds / 60),
         run: { week: run.week, session: run.session, seconds, runId: run.id },
-        goal: { value: goal.value },
+        goal: { value: Math.round(week.totalSeconds / 60) },
         at: prev?.at ?? t,
         updatedAt: t,
       }),

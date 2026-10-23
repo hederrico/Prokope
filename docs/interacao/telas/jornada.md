@@ -1,13 +1,15 @@
 # D · Jornada · interações e animações
 
-A Jornada guarda o plano (fases, corrida e Revisões da semana). Quase tudo aqui é calmo e raro: uma revisão por semana, uma fase a cada três semanas. A exceção é a corrida, que é usada na rua, sem olhar e com o celular no braço.
+A Jornada guarda o plano (fases, treinos guiados e Revisões da semana). Quase tudo aqui é calmo e raro: uma revisão por semana, uma fase a cada três semanas. A exceção é o treino guiado (a corrida, a bicicleta), que é usado na rua, sem olhar e com o celular no braço.
 
-Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (motor e tela do treino), `IntervalStrip` (fileira de blocos), `ChoiceCard` (as duas escolhas da Revisão 3) e `Confetti`. Coleção nova: `runs`. Ações novas: `startPhase`, `stayInPhase`, `undoPhaseChoice`, `updatePhase`, `moveHabitToPhase`, `setPhaseThreshold`, `addPhase`, `saveReviewStep`, `finishReview`, `scheduleHabit`, `setRunSchedule`, `startRun`, `pauseRun`, `resumeRun`, `finishRun` e `discardRun`.
+Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (motor e tela do treino), `IntervalStrip` (fileira de blocos), `ChoiceCard` (as duas escolhas da Revisão 3), `Confetti` e o `TrainingPlanEditor` (o editor do plano, em [ajustes-plano.md](ajustes-plano.md)). Coleção nova: `runs`. Ações novas: `startPhase`, `stayInPhase`, `undoPhaseChoice`, `updatePhase`, `moveHabitToPhase`, `setPhaseThreshold`, `addPhase`, `saveReviewStep`, `finishReview`, `scheduleHabit`, `setRunSchedule`, `startRun`, `pauseRun`, `resumeRun`, `finishRun` e `discardRun`.
+
+**Treino guiado** é um tipo de hábito (`type: 'guided'`): um plano em semanas, com N treinos por semana nos dias da agenda. Cada treino tem o aquecimento, os blocos da semana (repetições de esforço e descanso, uma sequência ou um bloco contínuo) e a volta à calma. O esforço e o descanso têm o nome que a pessoa escolheu ("Correr" e "Caminhar", "Pedalar" e "Pedalar leve", "Nadar" e "Descansar"), e esse nome aparece em todos os textos e anúncios. O modelo pronto é a "Corrida do zero aos 30 minutos" (13 semanas, 2 treinos por semana). A corrida de quem já usava o app (um "vezes por semana" com o papel `run`) chega como Treino guiado com esse modelo, sem perder os treinos feitos nem a semana e o treino em que a pessoa estava.
 
 ## Jornada  (rota: `/jornada`)
 
 **Como chega:** pela aba, com troca de opacidade em `micro`. Tocar na aba ativa rola ao topo com `calma`.
-**Ao aparecer:** na primeira montagem da sessão, os 4 nós do caminho entram em `cascade` (30 ms entre eles), o anel do nó 2 se desenha em `ring` e as barras das semanas enchem em `fill`. Nas outras vezes, nada anima, a não ser que um valor tenha mudado ("ao abrir" de [comunicacao.md](../comunicacao.md)). O plano de corrida e as revisões nunca animam.
+**Ao aparecer:** na primeira montagem da sessão, os 4 nós do caminho entram em `cascade` (30 ms entre eles), o anel do nó 2 se desenha em `ring` e as barras das semanas enchem em `fill`. Nas outras vezes, nada anima, a não ser que um valor tenha mudado ("ao abrir" de [comunicacao.md](../comunicacao.md)). Os cartões dos treinos e as revisões nunca animam.
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|---|
@@ -15,7 +17,7 @@ Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (mot
 | Fase 1 (concluída) | Toque | Empurra a revisão do fim da fase, só leitura (`/jornada/revisoes/2026-10-11`) | `calma` | — | — |
 | Cartão da fase 2, fase 3 e fase 4 | Toque | Empurra Editar fases com a fase rolada até o topo | `calma` | — | — |
 | Chips de hábito no cartão | — | Não são tocáveis (só descrevem) | — | — | — |
-| Plano de corrida | Toque | Empurra o Plano de corrida | `calma` | — | — |
+| Cartão de um treino guiado ("Corrida", "Bicicleta") | Toque | Empurra o plano daquele treino (`/jornada/treino/:id`) | `calma` | — | — |
 | Revisão passada | Toque | Empurra a revisão só para leitura | `calma` | — | — |
 | Revisão pendente (só quando há) | Toque em "Fazer" | Abre a revisão no passo guardado | tela cheia | — | — |
 
@@ -24,9 +26,10 @@ Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (mot
 - **Fase trocada:** na primeira vez que a Jornada abre depois de `startPhase`, o anel do nó 2 vira check com a mola `toque`, e o cartão "Agora" passa para a fase 3 com layout `calma`. O caminho não se move.
 - **Primeiro dia:** só a fase 1 em "Agora". Em Revisões da semana entra o `EmptyState` "A primeira Revisão da semana é no domingo, 27 set."
 - **Pausa do app:** o cartão "Agora" mostra "Pausado até 2 jan" no lugar de "semana 2 de 3", e a barra da semana fica hachurada.
+- **Treinos guiados:** um cartão por Treino guiado ativo ou à espera da fase dele, na ordem dos hábitos, empilhados com 12 px entre eles (no lugar do cartão fixo "Plano de corrida"). Cada cartão tem o ícone e o nome do hábito, a descrição (ou "Pedalar e pedalar leve", sem descrição), uma barrinha por semana (a altura é o tempo de esforço; a semana de agora em destaque, ou a última, antes de começar) e "Semana 3 · treino 1 de 2 · 13 semanas" ou "Entra com a fase 3 · 13 semanas · 2 treinos por semana". Arquivado ou parado (a fase em que ele para já passou), o cartão sai; os treinos feitos continuam no histórico. Sem nenhum treino guiado, não há cartão.
 
 **Como sai:** pelas telas empurradas da tabela, ou por outra aba.
-**Acessibilidade:** `PhasePath` é uma lista. Cada fase é um item com o nome completo: "Fase 2, Alimentação, agora, semana 2 de 3, 76% na semana, 5 hábitos novos". A linha do caminho e as barras das semanas são decorativas. Ordem de foco: Editar fases, título, fases, plano, revisões. Com letra grande, os chips do cartão quebram linha e as barras das semanas viram texto ("semana 1 · 74%") empilhado.
+**Acessibilidade:** `PhasePath` é uma lista. Cada fase é um item com o nome completo: "Fase 2, Alimentação, agora, semana 2 de 3, 76% na semana, 5 hábitos novos". A linha do caminho e as barras das semanas são decorativas. Cada cartão de treino é um botão lido inteiro: "Bicicleta, plano de treino. Pedalar e pedalar leve. Semana 1, treino 1 de 3, 2 semanas, 3 treinos por semana". Ordem de foco: Editar fases, título, fases, treinos, revisões. Com letra grande, os chips do cartão quebram linha e as barras das semanas viram texto ("semana 1 · 74%") empilhado.
 **Implementação:** `PhasePath` lê `phases` e a constância calculada no domínio. A porcentagem da semana em curso é a mesma do `WeekCard` do Hoje (um seletor só). Não guarde datas de início das fases futuras: elas são previsões calculadas a partir do fim da fase atual e da duração de cada uma.
 
 ## Editar fases  (rota: `/jornada/fases`)
@@ -46,23 +49,34 @@ Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (mot
 **Acessibilidade:** cada cartão é um grupo com o nome da fase. Os chips dizem "Proteína, na fase 2. Toque para mudar de fase". O valor de cada `TimeValue` é lido com a ação ("Termina em 1 de novembro, alterar").
 **Implementação:** os chips usam `layoutId` por hábito dentro de um `LayoutGroup`, para atravessar de um cartão para o outro. A data mínima do campo é amanhã, e nenhuma data passada fica editável.
 
-## Plano de corrida  (rota: `/jornada/corrida`)
+## Plano do treino  (rota: `/jornada/treino/:id`)
 
-**Como chega:** empurrada a partir da Jornada (`calma`), ou do detalhe do hábito Corrida.
-**Ao aparecer:** nada anima. As 13 barras de `MiniBar` já chegam cheias, porque são o plano e não um progresso.
+**Como chega:** empurrada a partir do cartão do treino na Jornada (`calma`). A rota antiga `/jornada/corrida` leva ao plano do primeiro treino guiado (troca a rota, sem passagem), para os links de antes continuarem valendo.
+**Ao aparecer:** nada anima. As barras de `MiniBar` já chegam cheias, porque são o plano e não um progresso.
+
+O topo tem o ícone e o nome do hábito ("Bicicleta") e a frase "Do zero aos 30 minutos. 13 semanas, 2 treinos por semana. Dá para repetir uma semana quando quiser." (a descrição, quando há; antes de começar, "Entra no seu dia junto com a fase 3.").
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|---|
-| Dias de treino | Toque | Folha com `DayPicker` (2 dias) e `TimeValue` | `folha` | `setRunSchedule({ days: [0, 2], time: '07:10' })` | Hoje dos dias escolhidos ganha a linha "Corrida · semana 1, treino 1" com "Começar"; cartão da Fase desbloqueada |
+| Dias de treino | Toque | Folha com `DayPicker` e `TimeValue` | `folha` | `setRunSchedule({ days: [0, 2], time: '07:10' }, habitId)` | Hoje dos dias escolhidos ganha a linha "Bicicleta · semana 1, treino 1" com "Começar"; cartão da Fase desbloqueada |
+| Editar o plano · 13 semanas | Toque | Abre Editar plano | tela cheia | — | — |
 | Linha de uma semana | Toque | O cartão "Semana N · o treino" mostra aquela semana | troca de opacidade em `micro`; a fileira e a legenda trocam juntas | — | — |
-| "Começar treino" (só na fase 3, fixo no rodapé) | Toque | Abre a Corrida em andamento | tela cheia | `startRun` | Hoje: `RunStrip` se a pessoa minimizar |
+| "Começar treino" (só com o plano em curso, fixo no rodapé) | Toque | Abre o Treino em andamento (`/treino/:id/:semana/:treino`) | tela cheia | `startRun({ week, session, habitId })` | Hoje: `RunStrip` se a pessoa minimizar |
 
-**Estados desta tela:** antes da fase 3, não há botão no rodapé, e a semana 1 diz "a partir de 2 nov". Na fase 3, a semana atual ganha `BudgetSlots` (2 treinos) e um `Tag` "agora". Depois dos 2 treinos da semana, a linha seguinte vira a atual. Na mesma linha, "Repetir esta semana" fica disponível pelo toque.
-**Acessibilidade:** cada semana é lida como "Semana 3: 6 vezes 1 minuto e meio de trote e 1 minuto e meio de caminhada. 9 minutos de trote." A fileira de blocos é decorativa, e a legenda do treino diz a mesma coisa em texto.
+**Estados desta tela:** antes da fase do hábito, não há botão no rodapé, e a semana 1 diz "a partir de 2 nov". Com o plano em curso, a semana atual ganha `BudgetSlots` (os treinos por semana do hábito) e um `Tag` "agora". Depois dos treinos da semana, a linha seguinte vira a atual; depois da última semana, ela se repete. Tocando numa semana que já passou, o botão vira "Repetir a semana N". Arquivado: a frase diz "Arquivado. Os treinos feitos ficam no histórico." e não há botão. O rótulo da coluna é o tempo de esforço com o nome do plano ("tempo correndo", "tempo pedalando"), e a legenda usa os nomes ("Pedalar 5 × 2 min", "Pedalar leve 5 × 1 min"). Num bloco de aquecimento curto (menos de 4 min), a medida embaixo da fileira mostra só o número.
+**Acessibilidade:** cada semana é lida como "Semana 3: 6 vezes correr 1 minuto e meio e caminhar 1 minuto e meio. 9 minutos correndo no total." (com os nomes do plano: "4 vezes pedalar 3 minutos e pedalar leve 2 minutos. 12 minutos pedalando no total."). A fileira de blocos é decorativa, e a legenda do treino diz a mesma coisa em texto.
 
-## Corrida em andamento  (rota: `/corrida/:semana/:treino`)
+## Editar plano  (rota: `/jornada/treino/:id/plano`)
 
-**Como chega:** pelo "Começar" da linha do Hoje ou do Plano de corrida, como tela cheia (sobe 24 px com opacidade em `base`). O toque em "Começar" também libera o áudio e pede o Wake Lock, porque o iPhone só permite isso depois de um gesto. O primeiro bloco (aquecimento caminhando) começa na hora, sem contagem.
+**Como chega:** pela linha "Editar o plano" do plano do treino, como tela cheia (formulário).
+**Topo:** `NavBar` com Cancelar · Plano · Salvar. Salvar acende quando algo mudou, grava `updateHabit(id, { training })` e volta ao plano; Cancelar sai sem gravar e sem perguntar.
+**Conteúdo:** o mesmo editor do formulário do hábito ([ajustes-plano.md › Plano do treino](ajustes-plano.md)): o resumo, Em todo treino (aquecimento e volta à calma), as semanas, Adicionar semana e Começar de um modelo.
+**Estados:** os treinos feitos não mudam. O progresso continua pela contagem dos treinos feitos: com menos semanas, a pessoa fica na última; com mais, segue para a próxima.
+
+## Treino em andamento  (rota: `/treino/:habito/:semana/:treino`)
+
+**Como chega:** pelo "Começar" da linha do Hoje ou do plano do treino, como tela cheia (sobe 24 px com opacidade em `base`). O toque em "Começar" também libera o áudio e pede o Wake Lock, porque o iPhone só permite isso depois de um gesto. O primeiro bloco (o aquecimento, ou o primeiro esforço num plano sem aquecimento) começa na hora, sem contagem. A rota antiga `/corrida/:semana/:treino` continua abrindo o treino do primeiro treino guiado (e termina em `/corrida/:semana/:treino/feito`). Um treino de cada vez: se já há um em andamento (deste ou de outro treino guiado), é ele que abre.
+**Os nomes:** os blocos de esforço e de descanso usam os nomes do plano em tudo: a palavra grande ("Pedalar"), "Depois: pedalar leve 1:00", a faixa do Hoje, a folha de encerrar e os anúncios. O ícone do esforço é o do hábito; o do descanso é o de caminhar quando o nome é caminhar (senão, um respiro), e é o mesmo do aquecimento e da volta à calma.
 **Ao aparecer:** o anel se desenha em `ring` uma vez. Depois disso, ele avança continuamente e não usa o token.
 
 ### O motor
@@ -76,8 +90,8 @@ Componentes novos deste grupo: `PhasePath` (caminho das fases), `RunScreen` (mot
 | Tempo | O que acontece |
 |---|---|
 | −3 s, −2 s, −1 s | O número grande mostra só "3", "2", "1" (troca de opacidade em `micro`, sem escala). A pílula "Depois" passa de 14% para 24% de fundo. Com o som ligado, toca um tique curto (660 Hz, 60 ms) por segundo |
-| 0 | O fundo troca de cor (trote em cor cheia, caminhada em tom claro) em `fill` com `--ease-in-out`. A palavra e o ícone saem com opacidade em `micro` e entram com `fadeUp`. O anel volta ao zero sem animar para trás. O contorno do bloco atual anda na fileira com layout `calma` |
-| 0 | Som: para o trote, dois bipes de 880 Hz (120 ms, com 80 ms entre eles); para a caminhada, um tom de 523 Hz de 300 ms. A região viva anuncia o bloco novo |
+| 0 | O fundo troca de cor (esforço em cor cheia, descanso em tom claro) em `fill` com `--ease-in-out`. A palavra e o ícone saem com opacidade em `micro` e entram com `fadeUp`. O anel volta ao zero sem animar para trás. O contorno do bloco atual anda na fileira com layout `calma` |
+| 0 | Som: para o esforço, dois bipes de 880 Hz (120 ms, com 80 ms entre eles); para o descanso (e a volta à calma), um tom de 523 Hz de 300 ms. A região viva anuncia o bloco novo |
 | 0 | Vibração pelo truque do interruptor, se funcionar sem gesto. Testar: se não vibrar, nada quebra |
 
 O fim do último bloco leva à tela Treino feito (substitui a rota).
@@ -98,7 +112,7 @@ O som vem do Web Audio, com um `OscillatorNode` e um envelope de 10 ms de ataque
 ### Volta ao app (tela "Corrida · de volta ao app")
 
 - No `visibilitychange` visível: recalcule o tempo, peça o Wake Lock de novo e retome o áudio.
-- Se uma troca passou com o app escondido, entra o aviso no topo com `fadeUp` em `base` ("O treino seguiu com a tela bloqueada" e há quanto tempo foi a troca). Ele sai sozinho depois de 5 s, com opacidade em `micro`. Nenhum som toca pelas trocas perdidas.
+- Se uma troca passou com o app escondido, entra o aviso no topo com `fadeUp` em `base` ("O treino seguiu com a tela bloqueada" e "Agora: caminhar, há 40 s. Os avisos voltaram."). Ele sai sozinho depois de 5 s, com opacidade em `micro`. Nenhum som toca pelas trocas perdidas.
 - Se o treino terminou com o app escondido, a rota vai direto para Treino feito, com o fim na hora prevista.
 - Um treino com `status: 'running'` e começado há menos de 2 h sobrevive ao fechamento do app: ao abrir, o Hoje mostra a `RunStrip`.
 
@@ -108,26 +122,26 @@ A faixa `RunStrip` é do Hoje ([hoje.md](hoje.md)). Daqui ela recebe o estado do
 
 **Estados desta tela:** treino pausado (relógio parado, fundo igual), aviso de volta, selo da tela que pode apagar.
 **Acessibilidade:**
-- Uma região viva (`aria-live="polite"`) anuncia só os momentos: "Caminhada, 1 minuto e 30 segundos. Intervalo 3 de 8.", "Pausado", "Continuando", "O treino seguiu com a tela bloqueada. Agora: caminhada, faltam 40 segundos." A contagem 3, 2, 1 não é anunciada.
+- Uma região viva (`aria-live="polite"`) anuncia só os momentos: "Caminhar, 1 minuto e 30 segundos. Intervalo 3 de 8.", "Pausado", "Continuando", "O treino seguiu com a tela bloqueada. Agora: caminhar, faltam 40 segundos." (com os nomes do plano: "Pedalar leve, 1 minuto."). A contagem 3, 2, 1 não é anunciada.
 - O relógio tem `role="timer"` e `aria-live="off"`. Tocar nele lê o estado completo.
 - Rótulos: "Minimizar treino", "Som nas trocas, ligado", "Pausar treino", "Encerrar treino, segure". No VoiceOver, tocar duas vezes e segurar encerra, e um botão "Encerrar treino", invisível na tela, abre a mesma folha (a web não tem ações personalizadas do rotor).
 - Com letra grande, o relógio fica em 92 px (já é grande), a palavra do estado sobe até 56 px, e a fileira de blocos sai.
 - Com movimento reduzido, a cor de fundo troca em 150 ms, sem `fadeUp`.
 
-**Implementação:** a troca de cor usa a variável `--xd-bg` com `transition: background-color var(--dur-fill) var(--ease-in-out)`. No escuro, o trote usa um damasco profundo (`oklch(38% .07 60)`), para não ofuscar. Anime só `opacity` e `transform`, mais a cor de fundo uma vez por troca. Teste no Modo de Pouca Energia e com a tela a 20% de brilho ao sol.
+**Implementação:** os blocos vêm do plano do hábito do treino (`run.habitId`): o motor (`engine.ts`) e `useRunLive` montam a semana com `weekOfHabit` (sem hábito, o modelo da corrida). A troca de cor usa a variável `--xd-bg` com `transition: background-color var(--dur-fill) var(--ease-in-out)`. No escuro, o esforço usa um tom profundo da cor do pilar (`oklch(38% .07 60)` no damasco), para não ofuscar. Anime só `opacity` e `transform`, mais a cor de fundo uma vez por troca. Teste no Modo de Pouca Energia e com a tela a 20% de brilho ao sol.
 
-## Treino feito  (rota: `/corrida/:semana/:treino/feito`)
+## Treino feito  (rota: `/treino/:habito/:semana/:treino/feito`)
 
 **Como chega:** ao fim do último bloco ou por "Salvar o que fiz". A rota é substituída e a tela troca com opacidade em `base`.
 **Ao aparecer:** o anel fecha do último valor até o fim em `ring` (ou até a parte feita, num treino encerrado antes), e o check se desenha com a mola `toque`. Há uma vibração bônus (nível 1 da escada). Sem confete e sem brilho. Os números já chegam no valor final.
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|---|
-| (ao chegar) | — | — | — | `finishRun` (status `done`, `endedAt`, intervalos feitos) e `markHabit(corrida, day, { week, session, seconds })` | Hoje: a linha da Corrida feita e "x de 12" anda; Plano: 1 de 2 na semana; Progresso › Corpo |
-| Próximo treino | Toque | Folha "Dias de treino" | `folha` | `setRunSchedule` | Hoje dos dias novos |
+| (ao chegar) | — | — | — | `finishRun` (status `done`, `endedAt`, intervalos feitos) e a marca do hábito no dia (`run: { week, session, seconds }`) | Hoje: a linha do treino feita e "x de 12" anda; Plano: 1 de 2 na semana; cartão da Jornada; Progresso › Corpo |
+| Próximo treino | Toque | Folha "Dias de treino" | `folha` | `setRunSchedule(…, habitId)` | Hoje dos dias novos |
 | Voltar ao dia | Toque | Hoje | saída da tela cheia | — | — |
 
-**Estados desta tela:** o treino encerrado antes mostra o que foi feito ("18 min", "5 de 8") e conta pelo que a pessoa configurou no hábito: a partir da meta é feito, a partir do mínimo é parcial, e abaixo do mínimo fica registrado sem contar. Nenhuma palavra sobre o que faltou. Para desfazer, a pessoa desmarca a Corrida no Hoje, como qualquer hábito.
+**Estados desta tela:** os números são Intervalos, o tempo de esforço e o de descanso, com os nomes do plano ("Pedalar 10 min", "Pedalar leve 5 min"). O treino encerrado antes mostra o que foi feito ("18 min", "5 de 8") e conta pelo plano: o treino inteiro é feito, a partir da metade é parcial, e abaixo da metade fica registrado sem contar. Nenhuma palavra sobre o que faltou. Para desfazer, a pessoa desmarca o treino no Hoje, como qualquer hábito.
 **Acessibilidade:** o foco vai para o título "Treino feito", que é lido junto com "30 minutos, 8 de 8 intervalos".
 
 ## Revisão da semana · 1, 2 e 3  (rota: `/revisao/:semana/1` a `/3`)
@@ -173,7 +187,7 @@ Reabrir a rota mostra tudo parado. Com movimento reduzido, o confete já está d
 
 | Elemento | Gesto | Resposta | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|
-| Primeiro treino de corrida | Toque | Folha com `TimeValue` e `DayPicker` | `setRunSchedule` | Hoje de segunda |
+| Primeiro treino de corrida (o primeiro treino guiado que entra com a fase, com o nome curto dele) | Toque | Folha com `TimeValue` e `DayPicker` | `setRunSchedule` | Hoje de segunda |
 | Ver meu dia | Toque | Hoje de domingo, com o cartão "Amanhã começa a fase 3" | — | Na segunda, os hábitos novos entram no Hoje com o selo "novo", em `cascade` |
 
 **Acessibilidade:** o confete é decorativo (`aria-hidden`). O foco vai para "Fase 3, Movimento" e lê a frase em seguida.

@@ -1,14 +1,19 @@
 // Novo hábito · detalhes e Editar hábito (tela cheia). Nome, meta e botões rápidos vêm primeiro; o resto chega
 // preenchido ("Onde e quando · pode deixar assim"). O ícone muda tocando no lápis da prévia. "Criar" ao criar e
 // "Salvar" ao editar, desabilitados sem nome (ajustes-plano.md › Novo hábito · detalhes).
-import { useEffect, useRef, useState } from 'react';
+// No Treino guiado, a linha "Plano · 13 semanas ›" empurra o editor do plano dentro da mesma tela cheia (o conteúdo
+// faz o passo de 24 px; "‹ Novo hábito" volta), e o plano vai junto no Criar ou no Salvar.
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
+import { AnimatePresence, m, type Variants } from 'motion/react';
 import { FullScreen, NavBar, Sheet, showUndo, useGoBack } from '@/components/shell';
 import { Button, DayPicker, ListGroup, SectionLabel, Switch, TextField, TimeValue } from '@/components/ui';
 import {
   formatDayShort,
   formatTime,
+  planWeeks,
   suggestIcon,
+  templateOf,
   useDrafts,
   useHabit,
   useJourney,
@@ -17,7 +22,13 @@ import {
 } from '@/data';
 import { createHabit, moveHabitToPhase, updateHabit } from '@/actions';
 import { useNow } from '@/data/useDomain';
+import { distance, dur, ease, tween } from '@/motion/tokens';
+import { usePrefersReducedMotion } from '@/motion';
 import type { Habit, HabitGoal, Weekday } from '@/types';
+import { aroundText, scheduleLabel } from '@/screens/journey/shared';
+import { TrainingPlanEditor } from './TrainingPlanEditor';
+import { planShape } from './trainingEdit';
+import './training.css';
 import { ChoiceSheet, Dot, Foot, Row, type Choice } from './parts';
 import { GoalStepper } from './GoalStepper';
 import { ChecklistEditor, GoalRamp, HabitPreview, QuickAddsEditor, RampSheet } from './HabitFormParts';
@@ -67,7 +78,44 @@ export default function HabitFormScreen() {
   return <HabitForm key={`novo-${tipo}`} initial={initial} origin={pilar} />;
 }
 
-type SheetName = 'icon' | 'pillar' | 'moment' | 'days' | 'start' | 'phase' | 'unit' | 'unitOther' | 'partial' | 'ramp';
+type SheetName =
+  | 'icon'
+  | 'pillar'
+  | 'moment'
+  | 'days'
+  | 'start'
+  | 'phase'
+  | 'unit'
+  | 'unitOther'
+  | 'partial'
+  | 'ramp'
+  | 'name';
+
+// a parte do plano entra como um passo: 24 px pela direita com opacidade em base; a que sai, 24 px para a esquerda
+// em micro (voltar faz o inverso). Reduzido: só opacidade, em micro.
+const partVariants: Variants = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * distance.screen }),
+  center: { opacity: 1, x: 0, transition: tween.base },
+  exit: (dir: number) => ({ opacity: 0, x: -dir * distance.screen, transition: { duration: dur.micro, ease: ease.exit } }),
+};
+const reducedPartVariants: Variants = {
+  enter: { opacity: 0 },
+  center: { opacity: 1, transition: tween.micro },
+  exit: { opacity: 0, transition: tween.micro },
+};
+
+/** Ao entrar uma parte: a rolagem vai para `scrollTo` (o topo, ou onde o formulário estava) e o foco para o título. */
+function PartStart({ scrollTo }: { scrollTo: number | null }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    if (scrollTo === null) return;
+    const scroller = ref.current?.closest<HTMLElement>('[data-screen-scroll]');
+    if (scroller) scroller.scrollTop = scrollTo;
+    const h = ref.current?.closest<HTMLElement>('.sh-full')?.querySelector<HTMLElement>('h1');
+    h?.focus({ preventScroll: true });
+  }, [scrollTo]);
+  return <span ref={ref} hidden />;
+}
 
 function HabitForm({ initial, editing, origin }: { initial: FormState; editing?: Habit; origin?: string | null }) {
   const navigate = useNavigate();
@@ -84,6 +132,33 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
   const [busy, setBusy] = useState(false);
   const nameWrap = useRef<HTMLDivElement>(null);
   const isNew = !editing;
+  const reduced = usePrefersReducedMotion();
+  // Treino guiado: a parte do plano (empurrada dentro da tela), os nomes do esforço e do descanso e o horário
+  const [planOpen, setPlanOpen] = useState(false);
+  const [partDir, setPartDir] = useState(1);
+  const [partScroll, setPartScroll] = useState<number | null>(null);
+  const formScroll = useRef(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [nameKind, setNameKind] = useState<'effort' | 'rest'>('effort');
+  const [nameDraft, setNameDraft] = useState('');
+  const [time, setTime] = useState(initial.time ?? '07:00');
+  const guided = form.type === 'guided' && !!form.training;
+  const openPlan = () => {
+    formScroll.current = bodyRef.current?.closest<HTMLElement>('[data-screen-scroll]')?.scrollTop ?? 0;
+    setPartDir(1);
+    setPartScroll(0);
+    setPlanOpen(true);
+  };
+  const closePlan = () => {
+    setPartDir(-1);
+    setPartScroll(formScroll.current);
+    setPlanOpen(false);
+  };
+  const openName = (kind: 'effort' | 'rest') => {
+    setNameKind(kind);
+    setNameDraft(form.training?.[kind] ?? '');
+    setSheet('name');
+  };
 
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
   const setGoal = (patch: Partial<HabitGoal>) => setForm((f) => ({ ...f, goal: { ...f.goal, ...patch } }));
@@ -148,15 +223,18 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
     if (!canSave || !pillar) return;
     setBusy(true);
     const goal: HabitGoal = { ...form.goal };
+    const trainingPatch = guided ? { training: form.training } : {};
+    const timePatch = guided && form.time ? { time: form.time } : {};
     if (editing) {
       await updateHabit(editing.id, {
         name,
         icon,
         pillarId: form.pillarId,
         goal,
-        schedule: { ...editing.schedule, days: form.days, moment: form.moment },
+        schedule: { ...editing.schedule, days: form.days, moment: form.moment, ...timePatch },
         quickAdds: form.quickAdds,
         checklist: form.checklist,
+        ...trainingPatch,
       });
       if (form.phase !== null && form.phase !== editing.phase) await moveHabitToPhase(editing.id, form.phase);
       goBack(`/ajustes/habitos/${encodeURIComponent(editing.id)}`);
@@ -168,10 +246,11 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
       pillarId: form.pillarId,
       icon,
       goal,
-      schedule: { days: form.days, moment: form.moment },
+      schedule: { days: form.days, moment: form.moment, ...timePatch },
       quickAdds: form.quickAdds,
       checklist: form.checklist,
       start: form.start,
+      ...trainingPatch,
     });
     setDraft(null);
     goBack(origin ? `/ajustes/pilares/${encodeURIComponent(origin)}` : '/ajustes/habitos');
@@ -312,6 +391,35 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
         />
       </div>
     );
+  } else if (guided && form.training) {
+    // treinos por semana e os nomes do esforço e do descanso (o resto do treino fica no plano)
+    const perWeek = g.perWeek ?? 2;
+    meta = (
+      <div className="pk-lg st-meta">
+        <GoalStepper
+          label="Treinos por semana"
+          value={perWeek}
+          step={1}
+          max={7}
+          caption={perWeek === 1 ? 'treino por semana' : 'treinos por semana'}
+          onChange={(v) => setGoal({ perWeek: v })}
+        />
+        <Row
+          title="Esforço"
+          subtitle="O que você faz nos blocos fortes"
+          value={form.training.effort}
+          label={`Esforço, ${form.training.effort}. Mudar o nome`}
+          onClick={() => openName('effort')}
+        />
+        <Row
+          title="Descanso"
+          subtitle="Entre um esforço e outro"
+          value={form.training.rest}
+          label={`Descanso, ${form.training.rest}. Mudar o nome`}
+          onClick={() => openName('rest')}
+        />
+      </div>
+    );
   } else if (form.type === 'budget') {
     meta = (
       <div className="pk-lg st-meta">
@@ -379,10 +487,15 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
     { value: '__outra', label: 'Outra', detail: 'Escreva a sua' },
   ];
 
+  const planWeekCount = form.training ? planWeeks(form.training).length : 0;
+  const planTemplate = form.training ? templateOf(form.training) : null;
+
   return (
     <FullScreen
       top={
-        isNew ? (
+        planOpen && form.training ? (
+          <NavBar back={isNew ? 'Novo hábito' : 'Editar hábito'} onBack={closePlan} title="Plano" />
+        ) : isNew ? (
           <NavBar
             back="Tipo"
             onBack={toType}
@@ -399,7 +512,39 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
         )
       }
     >
-      <div className="st-screen">
+      <AnimatePresence mode="wait" initial={false} custom={partDir}>
+        {planOpen && form.training ? (
+          <m.div
+            key="plano"
+            className="st-tp-host"
+            custom={partDir}
+            variants={reduced ? reducedPartVariants : partVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            <PartStart scrollTo={partScroll} />
+            <TrainingPlanEditor
+              plan={form.training}
+              onChange={(t) => update({ training: t })}
+              perWeek={g.perWeek ?? 2}
+              pillar={color}
+              name={form.name}
+            />
+          </m.div>
+        ) : (
+      // o formulário (o conteúdo fica no recuo de antes; a parte do plano entra no lugar dele)
+      <m.div
+        key="formulario"
+        ref={bodyRef}
+        className="st-screen"
+        custom={partDir}
+        variants={reduced ? reducedPartVariants : partVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+      >
+        <PartStart scrollTo={partScroll} />
         <SectionLabel trailing={previewLabel(form)}>Prévia no Hoje</SectionLabel>
         <div className="st-pad">
           <HabitPreview
@@ -418,7 +563,7 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
             hideLabel
             value={form.name}
             onChange={(v) => update({ name: v })}
-            placeholder="Proteína, Leitura, Louça…"
+            placeholder={form.type === 'guided' ? 'Corrida, Bicicleta, Natação…' : 'Proteína, Leitura, Louça…'}
             enterKeyHint="done"
             maxLength={40}
           />
@@ -426,8 +571,28 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
 
         {meta && (
           <>
-            <SectionLabel>Meta</SectionLabel>
+            <SectionLabel>{guided ? 'Treino' : 'Meta'}</SectionLabel>
             <div className="st-pad">{meta}</div>
+          </>
+        )}
+
+        {guided && form.training && (
+          <>
+            <SectionLabel trailing={planTemplate ? 'modelo pronto' : undefined}>Plano</SectionLabel>
+            <div className="st-pad">
+              <ListGroup>
+                <Row
+                  title="Plano"
+                  subtitle={planTemplate ? planTemplate.name : planShape(form.training)}
+                  value={`${planWeekCount} ${planWeekCount === 1 ? 'semana' : 'semanas'}`}
+                  label={`Plano, ${planWeekCount} ${planWeekCount === 1 ? 'semana' : 'semanas'}. ${
+                    planTemplate ? planTemplate.name : planShape(form.training)
+                  }. Editar o plano`}
+                  onClick={openPlan}
+                />
+              </ListGroup>
+            </div>
+            <Foot>{`${aroundText(form.training.warmupMin, form.training.cooldownMin)} No plano, cada semana tem os blocos de ${form.training.effort.toLocaleLowerCase('pt-BR')} e ${form.training.rest.toLocaleLowerCase('pt-BR')}.`}</Foot>
           </>
         )}
 
@@ -483,10 +648,17 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
                 <Row title="Dias" subtitle="Muda em Ajustes › Horários" value="Dias de coleta" chevron={false} />
               ) : (
                 <Row
-                  title="Dias"
-                  value={form.days.length === 7 ? 'Todos os dias' : daysLabel(form.days)}
+                  title={guided ? 'Dias de treino' : 'Dias'}
+                  value={
+                    guided
+                      ? scheduleLabel(form.days, form.time)
+                      : form.days.length === 7
+                        ? 'Todos os dias'
+                        : daysLabel(form.days)
+                  }
                   onClick={() => {
                     setDays(form.days);
+                    setTime(form.time ?? '07:00');
                     setSheet('days');
                   }}
                 />
@@ -499,7 +671,9 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
           </ListGroup>
         </div>
         <div className="st-form-end" />
-      </div>
+      </m.div>
+        )}
+      </AnimatePresence>
 
       {/* ---------- folhas ---------- */}
       <Sheet open={sheet === 'icon'} onOpenChange={(v) => !v && setSheet(null)} title="Ícone" tall>
@@ -533,13 +707,13 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
       <Sheet
         open={sheet === 'days'}
         onOpenChange={(v) => !v && setSheet(null)}
-        title="Dias"
+        title={guided ? 'Dias de treino' : 'Dias'}
         footer={
           <Button
             wide
             disabled={!days.length}
             onClick={() => {
-              update({ days });
+              update(guided ? { days, time } : { days });
               setSheet(null);
             }}
           >
@@ -548,10 +722,67 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
         }
       >
         <div className="st-field-row">
-          <DayPicker value={days} onChange={(d) => setDays(d as Weekday[])} pillar={color} label="Dias do hábito" />
-          <Button variant="ghost" size="sm" onClick={() => setDays([...ALL_WEEKDAYS])}>
-            Todos os dias
+          {guided && (
+            <p className="lead" style={{ margin: 0 }}>
+              {`${g.perWeek ?? 2} ${(g.perWeek ?? 2) === 1 ? 'treino' : 'treinos'} por semana. Um dia de descanso entre eles ajuda o corpo a se recuperar.`}
+            </p>
+          )}
+          <DayPicker
+            value={days}
+            onChange={(d) => setDays(d as Weekday[])}
+            pillar={color}
+            label={guided ? 'Dias de treino' : 'Dias do hábito'}
+          />
+          {guided ? (
+            <div className="st-tp-time">
+              <span>Horário</span>
+              <TimeValue
+                kind="time"
+                value={time}
+                onChange={setTime}
+                label="Horário do treino"
+                display={formatTime(time)}
+              />
+            </div>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setDays([...ALL_WEEKDAYS])}>
+              Todos os dias
+            </Button>
+          )}
+        </div>
+      </Sheet>
+      <Sheet
+        open={sheet === 'name'}
+        onOpenChange={(v) => !v && setSheet(null)}
+        title={nameKind === 'rest' ? 'Descanso' : 'Esforço'}
+        keyboardAware
+        footer={
+          <Button
+            wide
+            disabled={!nameDraft.trim()}
+            onClick={() => {
+              if (form.training) update({ training: { ...form.training, [nameKind]: nameDraft.trim() } });
+              setSheet(null);
+            }}
+          >
+            Pronto
           </Button>
+        }
+      >
+        <div className="st-field-row">
+          <TextField
+            label={nameKind === 'rest' ? 'Nome do descanso' : 'Nome do esforço'}
+            value={nameDraft}
+            onChange={setNameDraft}
+            placeholder={nameKind === 'rest' ? 'Caminhar, Pedalar leve, Descansar…' : 'Correr, Pedalar, Nadar…'}
+            enterKeyHint="done"
+            maxLength={24}
+          />
+          <p className="foot st-foot">
+            {nameKind === 'rest'
+              ? 'Aparece no treino entre os esforços: "Depois: caminhar 1:30".'
+              : 'Aparece no treino em letra grande enquanto o bloco dura, e nos avisos de cada troca.'}
+          </p>
         </div>
       </Sheet>
       <ChoiceSheet

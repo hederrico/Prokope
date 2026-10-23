@@ -8,7 +8,16 @@ import { daysSince, type DaysSince } from '@/domain/daysSince';
 import { addDays, weekStart } from '@/domain/day';
 import { pillarExitPlan, type PillarHabitFate } from '@/domain/pillars';
 import { lastBefore, weightTrend, type WeightTrend } from '@/domain/weight';
-import { runElapsed, runPosition, runWeek, type RunPosition, type RunWeek } from '@/domain/runPlan';
+import {
+  namesOf,
+  planWeek,
+  runElapsed,
+  runPosition,
+  trainingOf,
+  type RunPosition,
+  type RunWeek,
+  type TrainingNames,
+} from '@/domain/runPlan';
 import { reviewWindow, type ReviewWindow } from '@/domain/review';
 import {
   counterView,
@@ -338,14 +347,21 @@ export function useJourney(): JourneyView {
   return cached(data, `journey:${today}:${Math.floor(now / 60_000)}`, () => journeyView(data, now));
 }
 
-export function useRunPlan(): RunPlanView {
+/** O plano de um treino guiado (sem `habitId`, o primeiro que aparece na Jornada: as rotas antigas da corrida). */
+export function useRunPlan(habitId?: string | null): RunPlanView {
   const data = useDomain();
   const { now, today } = useNow();
-  return cached(data, `run:${today}:${Math.floor(now / 60_000)}`, () => runPlanView(data, now));
+  return cached(data, `run:${habitId ?? ''}:${today}:${Math.floor(now / 60_000)}`, () =>
+    runPlanView(data, now, habitId),
+  );
 }
 
 export interface RunLive {
   run: Run;
+  /** o treino guiado do treino (pode faltar num treino antigo sem hábito) */
+  habit: Habit | null;
+  /** os nomes do esforço e do descanso ("Pedalar", "Pedalar leve") */
+  names: TrainingNames;
   week: RunWeek;
   position: RunPosition;
   paused: boolean;
@@ -353,7 +369,7 @@ export interface RunLive {
 
 /**
  * O treino em andamento, recalculado `fps` vezes por segundo pela hora de início e pelas pausas
- * (a tela bloqueada não desvia o tempo). Sem `runId`, usa o treino ativo.
+ * (a tela bloqueada não desvia o tempo), com os blocos do plano do hábito. Sem `runId`, usa o treino ativo.
  */
 export function useRunLive(runId?: string, fps = 4): RunLive | null {
   const run = useDataStore((s) => {
@@ -364,6 +380,7 @@ export function useRunLive(runId?: string, fps = 4): RunLive | null {
     }
     return best;
   });
+  const habit = useDataStore((s) => (run ? (s.habits[run.habitId] ?? null) : null));
   const [now, setNow] = useState(() => nowMs());
   useEffect(() => {
     if (!run) return;
@@ -377,10 +394,18 @@ export function useRunLive(runId?: string, fps = 4): RunLive | null {
   }, [run, fps]);
   return useMemo(() => {
     if (!run) return null;
-    const week = runWeek(run.week);
+    const plan = trainingOf(habit);
+    const week = planWeek(plan, run.week);
     const elapsed = runElapsed(run, Math.max(now, run.startedAt));
-    return { run, week, position: runPosition(week, elapsed), paused: run.status === 'paused' };
-  }, [run, now]);
+    return {
+      run,
+      habit,
+      names: namesOf(plan),
+      week,
+      position: runPosition(week, elapsed),
+      paused: run.status === 'paused',
+    };
+  }, [run, habit, now]);
 }
 
 /** A revisão da semana (qualquer dia da semana serve: '2026-10-11' abre a semana de 5 a 11 out). */

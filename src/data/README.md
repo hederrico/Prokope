@@ -93,7 +93,7 @@ const t = useToday(day?);      // sem `day`, hoje; com `day`, "Ver outro dia" (/
 | `checkin` | o check-in do dia, ou `null` |
 | `quickAdds` | `{ [habitId]: QuickAdd[] }`: os 3 botões da hora de cada contador (ovo, leite, whey de manhã) |
 | `tomorrowMorning` | "Amanhã cedo", no dia fechado |
-| `activeRun` | treino em andamento (faixa `RunStrip`; use `useRunLive()` para o relógio) |
+| `activeRun` | treino em andamento, de qualquer treino guiado (faixa `RunStrip`; use `useRunLive()` para o relógio) |
 
 `t.layout` (`TodayLayout`):
 
@@ -164,7 +164,7 @@ st.daysSince;      // dias sem (tipo daysSince)
 st.budget;         // limite (tipo budget)
 const ds = useDaysSince(id);  // { current, record, total, periods: [{ start, end, days, current, record, slipId }], ifSlipToday }
 const hd = useHabitDay(id, day?); // o estado num dia (folhas: a nota já dada, o horário salvo)
-const lunch = useHabitByRole('lunch'); // o hábito de um papel: 'wake' | 'bed' | 'protein' | 'water' | 'lunch' | 'dinner' | 'checkin' | 'weight' | 'run' | ...
+const lunch = useHabitByRole('lunch'); // o hábito de um papel: 'wake' | 'bed' | 'protein' | 'water' | 'lunch' | 'dinner' | 'checkin' | 'weight' | ...
 ```
 
 - `ds.periods[0]` é o período atual; `ds.ifSlipToday` é a prévia da folha do deslize (`{ current: 0, record: 21, total: 32 }`).
@@ -209,24 +209,31 @@ p.pillar;    // tema de pilar: { pillar, counters, habits, limits, daysSince, ra
 - `WeightTrend`: `{ ready, count, needed: 3, points: [{ day, value, avg }], avg, delta: -1.1, weeks: 3, direction: 'down' | 'up' | 'stable', title: 'Tendência −1,1 kg em 3 semanas', sentence }`. Com `trendOnly` (Ajustes › Aparência › Privacidade), desenhe só a média.
 - Contadores do pilar: `counters[i].summary` = "80 g ou mais em 2 dos 3 dias fechados".
 
-### Jornada, corrida e revisão
+### Jornada, treinos guiados e revisão
 
 ```ts
 const j = useJourney();
 j.phases;   // PhaseView[]: { number, name, status: 'done' | 'current' | 'future', start, end, predicted, weeks,
             //   weekIndex, dayIndex, daysLeft, habits, constancy, weekBars: [{ index, start, end, ratio, current, future }], lastWeek }
 j.current; j.next;
-j.run;      // { habit, startsOn: '2026-11-02', available, weeks: 13, perWeek: 2 }
+j.trainings; // um por Treino guiado ativo ou à espera da fase (sem arquivados e parados), na ordem dos hábitos:
+             //   [{ habit, names: { effort: 'Correr', rest: 'Caminhar' }, startsOn, available, weeks: 13, perWeek: 2,
+             //      next: { week, session }, effortByWeek: [480, 480, 540, ...] }]
 j.reviews;  // [{ week, day, label: 'domingo, 18 out', context: 'semana 1 da fase 2', constancy: 0.74, status: 'done' | 'pending', endOfPhase }]
 j.firstReviewDay; j.pause;
 
-const r = useRunPlan();
-r.weeks;    // as 13 semanas: { week, label: '8× (1 + 1,5)', description, blocks, totalSeconds, runSeconds, intervals, current, sessionsDone }
-r.next;     // { week: 1, session: 1 }
-r.available; r.startsOn; r.schedule; r.activeRun; r.history;
+const r = useRunPlan(habitId?);  // o plano de um treino guiado; sem id, o primeiro (as rotas antigas da corrida)
+r.habit;    // o hábito (null se o id não é de um treino guiado)
+r.plan;     // o plano, sempre válido: { effort, rest, warmupMin, cooldownMin, weeks } (sem plano gravado, o modelo da corrida)
+r.names;    // { effort: 'Pedalar', rest: 'Pedalar leve' }
+r.weeks;    // as semanas: { week, label: '8× (1 + 1,5)', description, blocks, totalSeconds, effortSeconds, intervals, current, sessionsDone }
+r.next;     // { week: 1, session: 1 } (pela contagem dos treinos feitos deste hábito)
+r.perWeek; r.available; r.startsOn; r.schedule; r.history;
+r.activeRun; // o treino em andamento, de qualquer treino guiado (um por vez)
 
 const live = useRunLive(runId?);  // relógio do treino, 4× por segundo, sempre pela hora de início e pelas pausas
-live.position; // { block: { kind: 'run' | 'walk' | 'warmup' | 'cooldown', seconds }, next, inBlock, remaining, interval: 3, intervals: 8, elapsed, total, done }
+live.habit; live.names;           // o treino guiado do treino e os nomes do esforço e do descanso
+live.position; // { block: { kind: 'effort' | 'rest' | 'warmup' | 'cooldown', seconds }, next, inBlock, remaining, interval: 3, intervals: 8, elapsed, total, done }
 
 const rv = useReview(semana);      // qualquer dia da semana revista ('2026-10-11' abre 5 a 11 out)
 rv.steps;        // 3 no fim da fase (com o convite), 2 no meio
@@ -304,7 +311,7 @@ async function onCheck() {
 | `archivePillar(id)`, `restorePillar(id)` | arquiva com os hábitos só dele; o compartilhado passa para o extra (e volta ao restaurar) |
 | `deletePillar(id)` | apaga de vez com os hábitos só dele e os registros deles (há desfazer; a folha decide se oferece) |
 | `reorderPillars(ids)` | nova ordem, ao soltar o arrasto |
-| `createHabit(draft)` | `draft`: `{ name, type, pillarId, icon?, alsoIn?, goal?, schedule?, quickAdds?, checklist?, start?: 'now' \| <fase> \| <dia> }`. Numa fase futura, espera |
+| `createHabit(draft)` | `draft`: `{ name, type, pillarId, icon?, alsoIn?, goal?, schedule?, quickAdds?, checklist?, training?, start?: 'now' \| <fase> \| <dia> }`. Numa fase futura, espera. Treino guiado sem `training` nasce com o modelo da corrida |
 | `updateHabit(id, patch)` | meta, mínimo, horário, dias, pilar, ícone, botões... |
 | `moveHabitToPhase(habitId, n)` | "Proteína movida para a fase 3" |
 | `scheduleHabit(habitId, day, note?)` | um dia marcado (programa a dois no sábado) |
@@ -322,8 +329,8 @@ async function onCheck() {
 | `markPhaseCelebrated(n)` | a celebração da fase desbloqueada aconteceu (`phase.celebratedAt`) |
 | `saveReviewStep(semana, passo, { tweakWorked?, tweak?, waist?, together? })` | guarda o passo; `waist` grava a cintura; `together` marca o dia do programa a dois |
 | `finishReview(semana, { decision?: 'advance' \| 'stay' })` | conclui e guarda a constância e o resumo |
-| `setRunSchedule({ days: [0, 2], time: '07:10' })` | dias e hora dos treinos |
-| `startRun({ week, session })`, `pauseRun(id)`, `resumeRun(id)`, `finishRun(id)`, `discardRun(id)` | o treino; `finishRun` marca a Corrida (feito na meta, parcial a partir do mínimo). `readRunCopy()` lê a cópia local para retomar antes dos dados chegarem |
+| `setRunSchedule({ days: [0, 2], time: '07:10' }, habitId?)` | dias e hora dos treinos de um treino guiado (sem id, o primeiro) |
+| `startRun({ week, session, habitId? })`, `pauseRun(id)`, `resumeRun(id)`, `finishRun(id)`, `discardRun(id)` | o treino, com os blocos do plano do hábito; `finishRun` marca o hábito pelo plano: o treino inteiro é feito, a partir da metade é parcial, abaixo fica registrado sem contar (`mark.goal.value` = os minutos do treino). `readRunCopy()` lê a cópia local para retomar antes dos dados chegarem |
 
 ### Perfil, dados e A dois
 
@@ -366,7 +373,11 @@ Na virada do dia, um rascunho de check-in com humor e energia vira check-in salv
 
 Os tipos estão em `src/types/model.ts`: `Profile`, `Pillar`, `Habit`, `Mark`, `Entry`, `Slip`, `Checkin`, `Measurement`, `Pause`, `Phase`, `Review`, `Run`, `Invite`, `Link`, `Hug`.
 
-**Hábito** (`Habit`): `type` é `'check' | 'time' | 'counter' | 'rating' | 'number' | 'weekly' | 'budget' | 'daysSince' | 'checklist'`; `goal` = `{ value?, unit?, partialMin?, direction?, ramp?, perWeek?, time?, timeKey?, toleranceMin?, measuring? }`; `schedule` = `{ days, useCollectionDays?, moment: 'morning' | 'day' | 'evening' | 'free', time?, timeKey? }`; `pillarId` e `alsoIn`; `phase`, `startDay` (null = espera a fase), `role`, `icon`, `quickAdds`, `checklist`, `order`, `archived`.
+**Hábito** (`Habit`): `type` é `'check' | 'time' | 'counter' | 'rating' | 'number' | 'weekly' | 'budget' | 'daysSince' | 'checklist' | 'guided'`; `goal` = `{ value?, unit?, partialMin?, direction?, ramp?, perWeek?, time?, timeKey?, toleranceMin?, measuring? }`; `schedule` = `{ days, useCollectionDays?, moment: 'morning' | 'day' | 'evening' | 'free', time?, timeKey? }`; `pillarId` e `alsoIn`; `phase`, `startDay` (null = espera a fase), `role`, `icon`, `quickAdds`, `checklist`, `order`, `archived`.
+
+**Treino guiado** (`type: 'guided'`): conta como vezes por semana (`goal.perWeek` = treinos por semana, nos dias de `schedule.days`, às `schedule.time`) e tem o plano em `training`: `{ effort: 'Correr', rest: 'Caminhar', warmupMin: 5, cooldownMin: 5, weeks: [{ kind: 'repeat', repeat: 8, effort: 1, rest: 1.5 } | { kind: 'sequence', steps: [15, 2, 8] } | { kind: 'continuous', minutes: 20 }] }` (minutos). Leia sempre por `trainingOf(habit)`, que devolve um plano válido (nomes vazios voltam ao padrão; sem plano, o modelo da corrida).
+
+**Migração na leitura** (`src/domain/normalize.ts`): o store e o domínio passam cada hábito por `normalizeHabit`. A corrida de antes (`type: 'weekly'`, `role: 'run'`, sem `training`) chega como Treino guiado com o modelo "Corrida do zero aos 30 minutos", sem script. Os treinos feitos (`runs`) continuam ligados pelo id, e a semana e o treino atuais saem da contagem deles. A próxima gravação do hábito já sai no formato novo: `updateHabit` grava o documento inteiro, e um merge em qualquer outra ação (`commit`, em `actions/core.ts`) leva junto os campos da migração.
 
 **Estado de um dia** (`HabitDayState`):
 
@@ -405,7 +416,7 @@ Tudo sai de `@/data`:
 - **Textos:** `formatTime('06:52')` "6h52", `formatTimePadded` "06h52", `formatVolume(1500)` "1,5 L", `formatMinutes(108)` "1h 48min", `formatNumber(83.6)` "83,6", `formatAmount(46, 'g')`, `formatDayHeader(day)` "Quinta, 22 de outubro", `formatDayShort` "22 out", `formatDayCompact` "Qua, 21 out", `formatDayLong`, `formatRange(a, b)` "19 – 25 de outubro", `formatRelativeDay`, `formatPercent(0.76)` "76%", `formatClockSeconds(42)` "0:42", `weekdayName`, `weekdayShortLabel(0)` "seg", `moodWord(4)` "Bem", `energyWord(3)` "Ok", `mealWord(4)` "Bom", `greeting(minutes)`, `capitalize`.
 - **Datas:** `addDays`, `diffDays`, `daysBetween`, `weekStart`, `weekDays`, `weekdayOf`, `isWeekend`, `monthDays`, `instantAt(day, '07:10')`, `timeOf(ms)`.
 - **Primeiro acesso:** `defaultPlanDraft('template' | 'empty')`, `planChips(draft, pillarKey)`, `toggleChip(draft, chip, on)`, `laterSummary(pillarKey)` "Depois: ritual do sono e silêncio", `chosenCount(draft)` (7), `planStartDay(now, clock)` (amanhã depois das 20h), `TEMPLATE_PILLARS`, `DEFAULT_SCHEDULE`.
-- **Corrida:** `RUN_PLAN`, `runWeek(n)`, `runPosition(week, segundos)`, `runElapsed(run, agora)`, `intervalsCompleted`.
+- **Treino guiado:** `trainingOf(habit)`, `planWeeks(plan)`, `planWeek(plan, n)`, `weekOfHabit(habit, n)`, `namesOf(plan)`, `sessionsPerWeek(habit)`, `nextSession(feitos, semanas, porSemana)`, `runPosition(week, segundos)`, `runElapsed(run, agora)`, `intervalsCompleted`, `effortSecondsDone`; textos `weekLabel`, `weekPhrase`, `gerund('Pedalar leve')` "pedalando leve", `effortTimeLabel(names)` "tempo correndo"; modelos `RUN_TEMPLATE` ("Corrida do zero aos 30 minutos"), `TRAINING_TEMPLATES`, `templateOf(plan)`, `runTemplatePlan()`, `blankPlan()`, `clonePlan()`; o plano do modelo pronto em `RUN_PLAN` e `runWeek(n)`.
 - **Pilares:** `pillarUsingColor(color, pillars)` ("Damasco · também em Corpo"), `duplicatePillarName(name, pillars)` ("Já existe um pilar Corpo."), `firstFreeColor(PALETTE_KEYS, pillars)`.
 - **Outros:** `quickAddsFor(habit, minutes)`, `groupEntries(entries)`, `insightText(correlation, habit)`, `isDoneLike(state)`, `nextRampStep(habit, day)`, `CORRELATION_NEEDED` (7), `WEIGHT_NEEDED` (3).
 

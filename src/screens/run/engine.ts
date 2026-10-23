@@ -1,4 +1,4 @@
-// O motor da corrida fora do React (jornada.md › Corrida em andamento): som das trocas, contagem 3, 2, 1,
+// O motor do treino guiado fora do React (jornada.md › Treino em andamento): som das trocas, contagem 3, 2, 1,
 // vibração e a trava da tela (Wake Lock). Ele segue rodando quando a pessoa minimiza o treino, porque o app
 // continua aberto e a faixa do Hoje troca de cor igual.
 // O tempo nunca é contado por tique: a cada verificação, decorrido = agora − começo − pausas (runElapsed).
@@ -7,7 +7,7 @@
 // dentro do toque em "Começar" (o iPhone só libera o áudio e a trava da tela depois de um gesto).
 import { create } from 'zustand';
 import type { Run } from '@/types';
-import { runElapsed, runPosition, runWeek, type RunBlock, type RunPosition } from '@/data';
+import { runElapsed, runPosition, weekOfHabit, type RunBlock, type RunPosition, type RunWeek } from '@/data';
 import { haptic } from '@/motion';
 import { useDataStore } from '@/stores/data';
 import { nowMs } from '@/stores/clock';
@@ -54,13 +54,13 @@ function tone(freq: number, ms: number, at = 0) {
 export const runSound = {
   /** contagem: 660 Hz, 60 ms */
   tick: () => safe(() => tone(660, 60)),
-  /** trote: dois bipes de 880 Hz (120 ms, com 80 ms entre eles) */
+  /** esforço: dois bipes de 880 Hz (120 ms, com 80 ms entre eles) */
   run: () =>
     safe(() => {
       tone(880, 120);
       tone(880, 120, 200);
     }),
-  /** caminhada: um tom de 523 Hz de 300 ms */
+  /** descanso (e aquecimento, volta à calma): um tom de 523 Hz de 300 ms */
   walk: () => safe(() => tone(523, 300)),
 };
 
@@ -154,9 +154,14 @@ function soundOn(): boolean {
   return useDataStore.getState().profile?.prefs?.runSound ?? true;
 }
 
+/** A semana do treino, com os blocos do plano do hábito dele. */
+export function weekOf(run: Run): RunWeek {
+  return weekOfHabit(useDataStore.getState().habits[run.habitId], run.week);
+}
+
 /** Posição do treino agora. */
 export function positionOf(run: Run, at = nowMs()): RunPosition {
-  return runPosition(runWeek(run.week), runElapsed(run, Math.max(at, run.startedAt)));
+  return runPosition(weekOf(run), runElapsed(run, Math.max(at, run.startedAt)));
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -198,9 +203,9 @@ function check() {
     return;
   }
   if (pos.index !== last.index) {
-    const previous = runWeek(run.week).blocks[last.index];
+    const previous = weekOf(run).blocks[last.index];
     last = { runId: run.id, index: pos.index, countdown, done: pos.done };
-    if (soundOn()) (pos.block.kind === 'run' ? runSound.run : runSound.walk)();
+    if (soundOn()) (pos.block.kind === 'effort' ? runSound.run : runSound.walk)();
     haptic();
     for (const l of [...listeners]) l({ type: 'block', run, position: pos, previous });
     return;

@@ -51,16 +51,24 @@ test.describe('jornada', () => {
     await expect(page).toHaveURL(/\/jornada$/);
     await settle(page);
 
-    // plano de corrida: as 13 semanas, sem "Começar treino" antes da fase 3
-    await page.getByRole('button', { name: /^Plano de corrida/ }).click();
-    await expect(page).toHaveURL(/\/jornada\/corrida$/);
-    await expect(page.getByRole('heading', { name: 'Do zero aos 30 minutos' })).toBeVisible();
+    // o cartão do treino guiado (a corrida do modelo): as 13 semanas, sem "Começar treino" antes da fase 3
+    await page.getByRole('button', { name: /^Corrida, plano de treino/ }).click();
+    await expect(page).toHaveURL(/\/jornada\/treino\/[^/]+$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Corrida' })).toBeVisible();
+    await expect(page.getByText(/^Do zero aos 30 minutos\. 13 semanas, 2 treinos por semana/)).toBeVisible();
     await expect(page.locator('.jr-wr')).toHaveCount(13);
     await expect(page.getByText('a partir de 2 nov')).toBeVisible();
     await expect(page.getByRole('button', { name: /Começar treino/ })).toHaveCount(0);
     // outra semana troca o cartão do treino
     await page.getByRole('button', { name: /^Semana 13:/ }).click();
     await expect(page.getByRole('heading', { name: /Semana 13 · o treino/ })).toBeVisible();
+    await expect(page.getByRole('list', { name: /^Semana 13: correr 30 minutos sem parar/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Voltar para Jornada' }).click();
+    await settle(page);
+    // a rota antiga do plano de corrida leva ao plano da corrida
+    await go(page, '/jornada/corrida');
+    await expect(page).toHaveURL(/\/jornada\/treino\/[^/]+$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Corrida' })).toBeVisible();
     await page.getByRole('button', { name: 'Voltar para Jornada' }).click();
     await settle(page);
 
@@ -96,11 +104,12 @@ test.describe('jornada', () => {
     // espera de verdade pelo relógio (pausa, recarregar e o toque longo)
     test.setTimeout(60_000);
     await enterDemo(page, null);
+    // a rota antiga continua abrindo o treino do primeiro treino guiado (a corrida)
     await go(page, '/corrida/1/1');
     await expect(page.getByRole('heading', { name: 'Semana 1 · treino 1' })).toBeVisible();
     await expect(page.locator('.rn-state')).toHaveText('Aquecimento');
     await expect(page.getByRole('timer')).toBeVisible();
-    await expect(page.locator('.rn-next')).toContainText('Depois: trote');
+    await expect(page.locator('.rn-next')).toContainText('Depois: correr');
 
     // pausar e continuar
     await page.getByRole('button', { name: 'Pausar treino' }).click();
@@ -141,6 +150,85 @@ test.describe('jornada', () => {
     await expect(page.getByText('Semana 1 · treino 1 de 2')).toBeVisible();
     await page.getByRole('button', { name: 'Voltar ao dia' }).click();
     await expect(page).toHaveURL(/\/hoje/);
+  });
+
+  test('treino guiado de pedalar: criar com 2 semanas, ver na Jornada e fazer um treino', async ({ page }) => {
+    await enterDemo(page, '2026-10-22T07:05');
+    await go(page, '/ajustes/habitos/novo/tipo');
+    await page.getByRole('button', { name: /^Treino guiado/ }).click();
+    await expect(page).toHaveURL(/novo\/detalhes\?tipo=guided/);
+    await page.getByRole('textbox', { name: 'Nome' }).fill('Bicicleta');
+    // os nomes do esforço e do descanso (padrão: correr e caminhar)
+    await page.getByRole('button', { name: /^Esforço, Correr/ }).click();
+    await page.getByRole('textbox', { name: 'Nome do esforço' }).fill('Pedalar');
+    await page.getByRole('dialog').getByRole('button', { name: 'Pronto' }).click();
+    await page.getByRole('button', { name: /^Descanso, Caminhar/ }).click();
+    await page.getByRole('textbox', { name: 'Nome do descanso' }).fill('Pedalar leve');
+    await page.getByRole('dialog').getByRole('button', { name: 'Pronto' }).click();
+    await expect(page.getByRole('button', { name: /^Descanso, Pedalar leve/ })).toBeVisible();
+
+    // o plano começa no modelo da corrida (13 semanas); monta do zero, com 2 semanas
+    await page.getByRole('button', { name: /^Plano, 13 semanas/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Plano', exact: true })).toBeVisible();
+    const weeks = page.getByRole('list', { name: 'Semanas do plano' }).getByRole('listitem');
+    await expect(weeks).toHaveCount(13);
+    await page.getByRole('button', { name: /Começar de um modelo/ }).click();
+    await page.getByRole('radio', { name: /Montar do zero/ }).click();
+    await expect(weeks).toHaveCount(1);
+    await page.getByRole('button', { name: 'Adicionar semana' }).click();
+    const week2 = page.getByRole('dialog', { name: 'Semana 2' });
+    await expect(week2).toBeVisible();
+    await week2.getByRole('radio', { name: 'Contínuo' }).click();
+    await expect(week2.getByText('pedalar sem parar')).toBeVisible();
+    await week2.getByRole('button', { name: 'Aumentar pedalar' }).click();
+    await week2.getByRole('button', { name: 'Pronto' }).click();
+    await expect(weeks).toHaveCount(2);
+    await expect(page.getByRole('button', { name: /^Semana 2: pedalar 11 minutos sem parar/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Voltar para Novo hábito' }).click();
+    await expect(page.getByRole('button', { name: /^Plano, 2 semanas/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Criar' }).click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos$/);
+
+    // a Jornada ganha um cartão, ao lado do da corrida
+    await go(page, '/jornada');
+    await expect(page.getByRole('button', { name: /^Corrida, plano de treino/ })).toBeVisible();
+    const card = page.getByRole('button', { name: /^Bicicleta, plano de treino/ });
+    await expect(card).toContainText('Semana 1 · treino 1 de 2 · 2 semanas');
+    await card.click();
+    await expect(page).toHaveURL(/\/jornada\/treino\/[^/]+$/);
+    await expect(page.locator('.jr-wr')).toHaveCount(2);
+    await expect(page.locator('.jr-leg')).toContainText('Pedalar leve');
+
+    // o treino: os blocos e os nomes do plano
+    await page.getByRole('button', { name: /Começar treino/ }).click();
+    await expect(page).toHaveURL(/\/treino\/[^/]+\/1\/1$/);
+    await expect(page.locator('.rn-state')).toHaveText('Aquecimento');
+    await expect(page.locator('.rn-next')).toContainText('Depois: pedalar');
+    // a hora pula para depois do fim (5 + 5 × (2 + 1) + 5 = 25 min): ao abrir, o treino terminou na hora prevista
+    const path = new URL(page.url()).pathname;
+    await page.goto(`${path}?agora=2026-10-22T07:40`);
+    await expect(page).toHaveURL(/\/feito$/);
+    await expect(page.getByRole('heading', { name: 'Treino feito' })).toBeVisible();
+    await expect(page.getByText('Semana 1 · treino 1 de 2')).toBeVisible();
+    await expect(page.locator('#rn-done-sum')).toHaveText('25 minutos, 5 de 5 intervalos');
+    // os números do treino com os nomes do plano
+    await expect(page.getByText('Pedalar leve', { exact: true })).toBeVisible();
+
+    // de volta à Jornada, o cartão anda para o treino 2
+    await go(page, '/jornada');
+    const next = page.getByRole('button', { name: /^Bicicleta, plano de treino/ });
+    await expect(next).toContainText('Semana 1 · treino 2 de 2');
+
+    // o treino 2, retomado depois de reabrir o app e salvo antes do fim: guarda o que foi feito, sem outro treino
+    await next.click();
+    await page.getByRole('button', { name: /Começar treino/ }).click();
+    await expect(page).toHaveURL(/\/treino\/[^/]+\/1\/2$/);
+    await page.goto(`${new URL(page.url()).pathname}?agora=2026-10-22T07:48`);
+    await expect(page.locator('.rn-b p')).toContainText('Tempo total 8:00');
+    await page.getByRole('button', { name: 'Encerrar treino', exact: true }).dispatchEvent('click');
+    await page.getByRole('dialog', { name: 'Encerrar o treino?' }).getByRole('button', { name: 'Salvar o que fiz' }).click();
+    await expect(page).toHaveURL(/\/1\/2\/feito$/);
+    await expect(page.locator('#rn-done-sum')).toHaveText('8 minutos, 1 de 5 intervalos');
   });
 
   test('revisão de fim de fase: passos, voltar, fechar guardando e começar a fase 3', async ({ page }) => {

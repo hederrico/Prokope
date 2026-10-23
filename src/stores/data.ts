@@ -19,6 +19,7 @@ import {
   type UserCollections,
 } from '@/types';
 import type { DataSource, DocCollection, SnapshotMeta, Unsubscribe } from '@/data/source';
+import { normalizeHabit } from '@/domain/normalize';
 
 /** De onde veio a última mudança: deste aparelho, de outro aparelho, ou a carga inicial. */
 export type ChangeOrigin = 'local' | 'remote' | 'initial';
@@ -131,7 +132,8 @@ export function connectSource(source: DataSource) {
           if (meta.metadataOnly && s.loaded[col]) return setPending(col, meta.hasPendingWrites);
           const origin = originOf(meta, s.loaded[col]);
           const byId: Record<string, unknown> = {};
-          for (const d of docs) byId[(d as { id: string }).id] = d;
+          // migração na leitura: os hábitos antigos chegam no formato de hoje (domain/normalize.ts)
+          for (const d of docs) byId[(d as { id: string }).id] = col === 'habits' ? normalizeHabit(d as Habit) : d;
           setPending(col, meta.hasPendingWrites);
           useDataStore.setState({
             [col]: byId,

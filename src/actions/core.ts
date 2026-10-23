@@ -2,9 +2,10 @@
 import type { DataSource, DocCollection, WriteOp } from '@/data/source';
 import { PROFILE_ID } from '@/data/source';
 import { buildDomainData, type DomainData } from '@/domain/context';
+import { migrationPatch } from '@/domain/normalize';
 import { getSource, useDataStore } from '@/stores/data';
 import { nowMs, useClockStore } from '@/stores/clock';
-import type { DayKey } from '@/types';
+import type { DayKey, Habit } from '@/types';
 
 /** O desfazer de uma ação. Ações que criam algo trazem o id novo em `undo.id`. */
 export type Undo = (() => Promise<void>) & { id?: string };
@@ -27,9 +28,20 @@ function clone<T>(v: T): T {
   return v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T);
 }
 
+/**
+ * Um merge num hábito que chegou no formato antigo leva junto os campos da migração na leitura (domain/normalize.ts):
+ * assim a próxima gravação do hábito já sai no formato novo, mesmo quando a ação só muda um campo.
+ */
+function withMigration(op: WriteOp): WriteOp {
+  if (op.op !== 'merge' || op.col !== 'habits') return op;
+  const patch = migrationPatch(currentDoc('habits', op.id) as Habit | undefined);
+  return patch ? { ...op, data: { ...patch, ...op.data } } : op;
+}
+
 /** Grava os passos num lote e devolve o desfazer, que volta cada documento ao que era. */
-export async function commit(ops: WriteOp[], source: DataSource = getSource()): Promise<Undo> {
-  if (!ops.length) return noop;
+export async function commit(rawOps: WriteOp[], source: DataSource = getSource()): Promise<Undo> {
+  if (!rawOps.length) return noop;
+  const ops = rawOps.map(withMigration);
   const before = new Map<string, { col: DocCollection; id: string; doc: object | undefined }>();
   for (const o of ops) {
     const key = `${o.col}/${o.id}`;

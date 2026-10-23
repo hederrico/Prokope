@@ -48,6 +48,9 @@ export function HabitPreview({
   } else if (form.type === 'time') {
     const t = scheduleTime ?? g.time;
     right = t ? <span className="st-pv-val faint">meta {formatTime(t)}</span> : null;
+  } else if (form.type === 'guided') {
+    // a linha do Hoje: "Começar" abre o próximo treino do plano
+    right = <span className="pk-dop st-pv-pill">Começar</span>;
   } else if (form.type === 'weekly' || form.type === 'budget') {
     right = (
       <span className="st-pv-val num">

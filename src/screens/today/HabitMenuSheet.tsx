@@ -54,7 +54,7 @@ export default function HabitMenuSheet({ params, close }: SheetScreenProps) {
       ? `meta ${formatTime(hd.goal.time)}`
       : habit.type === 'counter' && hd.goal.value !== undefined
         ? `meta ${formatAmount(hd.goal.value, hd.goal.unit)}`
-        : habit.type === 'weekly' && hd.goal.perWeek
+        : (habit.type === 'weekly' || habit.type === 'guided') && hd.goal.perWeek
           ? `${hd.goal.perWeek} por semana`
           : hd.goal.perWeek
             ? `meta ${hd.goal.perWeek} na semana`
