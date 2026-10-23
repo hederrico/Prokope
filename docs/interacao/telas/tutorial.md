@@ -99,7 +99,7 @@ O condutor (`src/tutorial/conductor.ts`) roda um roteiro por vez. Quem escreve n
    4. pede o gesto ao Zeno e a fala (`talk`);
    5. espera a ação; mostra a resposta; roda o `leave`.
 3. **Fim:** grava o capítulo como visto (`markChapterDone`, só a primeira vez e só se algum passo apareceu), roda o `leave` do roteiro, sai do exemplo, desliga o `practice` e manda o Zeno embora. Com `then`, o próximo roteiro começa com o Zeno em cena.
-4. **Sair** (`stopTour`, o botão "Sair do tutorial", `Esc` com o foco no balão, ou começar outro capítulo): a tela fica limpa na hora (véu, anel, balão e `practice`). Depois sai do exemplo e manda o Zeno embora. Nada é gravado. Começar outro capítulo espera o de antes sair, e só então começa.
+4. **Sair** (`stopTour`, o botão "Sair do tutorial", `Esc` com o foco no balão, ou começar outro capítulo): a tela fica limpa na hora (véu, anel, balão e `practice`). Depois sai do exemplo e manda o Zeno embora. Nada é gravado. Começar outro capítulo espera o de antes sair, e só então começa. Vale também para um capítulo que acabou de terminar e ainda está saindo: o último passo de "Os ajustes" abre a lista dos capítulos, e a pessoa pode tocar noutro na hora. O novo espera os dados da pessoa voltarem (o exemplo sair), mas não o Zeno ir embora. Sem essa espera, a saída de antes levaria junto o exemplo do capítulo novo.
 5. **Sair do exemplo** (no fim ou no meio): antes de os dados da pessoa voltarem, o condutor leva a pessoa para a raiz da aba de agora (`exampleHome: 'tab'`, o padrão), para uma rota (`exampleHome: '/progresso'`) ou a deixa onde está (`exampleHome: null`). Uma tela do exemplo, como um hábito que só existe na história, mostraria "Este hábito não existe mais."
 
 **Modo acompanhar** (`follow`, o Começar): sem véu e sem navegar. Cada passo aparece uma vez, quando a pessoa chega à rota dele, e o balão se recolhe quando ela toca na tela, abre uma folha ou o alvo some. Chegar a `follow.end` termina o roteiro e começa o `then`; sair de `follow.within` por outro caminho (trocar de conta) termina sem seguir. O foco fica com o título do passo, e o balão não tem "Sair do tutorial": ele não segura nada.
@@ -119,8 +119,11 @@ O condutor (`src/tutorial/conductor.ts`) roda um roteiro por vez. Quem escreve n
 
 **Para quem escreve os roteiros:**
 
-- Ponha `data-tour` nos alvos (um nome curto, `pg-semana`), em vez de seletores de classe. "O dia" usa só alvos com `data-tour` ([hoje.md › Alvos do tutorial](hoje.md)); o `header.sh-hd` (o cabeçalho da aba) ainda aparece nos roteiros mínimos dos outros capítulos.
+- Ponha `data-tour` nos alvos (um nome curto, `pg-semana`), em vez de seletores de classe. Todos os capítulos usam só alvos com `data-tour` ([hoje.md › Alvos do tutorial](hoje.md)).
 - Conte com o Zeno num canto, com o balão ao lado dele, numa faixa de uns 220 px em cima ou embaixo: o alvo precisa caber fora dessa faixa. Um alvo que ocupa a tela inteira (um grupo enorme) fica com o balão encostado do outro lado.
+- Um invólucro com a margem da tela (o `st-pad` de um grupo de Ajustes, o `hb-pad` do hábito) deixaria o anel encostado nas bordas e com canto reto. Nesse caso, o alvo é o filho: `'[data-tour="ajustes-plano"] > *'`, e o anel acompanha o canto do cartão.
+- Um passo de fazer que depende do que a tela fez (um dia aberto, o período trocado) espera um aviso `custom` da tela, em vez do toque: `emitTour({ type: 'custom', name: 'habito-dia' })`. Assim, um toque num dia por vir não anda o passo.
+- Depois de um passo de fazer que empurra outra tela (o cartão do treino), o passo seguinte fica sem `where`: o toque já navega, e o condutor não navega de novo enquanto a rota chega. O foco fica com o título da tela nova, e o balão é anunciado.
 - Um alvo grande (um cartão inteiro) é melhor que um pequeno demais: o anel cresce 6 px em volta e o balão precisa de lugar embaixo ou em cima.
 - Um passo dentro de uma folha funciona (a folha fica abaixo do véu), mas a folha prende o foco: confira o foco do balão com o teclado nesse caso.
 - Os alvos dos Primeiros passos: `pp-group`, `pp-mark`, `pp-add`, `pp-rate` e `pp-journey`, e, dentro da folha de nota de treino (`primeira-nota`), `pp-rate-options` e `pp-rate-save`.
@@ -189,19 +192,77 @@ No Hoje, nos dados da pessoa (`scripts/hoje.ts`). O grupo Primeiros passos entra
 
 ## Capítulo "O hábito e os padrões" (`habito`, com exemplo)
 
-Abre um hábito com algumas semanas de história. O calendário: cheio é feito, meio cheio é parcial, pontilhado é fora da agenda. A força: cresce com a constância e cai devagar, e um dia sem não zera nada. Os padrões: "Aqui o app compara os dias com e sem este hábito." Corrigir um dia pelo calendário.
+Abre a caminhada da história de exemplo (sim ou não, com "Também conta em" e semanas de dados) na tela do hábito. Oito passos, um de olhar por vez e dois de fazer, no calendário. O roteiro está em `scripts/habito.ts`.
+
+| Passo | Alvo | Espera | Texto |
+|---|---|---|---|
+| 1 · `topo` | `habito-topo` (o topo, com as etiquetas dos pilares) | Próximo | "Cada hábito tem uma tela assim. As etiquetas são os pilares: o dele e os de "Também conta em"." |
+| 2 · `forca` | `habito-numeros` (força, nesta semana e total) | Próximo | "A força do hábito cresce com a constância e cai devagar. Um dia sem não zera nada. Ao lado, a semana e o total." |
+| 3 · `calendario` | `habito-calendario` | Próximo | "No calendário, cheio é feito, meio cheio é parcial e pontilhado é fora da agenda. A legenda fica embaixo." |
+| 4 · `dia` | `habito-calendario` | aviso `custom` `habito-dia` (um dia abriu) | "Toque num dia que passou para corrigir. Aqui é exemplo: pode tocar à vontade." |
+| 5 · `corrigir` | `habito-corrigir` (as opções da folha) | toque | "Escolha como foi esse dia. Dá para desfazer no aviso que aparece embaixo." Depois: "Isso. É assim que se corrige um dia." |
+| 6 · `padroes` | `[data-tour="habito-padroes"] > *` (o cartão do padrão) | Próximo | "Aqui o app compara os dias com e sem este hábito. Nos de horário, como o Acordar, compara os dias no horário com os outros." |
+| 7 · `menu` | `habito-menu` (o ⋯; em Ajustes, o Editar) | Próximo | "No ⋯ fica o menu: editar o hábito ou tirar só de hoje." Em Ajustes: "Em Editar você muda o nome, a meta, a agenda e os pilares." |
+| 8 · `pausar` | `[data-tour="habito-pausar"] > *` (Pausar e Arquivar) | Concluir | "No fim da tela, você pausa o hábito por uns dias ou arquiva. O histórico fica guardado." |
+
+- **A aba:** o capítulo acontece na aba em que a pessoa está, quando ela está na tela de um hábito (a oferta "O hábito" aparece ali): `/hoje/habito/:id`, `/progresso/habito/:id` ou `/ajustes/habitos/:id`. Por Ajustes › Tutorial, é o Hoje.
+- **O começo, pela oferta:** a tela é de um hábito da pessoa, que não existe no exemplo. Antes do exemplo, o gancho `enter` volta para a lista (a raiz da aba, ou Ajustes › Hábitos) e espera a passagem acabar; o primeiro passo abre a caminhada do exemplo dali. A tela dela nunca mostra "Este hábito não existe mais.".
+- **A saída** (no fim ou no meio, até com a folha de corrigir aberta): a raiz da aba, com os dados da pessoa. O dia corrigido no exemplo não fica.
+- **O que existe para os hábitos de horário** fica no texto do passo 6, porque a caminhada é de sim ou não.
 
 ## Capítulo "O progresso" (`progresso`, com exemplo)
 
-A visão geral da semana, o período, um pilar, o humor do check-in, as medidas (com "Mostrar só a tendência") e as revisões passadas.
+Nove passos no Progresso, quatro deles de fazer: o período (trocar e voltar) e os chips Humor e Medidas. O roteiro está em `scripts/progresso.ts`.
+
+| Passo | Alvo | Espera | Texto |
+|---|---|---|---|
+| 1 · `semana` | `progresso-semana` (o cartão da constância) | Próximo | "No anel, a constância da semana. Ao lado, a semana passada e a fase. Tocar na semana passada abre a revisão dela." |
+| 2 · `periodo` | `progresso-periodo` (o seletor) | aviso `custom` `progresso-periodo` (o período trocou) | "Para ver a semana anterior, toque na seta ‹ do período." Depois: "Isso. A tela toda acompanha o período." |
+| 3 · `voltar` | `progresso-agora` ("Voltar para esta semana") | toque | "Para voltar, toque em "Voltar para esta semana"." |
+| 4 · `pilares` | `progresso-pilares` | Próximo | "Os pilares ficam do maior para o menor. Toque num para ver só ele." |
+| 5 · `dados` | `progresso-dados` (as comparações) | Próximo | "Em "O que os seus dados mostram", o app compara os dias com e sem um hábito. Cada comparação aparece com 7 dias de cada lado." |
+| 6 · `aba-humor` | `progresso-aba-humor` (o chip) | toque | "Estes botões trocam o que ver: o humor, as medidas e cada pilar. Toque em Humor." |
+| 7 · `humor` | `progresso-humor` (o calendário do humor) | Próximo | "Cada dia mostra o humor do check-in da noite. Toque num dia para ver o resumo dele." |
+| 8 · `aba-medidas` | `progresso-aba-medidas` | toque | "Agora toque em Medidas." |
+| 9 · `medidas` | `progresso-peso` (o cartão do peso) | Concluir | "Aqui ficam o peso e a média de 7 dias. Para ver só a tendência, é em Ajustes › Aparência." |
+
+- **A saída:** o gancho `leave` volta para a visão geral desta semana (`/progresso`, sem a busca) antes de os dados da pessoa voltarem, porque o capítulo termina em Medidas.
+- O período troca em Humor (o mês da semana escolhida), como sempre: o passo 9 mostra as medidas do mês.
 
 ## Capítulo "A jornada" (`jornada`, com exemplo)
 
-O caminho das fases, a sugestão de avançar ("você decide"), Editar jornada, o cartão do treino guiado e o plano em semanas, e a revisão de domingo.
+Sete passos (oito com os Primeiros passos) na Jornada e no plano do treino. O roteiro está em `scripts/jornada.ts`.
+
+| Passo | Alvo | Espera | Texto |
+|---|---|---|---|
+| 1 · `caminho` | `jornada-caminho` (a lista das fases) | Próximo | "Este é o caminho das fases: a concluída, a de agora e as próximas." |
+| 2 · `agora` | `jornada-agora` (o cartão "Agora") | Próximo | "A fase de agora mostra as semanas e os hábitos novos. Os das fases anteriores continuam com você." |
+| 3 · `proxima` | `jornada-proxima` (a primeira fase que não começou) | Próximo | "A próxima fase tem uma data prevista. No fim da fase, a revisão sugere avançar. Você decide." |
+| 4 · `editar` | `jornada-editar` | Próximo | "Em Editar jornada você muda as datas, os hábitos de cada fase e quando sugerir a próxima." |
+| 5 · `primeiros-passos` | `pp-journey` | Próximo | "Os seus Primeiros passos ficaram aqui, no dia em que aconteceram." Só quando a pessoa já fez o primeiro gesto de "O dia" (o exemplo mostra o tutorial dela) |
+| 6 · `treino` | `jornada-treino` (o primeiro cartão de treino guiado) | toque | "Este é um treino guiado: um plano em semanas, como a corrida do zero. Toque nele." |
+| 7 · `plano` | `treino-semana` (o treino da semana, no plano) | Próximo | "Este é o treino da semana, bloco a bloco. Embaixo ficam todas as semanas do plano: toque numa para ver o treino dela." |
+| 8 · `revisoes` | `[data-tour="jornada-revisoes"] > *` (a lista das revisões) | Concluir | "No domingo, a revisão da semana aparece no Hoje. As que passaram ficam aqui, só para ler." |
+
+- O passo 7 fica sem `where`: o toque no cartão já abre o plano. O passo 8 volta para a Jornada.
+- **A saída no meio**, até no plano do treino do exemplo: a Jornada, com os dados da pessoa.
 
 ## Capítulo "Os ajustes" (`ajustes`)
 
-Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"), horários e lembretes, aparência (o jeito do Hoje, o tema e "Mostrar o Zeno"), pausar, a dois, dados e conta, e o próprio Tutorial.
+Oito passos nos dados da pessoa, só apontando: nada muda, e nenhuma tela de formulário abre. O último é de fazer: tocar em Tutorial, que abre a lista dos capítulos já com "Visto". O roteiro está em `scripts/ajustes.ts`.
+
+| Passo | Onde | Alvo | Texto |
+|---|---|---|---|
+| 1 · `plano` | `/ajustes` | `[data-tour="ajustes-plano"] > *` (Hábitos, Pilares e Pausar) | "Em Meu plano ficam os seus hábitos e pilares. Um hábito pode contar em mais de um pilar: é o "Também conta em", no formulário dele." |
+| 2 · `novo-habito` | `/ajustes/habitos` | `ajustes-novo-habito` (o +) | "No + você cria um hábito. Um dos tipos é o Treino guiado: um plano em semanas, como a corrida do zero." |
+| 3 · `pausar` | `/ajustes` | `ajustes-pausar` | "Em Pausar, você pausa o app ou alguns hábitos, nas férias ou numa gripe. Os dias pausados não contam." |
+| 4 · `rotina` | `/ajustes` | `[data-tour="ajustes-rotina"] > *` (Horários e Lembretes) | "Em Horários ficam as horas que guiam o seu dia. Em Lembretes, os alarmes para criar no iPhone." |
+| 5 · `aparencia` | `/ajustes` | `ajustes-aparencia` | "Em Aparência ficam o tema, o jeito de ver o Hoje e "Mostrar o Zeno". Sem mim, o tutorial segue só com o texto." |
+| 6 · `a-dois` | `/ajustes` | `ajustes-a-dois` | "Em A dois, você liga o app com outra pessoa e escolhe o que mostrar. Sem placar." |
+| 7 · `conta` | `/ajustes` | `[data-tour="ajustes-conta"] > *` (o cartão com o nome) | "No seu nome ficam os dados e a conta: exportar, sair e apagar." |
+| 8 · `tutorial` | `/ajustes` | `ajustes-tutorial` (toque) | "E em Tutorial ficam todos os capítulos, para rever quando quiser. Toque nele." |
+
+- O Novo hábito não abre: a tela de tipos limpa o rascunho de um hábito em andamento, e o + basta para dizer onde fica.
 
 ## Ofertas
 
@@ -244,7 +305,7 @@ Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"),
 ## Ajustes
 
 - **Ajustes › Tutorial** (`/ajustes/tutorial`): os capítulos, na ordem de `CHAPTERS`, cada um com a frase e "Visto" quando foi até o fim. Tocar começa o capítulo na aba dele. A linha "Tutorial" fica no fim do grupo App, em Ajustes ([ajustes-rotina-conta.md › Tutorial](ajustes-rotina-conta.md)).
-- **Capítulos sem roteiro completo:** por enquanto, "O hábito", "O progresso", "A jornada" e "Os ajustes" têm um roteiro mínimo de um passo. "O dia" está completo. "Os ajustes" é um passo de fazer (tocar em Tutorial).
+- **Roteiros:** todos os capítulos estão completos (acima). "Os ajustes" termina num passo de fazer: tocar em Tutorial.
 - **Ajustes › Aparência:** o interruptor "Mostrar o Zeno" (`prefs.zeno`).
 
 ## Acessibilidade
@@ -267,3 +328,4 @@ Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"),
 - E2e, com o Zeno de verdade em cena (o WebGL dos testes roda na CPU, e as esperas têm folga):
   - `tests/e2e/tutorial.spec.ts`: o Começar, Ajustes › Tutorial, sair e as ofertas;
   - `tests/e2e/tutorial-dia.spec.ts`: "O dia" do começo ao fim numa conta nova, rever sem gravar de novo, sair com a folha aberta, a noite, o dia fechado, "Seu plano começa amanhã", a apresentação ("Vamos" e "Agora não"), nenhuma oferta sem o Zeno, o axe com o balão aberto (claro e escuro), o toque no Zeno e o caminho sem o Zeno.
+  - `tests/e2e/tutorial-capitulos.spec.ts`: os capítulos do hábito, do Progresso, da Jornada e de Ajustes, cada um do começo ao fim, a saída no meio, a marca da pessoa que continua e o dia corrigido no exemplo que não fica, o "Visto", as ofertas de cada aba e o axe com o balão aberto. Ele roda com "Mostrar o Zeno" desligado, a não ser nas ofertas, que precisam dele.

@@ -60,8 +60,10 @@ export function PhasePath({ phases, today, pillarById, pause, animate, justClose
         motionProps={motionOf(at)}
       />
     ) : null;
+  // o alvo do tutorial na sugestão de avançar: a primeira fase que ainda não começou
+  const firstFuture = phases.find((p) => p.status === 'future')?.number ?? null;
   return (
-    <ol className="jr-tl" aria-label="Fases">
+    <ol className="jr-tl" aria-label="Fases" data-tour="jornada-caminho">
       {phases.map((p, i) => {
         const index = at >= 0 && i >= at ? i + 1 : i;
         const last = index === count - 1;
@@ -80,7 +82,13 @@ export function PhasePath({ phases, today, pillarById, pause, animate, justClose
                 onOpen={() => onOpenPhase(p)}
               />
             )}
-            {p.status === 'future' && <FuturePhase p={p} onOpen={() => onOpenPhase(p)} />}
+            {p.status === 'future' && (
+              <FuturePhase
+                p={p}
+                onOpen={() => onOpenPhase(p)}
+                tour={p.number === firstFuture ? 'jornada-proxima' : undefined}
+              />
+            )}
           </m.li>
         );
         return i === at ? [steps, item] : item;
@@ -155,7 +163,7 @@ function DonePhase({ p, fresh, onOpen }: { p: PhaseView; fresh: boolean; onOpen:
   );
 }
 
-function FuturePhase({ p, onOpen }: { p: PhaseView; onOpen: () => void }) {
+function FuturePhase({ p, onOpen, tour }: { p: PhaseView; onOpen: () => void; tour?: string }) {
   const when = p.start ? `Pode começar em ${formatDayShort(p.start)}` : 'Depois da fase anterior';
   const what = phaseSummary(p.phase as { description?: string | null }, p.habits);
   return (
@@ -167,6 +175,7 @@ function FuturePhase({ p, onOpen }: { p: PhaseView; onOpen: () => void }) {
         type="button"
         className="jr-pt next"
         onClick={onOpen}
+        data-tour={tour}
         aria-label={`${phaseTitle(p).replace(' · ', ', ')}. ${when}. ${what}. Abre Editar jornada`}
       >
         <span>
@@ -244,7 +253,13 @@ function CurrentPhase({
           <b>{p.number}</b>
         </Ring>
       </span>
-      <button type="button" className="jr-now" onClick={onOpen} aria-label={`${label}. Abre Editar jornada`}>
+      <button
+        type="button"
+        className="jr-now"
+        onClick={onOpen}
+        aria-label={`${label}. Abre Editar jornada`}
+        data-tour="jornada-agora"
+      >
         <span className="jr-between">
           <Tag dot upper lift pillar="accent">
             Agora

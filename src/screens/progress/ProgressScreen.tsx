@@ -21,6 +21,7 @@ import {
   useProgress,
   weekStart
 } from '@/data';
+import { emitTour } from '@/stores/tour';
 import type { DayKey } from '@/types';
 import { MeasuresView } from './MeasuresView';
 import { MoodView } from './MoodView';
@@ -34,6 +35,8 @@ type Periodo = 'semana' | 'mes' | 'fase';
 
 const THEME_URL: Record<string, string> = { overview: 'visao', mood: 'humor', measures: 'medidas' };
 const THEME_KEY: Record<string, string> = { visao: 'overview', humor: 'mood', medidas: 'measures' };
+/** Os alvos do tutorial nos chips ("toque em Humor", "agora toque em Medidas"). */
+const TOUR_CHIP: Record<string, string> = { mood: 'progresso-aba-humor', measures: 'progresso-aba-medidas' };
 
 function relWeeks(n: number) {
   if (n === 0) return 'esta semana';
@@ -90,6 +93,8 @@ export default function ProgressScreen() {
   });
   const goAnchor = (a: string | null) => {
     if (a === null) return;
+    // o passo "troque o período" do tutorial anda quando o período troca de verdade
+    emitTour({ type: 'custom', name: 'progresso-periodo' });
     if (periodo === 'semana') update(anchorPatch('semana', weekStart(a) === weekStart(today) ? null : weekStart(a)));
     else if (periodo === 'mes') update(anchorPatch('mes', a.slice(0, 7) === today.slice(0, 7) ? null : a.slice(0, 7)));
     else update(anchorPatch('fase', a));
@@ -197,7 +202,13 @@ export default function ProgressScreen() {
               onNext={range.next ? () => goAnchor(range.next) : null}
             />
             {!range.isCurrent && (
-              <m.button type="button" className="pk-reset pg-now hit" onClick={backToNow} {...fadeUp}>
+              <m.button
+                type="button"
+                className="pk-reset pg-now hit"
+                onClick={backToNow}
+                data-tour="progresso-agora"
+                {...fadeUp}
+              >
                 <Icon name="arrow-counter-clockwise" weight="bold" />
                 {nowLabel}
               </m.button>
@@ -214,6 +225,7 @@ export default function ProgressScreen() {
               key={c.key}
               type="button"
               data-chip={c.key}
+              data-tour={TOUR_CHIP[c.key]}
               className={clsx('pk-reset pk-chip hit', on && 'sel', pa.className)}
               data-pillar={pa['data-pillar']}
               data-hue={pa['data-hue']}

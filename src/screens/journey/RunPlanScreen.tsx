@@ -139,7 +139,7 @@ function TrainingPlan({ habitId }: { habitId: string }) {
 
       <SectionLabel trailing={`${minutesOf(week.totalSeconds)} min`}>{`Semana ${week.week} · o treino`}</SectionLabel>
       <div className="jr-pad">
-        <Card padded pillar={color}>
+        <Card padded pillar={color} data-tour="treino-semana">
           <AnimatePresence mode="wait" initial={false}>
             <m.div
               key={`${week.week}:${week.label}`}

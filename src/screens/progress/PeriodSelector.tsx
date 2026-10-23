@@ -11,7 +11,7 @@ export interface PeriodSelectorProps {
 
 export function PeriodSelector({ label, sublabel, onPrev, onNext }: PeriodSelectorProps) {
   return (
-    <div className="pg-pn" role="group" aria-label="Período">
+    <div className="pg-pn" role="group" aria-label="Período" data-tour="progresso-periodo">
       <button
         type="button"
         className="pk-reset pg-ar"

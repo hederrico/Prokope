@@ -218,7 +218,12 @@ export default function HabitsScreen() {
     <div className="st-screen" ref={top}>
       <NavBar
         title="Hábitos"
-        action={{ label: 'Novo hábito', icon: 'plus', onClick: () => void navigate('/ajustes/habitos/novo/tipo') }}
+        action={{
+          label: 'Novo hábito',
+          icon: 'plus',
+          tour: 'ajustes-novo-habito',
+          onClick: () => void navigate('/ajustes/habitos/novo/tipo'),
+        }}
       />
       <div className="st-pad st-seg">
         <SegmentedControl options={options} value={view} onChange={setView} label="Mostrar" />

@@ -133,28 +133,13 @@ test.describe('tutorial', () => {
 
     await page.getByRole('button', { name: /^O progresso/ }).click();
     await expect(page).toHaveURL(/\/progresso/);
-    await expect(balloon(page)).toContainText('Aqui fica o seu progresso', SLOW);
+    await expect(balloon(page)).toContainText('No anel, a constância da semana.', SLOW);
     expect((await tourState(page)).run).toBe('progresso');
-    await balloon(page).getByRole('button', { name: 'Concluir' }).click();
+    // sair no meio não grava: o capítulo continua sem "Visto" (do começo ao fim: tutorial-capitulos.spec.ts)
+    await balloon(page).getByRole('button', { name: 'Sair do tutorial' }).click();
     await expect(balloon(page)).toHaveCount(0);
-
-    // de volta: "O progresso" ficou como visto
     await go(page, '/ajustes/tutorial');
-    await expect(page.getByRole('button', { name: /^O progresso/ })).toContainText('Visto');
-    await expect(page.getByText('Visto')).toHaveCount(1);
-
-    // "Os ajustes": passo de fazer, só o alvo responde; o toque nele anda (e abre o Tutorial)
-    await page.getByRole('button', { name: /^Os ajustes/ }).click();
-    await expect(page).toHaveURL(/\/ajustes$/);
-    await expect(balloon(page)).toContainText('Toque em Tutorial.', SLOW);
-    expect((await tourState(page)).veil).toBe('do');
-    await expect(balloon(page).getByRole('button', { name: /Próximo|Concluir/ })).toHaveCount(0);
-    expect(await hitAt(page, '[data-tour="ajustes-tutorial"] button')).toBe('alvo');
-    expect(await hitAt(page, '[role="tab"][aria-selected="false"]')).toBe('véu');
-    await page.locator('[data-tour="ajustes-tutorial"] button').click();
-    await expect(page).toHaveURL(/\/ajustes\/tutorial$/);
-    await expect(balloon(page)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /^Os ajustes/ })).toContainText('Visto');
+    await expect(page.getByText('Visto')).toHaveCount(0);
   });
 
   test('"Sair do tutorial" limpa tudo e devolve o foco', async ({ page }) => {
@@ -178,14 +163,14 @@ test.describe('tutorial', () => {
 
     // pela API também, e Esc no balão sai
     await page.evaluate(() => window.__pkTour!.start('jornada'));
-    await expect(balloon(page)).toContainText('Aqui fica a sua jornada', SLOW);
+    await expect(balloon(page)).toContainText('Este é o caminho das fases', SLOW);
     // Esc com o foco no balão (o foco chega quando o balão assenta)
     await expect(balloon(page)).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(balloon(page)).toHaveCount(0);
     expect((await tourState(page)).run).toBeNull();
     await page.evaluate(() => window.__pkTour!.start('progresso'));
-    await expect(balloon(page)).toContainText('Aqui fica o seu progresso', SLOW);
+    await expect(balloon(page)).toContainText('No anel, a constância da semana.', SLOW);
     await page.evaluate(() => window.__pkTour!.stop());
     await expect(balloon(page)).toHaveCount(0);
     await expect(page.locator('.tt-veil-layer')).toHaveCount(0);
@@ -236,7 +221,7 @@ test.describe('tutorial', () => {
     await page.getByRole('tab', { name: 'Jornada' }).click();
     await expect(balloon(page)).toContainText('Quer que eu mostre a Jornada?', SLOW);
     await balloon(page).getByRole('button', { name: 'Mostrar' }).click();
-    await expect(balloon(page)).toContainText('Aqui fica a sua jornada', SLOW);
+    await expect(balloon(page)).toContainText('Este é o caminho das fases', SLOW);
     expect((await tourState(page)).run).toBe('jornada');
     await balloon(page).getByRole('button', { name: 'Sair do tutorial' }).click();
     await expect(balloon(page)).toHaveCount(0);

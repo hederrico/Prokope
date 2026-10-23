@@ -97,7 +97,12 @@ export default function JourneyScreen() {
         context={formatDayHeader(today)}
         title="Jornada"
         trailing={
-          <button type="button" className="jr-hdact hit" onClick={() => void navigate('/jornada/fases')}>
+          <button
+            type="button"
+            className="jr-hdact hit"
+            onClick={() => void navigate('/jornada/fases')}
+            data-tour="jornada-editar"
+          >
             <Icon name="pencil-simple" weight="bold" />
             Editar jornada
           </button>
@@ -120,19 +125,20 @@ export default function JourneyScreen() {
 
       {j.trainings.length > 0 && (
         <div className="jr-pad jr-trainings" style={{ marginTop: 24 }}>
-          {j.trainings.map((t) => (
+          {j.trainings.map((t, i) => (
             <TrainingCard
               key={t.habit.id}
               t={t}
               pillar={pillarById.get(t.habit.pillarId)}
               onOpen={() => void navigate(trainingPlanPath(t.habit.id))}
+              tour={i === 0 ? 'jornada-treino' : undefined}
             />
           ))}
         </div>
       )}
 
       <SectionLabel trailing={j.reviews.length ? nextLabel : undefined}>Revisões da semana</SectionLabel>
-      <div className="jr-pad">
+      <div className="jr-pad" data-tour="jornada-revisoes">
         {j.reviews.length === 0 ? (
           <EmptyState
             icon="calendar-check"
@@ -176,7 +182,18 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  * O cartão de um treino guiado: o nome do hábito, o que ele é, as barrinhas das semanas (a de agora em destaque;
  * antes de começar, a última, que é onde o plano chega) e onde a pessoa está.
  */
-function TrainingCard({ t, pillar, onOpen }: { t: TrainingSummary; pillar?: Pillar; onOpen: () => void }) {
+function TrainingCard({
+  t,
+  pillar,
+  onOpen,
+  tour,
+}: {
+  t: TrainingSummary;
+  pillar?: Pillar;
+  onOpen: () => void;
+  /** o alvo do tutorial (o primeiro cartão) */
+  tour?: string;
+}) {
   const h = t.habit;
   const max = Math.max(1, ...t.effortByWeek);
   const what = h.description?.trim()
@@ -192,6 +209,7 @@ function TrainingCard({ t, pillar, onOpen }: { t: TrainingSummary; pillar?: Pill
       padded
       pillar={pillar?.color}
       className="jr-runcard"
+      data-tour={tour}
       role="button"
       tabIndex={0}
       onClick={onOpen}

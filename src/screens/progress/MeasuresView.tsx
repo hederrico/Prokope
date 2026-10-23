@@ -114,7 +114,7 @@ export function MeasuresView({ p, today, onOpenDay }: MeasuresViewProps) {
     <m.div {...cascade}>
       <div className="pg-pad pg-stack">
         <m.div variants={fadeUpItem}>
-          <Card padded pillar={wPillar}>
+          <Card padded pillar={wPillar} data-tour="progresso-peso">
             <CardHeader
               title={title}
               subtitle={`Peso em ${unit} · média de 7 dias`}

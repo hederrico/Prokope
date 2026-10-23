@@ -28,6 +28,7 @@ import { NavBar, showUndo, useCurrentTab, useGoBack, useOpenSheet, useScreenTitl
 import { Icon } from '@/icons';
 import { fadeUpItem, useCascadeOnce } from '@/motion';
 import { archiveHabit, restoreHabit } from '@/actions';
+import { emitTour } from '@/stores/tour';
 import {
   addDays,
   capitalize,
@@ -73,7 +74,7 @@ function Hero({ h, pillar, onEdit }: { h: HabitView; pillar?: PillarColor; onEdi
   if (h.status === 'upcoming') notes.push(habit.phase ? `começa na fase ${habit.phase}` : 'ainda não começou');
   const sub = [habitSubtitle(habit, h.today.goal), ...notes].filter(Boolean).join(' · ');
   return (
-    <div className="hb-hero">
+    <div className="hb-hero" data-tour="habito-topo">
       <PillarBubble icon={habit.icon} pillar={pillar} size="lg" />
       <h1 tabIndex={-1}>{habit.name}</h1>
       {(h.pillar || h.alsoIn.length > 0) && (
@@ -285,7 +286,7 @@ function statItems(habit: Habit, st: HabitStatsView, today: DayKey): { items: St
 function StatsCard({ habit, st, pillar, today }: { habit: Habit; st: HabitStatsView; pillar?: PillarColor; today: DayKey }) {
   const { items, why } = statItems(habit, st, today);
   return (
-    <Card pillar={pillar}>
+    <Card pillar={pillar} data-tour="habito-numeros">
       <div className="pk-stats hb-wst">
         {items.map((it) => (
           <div key={it.key} className="pk-stat" role="group" aria-label={it.spoken}>
@@ -451,7 +452,7 @@ function CalendarCard({
     isCurrent && st.neverTwoInARow && habit.startDay && (habit.type === 'check' || habit.type === 'checklist' || habit.type === 'time');
 
   return (
-    <Card padded pillar={pillar} className="hb-cal">
+    <Card padded pillar={pillar} className="hb-cal" data-tour="habito-calendario">
       <CardHeader
         title={title}
         subtitle={`${done} ${noun} · ${action}`}
@@ -584,6 +585,8 @@ function HabitDetail({ h, pillar }: { h: HabitView; pillar?: PillarColor }) {
   const openDay = (day: DayKey) => {
     const s = sheetForDay(habit, day);
     openSheet(s.name, s.args);
+    // o passo "toque num dia" do tutorial anda com o dia aberto (e não com um toque num dia por vir)
+    emitTour({ type: 'custom', name: 'habito-dia' });
   };
   const monthStart = `${st.month.year}-${String(st.month.month).padStart(2, '0')}-01`;
   const hasPrev = !!habit.startDay && habit.startDay < monthStart;
@@ -635,11 +638,11 @@ function HabitDetail({ h, pillar }: { h: HabitView; pillar?: PillarColor }) {
             hasPrev={hasPrev}
           />
         </m.div>
-        <m.div variants={fadeUpItem}>
+        <m.div variants={fadeUpItem} data-tour="habito-padroes">
           <HabitInsight habit={habit} words={words} noRecord={history.noRecord} st={st} pillar={pillar} />
         </m.div>
       </div>
-      <div className="hb-pad" style={{ paddingTop: 20 }}>
+      <div className="hb-pad" style={{ paddingTop: 20 }} data-tour="habito-pausar">
         {h.status === 'archived' ? (
           <ListGroup>
             <ListItem
@@ -696,8 +699,17 @@ export default function HabitScreen() {
       <NavBar
         action={
           tab === 'ajustes'
-            ? { label: 'Editar', onClick: () => navigate(`/ajustes/habitos/${encodeURIComponent(h.habit.id)}/editar`) }
-            : { label: 'Mais', icon: 'dots-three', onClick: () => openSheet('menu', { habito: h.habit.id }) }
+            ? {
+                label: 'Editar',
+                tour: 'habito-menu',
+                onClick: () => navigate(`/ajustes/habitos/${encodeURIComponent(h.habit.id)}/editar`),
+              }
+            : {
+                label: 'Mais',
+                icon: 'dots-three',
+                tour: 'habito-menu',
+                onClick: () => openSheet('menu', { habito: h.habit.id }),
+              }
         }
       />
       {h.habit.type === 'daysSince' ? <DaysSinceDetail habit={h.habit} pillar={pillar} /> : <HabitDetail h={h} pillar={pillar} />}

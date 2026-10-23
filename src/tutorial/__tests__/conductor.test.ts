@@ -412,6 +412,42 @@ describe('condutor', () => {
     expect(markDone).toHaveBeenCalledWith('ajustes');
   });
 
+  it('começar outro capítulo logo depois do fim espera os dados da pessoa voltarem, e o exemplo do novo fica', async () => {
+    const { c, example, zeno } = setup(
+      {
+        progresso: { run: 'progresso', example: true, steps: [{ id: 'b', target: 'grupo', text: 'Progresso.' }] },
+        jornada: { run: 'jornada', example: true, steps: [{ id: 'c', target: 'semana', text: 'Jornada.' }] },
+      },
+      { zeno: true },
+    );
+    // a saída do exemplo demora (o aviso do Desfazer, a troca dos dados) e o Zeno não termina de sair
+    let back: () => void = () => undefined;
+    example.leave.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          back = () => {
+            example.active = false;
+            resolve();
+          };
+        }),
+    );
+    zeno.leave.mockImplementationOnce(() => new Promise<void>(() => undefined));
+    c.start('progresso');
+    await vi.waitFor(() => expect(balloon()?.text).toBe('Progresso.'));
+    c.next();
+    await vi.waitFor(() => expect(example.leave).toHaveBeenCalledTimes(1));
+    // a pessoa toca outro capítulo enquanto o de antes ainda está saindo: o novo espera
+    c.start('jornada');
+    await new Promise((r) => setTimeout(r, 30));
+    expect(example.enter).toHaveBeenCalledTimes(1);
+    back();
+    await vi.waitFor(() => expect(balloon()?.text).toBe('Jornada.'));
+    // a saída de antes não levou o exemplo do novo, e o Zeno que não termina de sair não segura o novo
+    expect(example.enter).toHaveBeenCalledTimes(2);
+    expect(example.leave).toHaveBeenCalledTimes(1);
+    expect(example.active).toBe(true);
+  });
+
   describe('modo acompanhar (Começar)', () => {
     const comecar: TourScript = {
       run: 'comecar',
