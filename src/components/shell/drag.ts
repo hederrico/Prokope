@@ -22,13 +22,42 @@ export interface DragOptions {
 
 type Point = [t: number, x: number, y: number];
 
+const FIELD = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+
+function isField(t: EventTarget | null): boolean {
+  return t instanceof Element && !!t.closest(FIELD);
+}
+
+// Com o mouse, apertar e mover seleciona texto, e a seleção que sobra faz o próximo apertar começar o arrasto nativo
+// do navegador (os pointermove param no meio). Enquanto o botão está apertado, a página não seleciona nada.
+let selectLocks = 0;
+let savedSelect = '';
+function lockSelection(on: boolean) {
+  const root = document.documentElement.style;
+  if (on) {
+    if (selectLocks++ === 0) {
+      savedSelect = root.userSelect;
+      root.userSelect = 'none';
+      root.setProperty('-webkit-user-select', 'none');
+    }
+  } else if (selectLocks > 0 && --selectLocks === 0) {
+    root.userSelect = savedSelect;
+    root.setProperty('-webkit-user-select', savedSelect);
+  }
+}
+
 export function attachDrag(el: HTMLElement, o: DragOptions): () => void {
   let a: { id: number; x0: number; y0: number; pts: Point[]; on: boolean } | null = null;
+  let locked = false;
 
   function stop() {
     window.removeEventListener('pointermove', onMove, true);
     window.removeEventListener('pointerup', onEnd, true);
     window.removeEventListener('pointercancel', onEnd, true);
+    if (locked) {
+      locked = false;
+      lockSelection(false);
+    }
   }
 
   function onDown(e: PointerEvent) {
@@ -36,6 +65,12 @@ export function attachDrag(el: HTMLElement, o: DragOptions): () => void {
     a = null;
     if (e.button !== 0) return;
     if (o.filter && !o.filter(e)) return;
+    if (e.pointerType === 'mouse' && !isField(e.target)) {
+      // sem seleção de texto (nem a que sobrou do arrasto anterior) e sem arrasto nativo
+      window.getSelection()?.removeAllRanges();
+      locked = true;
+      lockSelection(true);
+    }
     a = { id: e.pointerId, x0: e.clientX, y0: e.clientY, pts: [[e.timeStamp, e.clientX, e.clientY]], on: false };
     window.addEventListener('pointermove', onMove, true);
     window.addEventListener('pointerup', onEnd, true);
@@ -102,9 +137,16 @@ export function attachDrag(el: HTMLElement, o: DragOptions): () => void {
     o.end(e.clientX - w.x0, e.clientY - w.y0, vx, vy);
   }
 
+  // o arrasto nativo (texto, imagem, link) roubaria o ponteiro no meio do gesto
+  function onDragStart(e: DragEvent) {
+    if (a && !isField(e.target)) e.preventDefault();
+  }
+
   el.addEventListener('pointerdown', onDown);
+  el.addEventListener('dragstart', onDragStart);
   return () => {
     el.removeEventListener('pointerdown', onDown);
+    el.removeEventListener('dragstart', onDragStart);
     stop();
   };
 }

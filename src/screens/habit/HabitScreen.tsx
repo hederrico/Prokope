@@ -51,7 +51,7 @@ import { fmt1, shortMinutes } from '@/screens/progress/format';
 import { habitCells, sheetForDay } from './cells';
 import { DaysSinceDetail } from './DaysSinceDetail';
 import { MonthArrows, MonthCalendar } from './MonthCalendar';
-import { agree, countNoun, habitSubtitle, pluralNoun, shortOf } from './text';
+import { agree, countNoun, habitSubtitle, pastOf, pluralNoun, shortOf, verbOf } from './text';
 import './habit.css';
 
 function valueText(v: number, unit?: string) {
@@ -453,7 +453,8 @@ function CalendarCard({
         <p className="hb-nv">
           <Icon name="seal-check" weight="duotone" />
           <span>
-            Desde {formatDayMonth(habit.startDay!)}, você nunca ficou dois dias seguidos sem {short}.
+            Desde {formatDayMonth(habit.startDay!)}, você nunca ficou dois dias seguidos{' '}
+            {habit.type === 'time' ? 'fora do horário' : `sem ${verbOf(short) ?? short}`}.
           </span>
         </p>
       )}
@@ -481,7 +482,11 @@ function HabitInsight({ habit, st, pillar }: { habit: Habit; st: HabitStatsView;
         withoutDays={c.withoutDays}
         needed={c.needed}
         showHeader={false}
-        almostAll
+        almostAll={(() => {
+          const verb = verbOf(short);
+          const did = verb ? `Você ${pastOf(verb)}${habit.type === 'time' ? ' no horário' : ''}` : `Você fez ${short}`;
+          return `${did} em quase todos os dias, então ainda não dá para comparar.`;
+        })()}
       />
     );
   }

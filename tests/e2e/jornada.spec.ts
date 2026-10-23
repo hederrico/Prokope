@@ -93,6 +93,8 @@ test.describe('jornada', () => {
   });
 
   test('corrida: começa, pausa, sobrevive a recarregar e encerra com toque longo', async ({ page }) => {
+    // espera de verdade pelo relógio (pausa, recarregar e o toque longo)
+    test.setTimeout(60_000);
     await enterDemo(page, null);
     await go(page, '/corrida/1/1');
     await expect(page.getByRole('heading', { name: 'Semana 1 · treino 1' })).toBeVisible();

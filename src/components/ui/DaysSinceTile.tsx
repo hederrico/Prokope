@@ -1,5 +1,7 @@
 // DaysSinceTile: o cartão de "dias sem", com o número grande na serifa e sem controle. Quadro: semTile().
-// À direita: "recorde 21", ou "seu recorde" com o troféu em --ink quando o número alcança o recorde.
+// À direita: "recorde 21", ou "seu recorde" com o troféu em --ink quando o número alcança o recorde. Uma contagem
+// ainda curta (menos de 7 dias) que é a maior até agora não comemora recorde: no primeiro dia, "desde ontem" (quadro:
+// Hoje · primeiro dia); depois, a legenda `since`, quando a tela passa ("desde 20 set"), ou nada.
 // O número rola algarismo por algarismo, com a largura animada (RollingNumber). No deslize, desce devagar até 0.
 // Ao passar do recorde com a tela aberta, entra o selo "novo recorde" com a mola festa (nível 5).
 // O toque abre o hábito; o deslize fica no detalhe, longe de um toque sem querer.
@@ -20,24 +22,41 @@ export type DaysSinceTileProps = {
   record: number;
   /** o que fica sem: "refrigerante", "Shorts e TikTok" */
   what: string;
+  /** "desde 20 set": a legenda de uma contagem curta, no lugar do recorde */
+  since?: string;
   onOpen: () => void;
   className?: string;
 };
 
+/** Uma contagem curta não é "recorde" ainda (um dia sem não pede troféu). */
+export const RECORD_MIN_DAYS = 7;
+
+/** A legenda de uma contagem curta que é a maior até agora: "desde ontem" no primeiro dia, ou a `since` da tela. */
+function shortCaption(days: number, since?: string): string | null {
+  if (since) return since;
+  return days <= 1 ? 'desde ontem' : null;
+}
+
 /** Nome lido: "Zero refrigerante, 12 dias sem, recorde 21". */
-export function daysSinceLabel(name: string, days: number, record: number): string {
+export function daysSinceLabel(name: string, days: number, record: number, since?: string): string {
   const d = days === 1 ? '1 dia sem' : `${days} dias sem`;
+  if (days >= record && days < RECORD_MIN_DAYS) {
+    const cap = shortCaption(days, since);
+    return cap ? `${name}, ${d}, ${cap}` : `${name}, ${d}`;
+  }
   return days > 0 && days >= record ? `${name}, ${d}, seu recorde` : `${name}, ${d}, recorde ${record}`;
 }
 
-export function DaysSinceTile({ habit, days, record, what, onOpen, className }: DaysSinceTileProps) {
-  const isBest = days > 0 && days >= record;
+export function DaysSinceTile({ habit, days, record, what, since, onOpen, className }: DaysSinceTileProps) {
+  const short = days >= record && days < RECORD_MIN_DAYS;
+  const isBest = days > 0 && days >= record && !short;
+  const caption = short ? shortCaption(days, since) : null;
   // novo recorde: o número subiu e passou do recorde que valia antes, com a tela aberta
   const [prev, setPrev] = useState({ days, record });
   const [broke, setBroke] = useState(false);
   const [brokeKey, setBrokeKey] = useState(0);
   if (prev.days !== days || prev.record !== record) {
-    if (days > prev.days && days > prev.record) {
+    if (days > prev.days && days > prev.record && days >= RECORD_MIN_DAYS) {
       if (!broke) setBrokeKey((k) => k + 1);
       setBroke(true);
     } else if (days < prev.days) setBroke(false);
@@ -51,7 +70,7 @@ export function DaysSinceTile({ habit, days, record, what, onOpen, className }: 
       className={clsx('pk-reset pk-ds pk-press', p.className, className)}
       data-pillar={p['data-pillar']}
       data-hue={p['data-hue']}
-      aria-label={daysSinceLabel(habit.name, days, record)}
+      aria-label={daysSinceLabel(habit.name, days, record, since)}
       onClick={onOpen}
     >
       <span className="top" aria-hidden="true">
@@ -60,6 +79,8 @@ export function DaysSinceTile({ habit, days, record, what, onOpen, className }: 
           <Tag key={brokeKey} icon="trophy" iconWeight="fill" celebrate="festa">
             novo recorde
           </Tag>
+        ) : short ? (
+          caption && <span className="rec">{caption}</span>
         ) : isBest ? (
           <span className="rec best">
             <Icon name="trophy" weight="regular" />

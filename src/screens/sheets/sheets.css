@@ -477,10 +477,20 @@
     color: var(--text-3);
     opacity: 1;
   }
+  /* o campo ocupa a caixa toda (34 px), e o hit do rótulo leva o toque a 44 px */
   .rg-mins .rg-auto {
+    align-self: stretch;
+    text-align: right;
+  }
+  .rg-mins .rg-auto::after,
+  .rg-mins .rg-auto > input {
+    box-sizing: border-box;
     min-height: 34px;
     padding: 6px 11px;
-    text-align: right;
+  }
+  .rg-mins .rg-auto > input {
+    height: 100%;
+    border-radius: 9px;
   }
 
   /* ---------- deslize ---------- */

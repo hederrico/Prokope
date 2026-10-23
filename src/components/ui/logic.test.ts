@@ -61,6 +61,10 @@ describe('nomes lidos', () => {
     expect(daysSinceLabel('Zero refrigerante', 12, 21)).toBe('Zero refrigerante, 12 dias sem, recorde 21');
     expect(daysSinceLabel('Sem Shorts e TikTok', 32, 32)).toBe('Sem Shorts e TikTok, 32 dias sem, seu recorde');
     expect(daysSinceLabel('Zero refrigerante', 1, 21)).toBe('Zero refrigerante, 1 dia sem, recorde 21');
+    // uma contagem curta, que ainda é a maior, não vira recorde: "desde ontem" no primeiro dia
+    expect(daysSinceLabel('Zero refrigerante', 1, 1)).toBe('Zero refrigerante, 1 dia sem, desde ontem');
+    expect(daysSinceLabel('Zero refrigerante', 3, 3)).toBe('Zero refrigerante, 3 dias sem');
+    expect(daysSinceLabel('Zero refrigerante', 3, 3, 'desde 20 set')).toBe('Zero refrigerante, 3 dias sem, desde 20 set');
   });
 
   it('unidades por extenso', () => {

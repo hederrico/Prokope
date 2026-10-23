@@ -4,7 +4,7 @@
 import type { DayKey, DayMoment, Habit, Pillar, QuickAdd, QuickAddSlot } from '@/types';
 import type { DomainData } from './context';
 import { addDays, timeToMinutes } from './day';
-import { budgetWeek, type BudgetWeek } from './budget';
+import { budgetWeek, type BudgetWeek, compareBudgets } from './budget';
 import { daysSince, type DaysSince } from './daysSince';
 import {
   appPauseOn,
@@ -124,7 +124,8 @@ export function todayItems(data: DomainData, day: DayKey, today: DayKey): TodayI
       counts: countsInDay(habit, data.profile) && isCountable(hd.state),
       isNew: !firstDay && habit.startDay === day,
       time,
-      sortKey: time ? timeToMinutes(time) : MOMENT_DEFAULT_MIN[moment],
+      // uma medida sem horário (o peso) abre o momento do dia, antes do acordar (quadro: "peso, acordar e caminhada")
+      sortKey: time ? timeToMinutes(time) : habit.goal.measuring ? 0 : MOMENT_DEFAULT_MIN[moment],
       week: isWeekly ? weekProgress(habit, day, data, today) : null,
       budget: habit.type === 'budget' ? budgetWeek(habit, day, data, today) : null,
       daysSince: habit.type === 'daysSince' ? daysSince(habit, data, day) : null,
@@ -171,7 +172,8 @@ export function todayLayout(
   const checkinMin = timeToMinutes(scheduleTimeOn('checkin', day, data.profile));
   const closed = !opts.past && isDayClosed(items);
   const mode: TodayMode = opts.past ? 'day' : todayMode(minutes, checkinMin, closed);
-  const limits = items.filter((i) => groupOf(i.habit) === 'limits');
+  // estável: no empate de folga, fica a ordem dos itens
+  const limits = items.filter((i) => groupOf(i.habit) === 'limits').sort((a, b) => compareBudgets(a.budget, b.budget));
   const ds = items.filter((i) => groupOf(i.habit) === 'daysSince');
   const counters = items.filter((i) => i.habit.type === 'counter');
   const groups: TodayGroup[] = (['morning', 'day', 'evening'] as TodayGroupKey[]).map((key) => {

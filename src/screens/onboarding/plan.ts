@@ -80,6 +80,28 @@ export function sleepSpan(bed: TimeHM, wake: TimeHM): number {
   return d === 0 ? 1440 : d;
 }
 
+/** Até quantas letras o "Depois: …" cabe numa linha ao lado do interruptor (390 px). */
+const LATER_MAX = 36;
+
+/**
+ * "Depois: proteína, água e mais 3": os hábitos das fases 2 a 4 do modelo no pilar, na ordem do modelo, resumidos
+ * para caber numa linha (o quadro resume). Muda sozinho se o modelo mudar.
+ */
+export function laterLine(pillarKey: string, max = LATER_MAX): string {
+  const names: string[] = [];
+  for (const h of TEMPLATE_HABITS) {
+    if (h.phase < 2 || h.pillar !== pillarKey || names.includes(h.short)) continue;
+    names.push(h.short);
+  }
+  if (!names.length) return '';
+  const line = (k: number) => {
+    const rest = names.length - k;
+    return rest ? `Depois: ${names.slice(0, k).join(', ')} e mais ${rest}` : `Depois: ${joinNames(names)}`;
+  };
+  for (let k = names.length; k > 1; k--) if (line(k).length <= max) return line(k);
+  return line(1);
+}
+
 /** Lista "louça e lixo". */
 export function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? '';

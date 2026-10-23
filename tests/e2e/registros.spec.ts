@@ -203,6 +203,8 @@ test.describe('registros rápidos', () => {
 });
 
 test('folhas de registro sem violações de acessibilidade (axe)', async ({ page }) => {
+  // seis folhas com o axe em cada uma: mais tempo que o padrão de 30 s
+  test.setTimeout(120_000);
   await enterDemo(page, '2026-10-22T12:41');
   for (const q of ['proteina', 'agua', 'acordar', 'nota&refeicao=almoco', 'checkin&humor=4', 'peso']) {
     await go(page, `${HOST}?folha=${q}`);

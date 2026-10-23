@@ -236,7 +236,7 @@ export function PillarView({ p, today, onOpenDay }: PillarViewProps) {
       {v.ratings.length > 0 && (
         <m.section variants={fadeUpItem} aria-labelledby="pg-p-notas">
           <SectionLabel id="pg-p-notas" trailing={p.range.period === 'week' ? 'média da semana' : p.range.period === 'month' ? 'média do mês' : 'média da fase'}>
-            Notas
+            {v.ratings.every((r) => r.habit.role === 'lunch' || r.habit.role === 'dinner') ? 'Notas dos pratos' : 'Notas'}
           </SectionLabel>
           <div className="pg-pad pg-two">
             {v.ratings.map((r) => (

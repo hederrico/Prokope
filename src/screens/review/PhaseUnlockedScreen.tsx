@@ -108,7 +108,7 @@ export default function PhaseUnlockedScreen() {
         <m.div ref={footRef} className="rv-wfoot" {...enter(0.6)}>
           {runHabit && (
             <button type="button" className="rv-firstrun" onClick={() => setScheduleOpen(true)}>
-              <PillarBubble icon={runHabit.icon} pillar={runPillar?.color} />
+              <PillarBubble icon="person-simple-run" pillar={runPillar?.color} />
               <span>
                 <b>Primeiro treino de corrida</b>
                 <small>{firstRunLabel}</small>

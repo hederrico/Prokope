@@ -335,6 +335,8 @@ export interface Phase {
   id: string;
   number: number;
   name: string;
+  /** o que entra, em poucas palavras ("Academia, corrida e menos tela"); sem ela, a tela resume pelos hábitos */
+  description?: string | null;
   /** duração em semanas; null = sem fim */
   weeks: number | null;
   /** começo, gravado quando a fase começa (as futuras são previsões) */

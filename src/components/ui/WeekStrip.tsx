@@ -72,24 +72,28 @@ export function WeekStrip({ days, today, selected, onSelect, head, foot, bare, c
         const { weekday, day } = dayParts(d.date);
         const isToday = d.date === today;
         const future = d.state === 'future' || d.date > today;
+        const paused = d.state === 'paused' && !future;
         const inner = (
           <>
             <span aria-hidden="true">{LETTERS[weekday]}</span>
             <span className="rg" aria-hidden="true">
-              <Ring
-                size={36}
-                stroke={3.5}
-                value={future ? 0 : d.value}
-                color={isToday ? 'var(--accent-ink)' : 'var(--accent-mark)'}
-                timing="fill"
-                delay={isToday ? choreography.distant * 1000 : 0}
-                dashedTrack={d.state === 'paused'}
-              />
+              {paused ? (
+                <span className="pk-wkpz" />
+              ) : (
+                <Ring
+                  size={36}
+                  stroke={3.5}
+                  value={future ? 0 : d.value}
+                  color={isToday ? 'var(--accent-ink)' : 'var(--accent-mark)'}
+                  timing="fill"
+                  delay={isToday ? choreography.distant * 1000 : 0}
+                />
+              )}
               <b>{day}</b>
             </span>
           </>
         );
-        const cls = clsx('pk-wkd', isToday && 'today', future && 'future', selected === d.date && 'sel');
+        const cls = clsx('pk-wkd', isToday && 'today', future && 'future', paused && 'pz', selected === d.date && 'sel');
         return (
           <li key={d.date} className={cls}>
             {!future && onSelect ? (

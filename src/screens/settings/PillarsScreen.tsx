@@ -115,15 +115,16 @@ function PillarReorderList({ items }: { items: PillarListItem[] }) {
   const position = (id: string, list: string[]) =>
     `${byId.get(id)?.pillar.name ?? ''}, posição ${list.indexOf(id) + 1} de ${list.length}`;
 
-  const move = (id: string, delta: number) => {
+  const move = (id: string, delta: number): string[] | null => {
     const i = order.indexOf(id);
     const j = i + delta;
-    if (i < 0 || j < 0 || j >= order.length) return;
+    if (i < 0 || j < 0 || j >= order.length) return null;
     const next = [...order];
     next.splice(i, 1);
     next.splice(j, 0, id);
     setOrder(next);
     setAnnounce(position(id, next));
+    return next;
   };
 
   return (
@@ -161,9 +162,11 @@ function PillarReorderList({ items }: { items: PillarListItem[] }) {
                   setKbGrab({ id, from: order });
                   setAnnounce(`${position(id, order)}. Use as setas para mover.`);
                 }
-              } else if (kbGrab && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+              } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                // as setas movem a linha com foco (gestos-e-feedback.md); pegada com Espaço, grava ao soltar
                 e.preventDefault();
-                move(id, e.key === 'ArrowUp' ? -1 : 1);
+                const next = move(id, e.key === 'ArrowUp' ? -1 : 1);
+                if (next && !kbGrab) save(next);
               } else if (kbGrab && e.key === 'Escape') {
                 e.preventDefault();
                 setOrder(kbGrab.from);
@@ -284,7 +287,7 @@ function PillarItem({
         >
           <Icon name="dots-six-vertical" weight="bold" />
           <span id={`grip-help-${pillar.id}`} className="pk-sr">
-            Espaço pega a linha, as setas movem, Espaço solta e Esc cancela.
+            As setas movem a linha. Espaço pega e solta, e Esc cancela.
           </span>
         </button>
       )}

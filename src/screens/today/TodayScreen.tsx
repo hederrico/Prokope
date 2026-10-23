@@ -13,7 +13,6 @@ import { FoldedGroup, HabitList, SectionLabel, type PillarColor } from '@/compon
 import {
   formatDayHeader,
   formatTime,
-  formatTimePadded,
   greeting,
   isDoneLike,
   timeOf,
@@ -572,7 +571,7 @@ function firstDayTarget(live: TodayView, minutes: number): TodayItem | null {
   return group?.items.find((i) => i.counts && !i.registered && i.habit.type !== 'number') ?? null;
 }
 
-/** "Comece por aqui." com o registro já pronto ("Acordei às 06h58", com o horário de agora). */
+/** "Comece por aqui." com o registro já pronto ("Acordei às 6h58", com o horário de agora). */
 function FirstDayNudge({ item }: { item: TodayItem }) {
   const ctx = useTodayCtx();
   const { now, clock } = useNow();
@@ -584,7 +583,7 @@ function FirstDayNudge({ item }: { item: TodayItem }) {
         item={item}
         enter
         text="Comece por aqui."
-        action={`${h.role === 'wake' ? 'Acordei' : 'Registrar'} às ${formatTimePadded(time)}`}
+        action={`${h.role === 'wake' ? 'Acordei' : 'Registrar'} às ${formatTime(time)}`}
         onAction={() => {
           haptic();
           void markHabit(h.id, ctx.day, { time }).then((undo) =>
@@ -593,7 +592,7 @@ function FirstDayNudge({ item }: { item: TodayItem }) {
                 showUndo(
                   {
                     title: withParticiple(h.name, 'registrad'),
-                    detail: formatTimePadded(time),
+                    detail: formatTime(time),
                     pillar: pillarColor(item),
                     icon: 'check',
                   },

@@ -80,7 +80,7 @@ export async function stayInPhase(number: number, weeks = 1): Promise<Undo> {
 /** Muda nome, duração ou o fim planejado de uma fase (Editar fases). */
 export async function updatePhase(
   number: number,
-  patch: Partial<Pick<Phase, 'name' | 'weeks' | 'end'>>,
+  patch: Partial<Pick<Phase, 'name' | 'weeks' | 'end' | 'description'>>,
 ): Promise<Undo> {
   const p = snapshot().phases.find((x) => x.number === number);
   if (!p) return noUndo();

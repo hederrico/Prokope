@@ -4,11 +4,13 @@
 // ainda não está ligado. A tela pinta pronta; só a ilustração anima, uma vez.
 import { useState } from 'react';
 import { AnimatePresence, m } from 'motion/react';
+import { useLocation } from 'react-router';
 import { FullScreen } from '@/components/shell';
 import { Button } from '@/components/ui';
 import { SIGN_IN_FAILED, useSession } from '@/data';
 import { Icon } from '@/icons';
 import { fadeUp, tween } from '@/motion/tokens';
+import { AccessDeniedView } from './AccessDeniedScreen';
 import { GoogleG } from './brand';
 import { SignInArt } from './SignInArt';
 import './onboarding.css';
@@ -18,8 +20,11 @@ const DEMO_FAILED = 'A demonstração não abriu agora. Tente de novo.';
 
 export default function SignInScreen() {
   const session = useSession();
+  const { search } = useLocation();
   const [opening, setOpening] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // só em desenvolvimento: /entrar?sem-acesso=e-mail mostra a Conta sem acesso (a sessão sem Firebase não chega lá)
+  const deniedPreview = import.meta.env.DEV ? new URLSearchParams(search).get('sem-acesso') : null;
 
   const message = notice ?? session.error;
   // a volta do Google: o botão fica desabilitado, sem girador
@@ -49,6 +54,8 @@ export default function SignInScreen() {
       setNotice(DEMO_FAILED);
     }
   }
+
+  if (deniedPreview !== null) return <AccessDeniedView email={deniedPreview || 'pessoa.exemplo@gmail.com'} />;
 
   return (
     <FullScreen

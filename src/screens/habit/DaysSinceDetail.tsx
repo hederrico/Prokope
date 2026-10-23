@@ -105,7 +105,9 @@ export function DaysSinceDetail({ habit, pillar }: { habit: Habit; pillar?: Pill
             <div ref={observe}>
               <ul className="hb-pers">
                 <AnimatePresence initial={false}>
-                  {ds.periods.map((p, i) => {
+                  {/* na ordem do quadro: do mais antigo para o atual (o período novo entra embaixo) */}
+                  {[...ds.periods].reverse().map((p, k) => {
+                    const i = ds.periods.length - 1 - k;
                     // a folha do deslize que limita o período: o que o fechou, ou o que o abriu (no atual)
                     const slipId = p.current ? (ds.periods[i + 1]?.slipId ?? null) : p.slipId;
                     const pct = ds.record > 0 ? (p.days / ds.record) * 100 : p.current ? 0 : 100;
@@ -146,7 +148,7 @@ export function DaysSinceDetail({ habit, pillar }: { habit: Habit; pillar?: Pill
                         k={`hb:per:${habit.id}:${p.start}`}
                         pct={Math.min(100, pct)}
                         now={p.current}
-                        delay={i * 30}
+                        delay={k * 30}
                         started={started}
                       />
                     );

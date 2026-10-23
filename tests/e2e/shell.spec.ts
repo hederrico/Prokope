@@ -70,6 +70,8 @@ async function dragSheetDown(page: Page, distance: number) {
 
 test.describe('casca', () => {
   test('percurso: abas, empurrar e voltar, folhas e Desfazer', async ({ page }) => {
+    // o percurso é longo (abas, pilha, arrastos com o mouse, folhas e toasts)
+    test.setTimeout(60_000);
     await enterDemo(page);
 
     // ---------- troca de aba ----------
@@ -119,6 +121,20 @@ test.describe('casca', () => {
     await expect(sheet).toHaveAttribute('aria-modal', 'true');
     await settle(page);
     expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true);
+    await dragSheetDown(page, 320);
+    await expect(page).toHaveURL(/\/ajustes$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    // com o mouse: um arrasto curto volta ao lugar, e o segundo arrasto (longo) ainda move e fecha a folha
+    // (sem seleção de texto, que dispararia o arrasto nativo do navegador)
+    await go(page, '/ajustes?folha=agua', { sheetBase: '' });
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await settle(page);
+    await dragSheetDown(page, 60);
+    await settle(page);
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page).toHaveURL(/\/ajustes\?folha=agua/);
+    expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
     await dragSheetDown(page, 320);
     await expect(page).toHaveURL(/\/ajustes$/);
     await expect(page.getByRole('dialog')).toHaveCount(0);

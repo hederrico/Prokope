@@ -17,7 +17,7 @@ import type {
 import type { DomainData } from './context';
 import { markId } from './context';
 import { addDays, daysBetween, diffDays, instantAt, logicalDay, monthDays, parseDay, weekDays, weekStart } from './day';
-import { budgetWeek, type BudgetWeek } from './budget';
+import { budgetWeek, type BudgetWeek, compareBudgets } from './budget';
 import { correlation, topCorrelations, waitingPatterns, type Correlation } from './correlation';
 import { daysSince, type DaysSince } from './daysSince';
 import {
@@ -614,6 +614,7 @@ function pillarSections(data: DomainData, pillar: Pillar, range: ProgressRange, 
         out.habits.push({ habit: h, week: weekProgress(h, range.to > today ? today : range.to, data, today) });
     }
   }
+  out.limits.sort((a, b) => compareBudgets(a.budget, b.budget));
   return out;
 }
 

@@ -103,7 +103,7 @@ const Cell = memo(function Cell({
   return (
     <button
       type="button"
-      className={cls}
+      className={clsx(cls, 'hit')}
       aria-label={label}
       aria-current={c.isToday ? 'date' : undefined}
       onClick={() => onSelect(c.day)}

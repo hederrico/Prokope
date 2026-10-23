@@ -26,6 +26,24 @@ export function pluralNoun(short: string): string | null {
   return null;
 }
 
+/** O verbo por trás do nome curto ("caminhada" → "caminhar", "acordar" → "acordar"); null quando não dá. */
+export function verbOf(short: string): string | null {
+  const w = short.trim().toLocaleLowerCase('pt-BR');
+  if (/\s/.test(w)) return null;
+  if (/(ar|er|ir)$/.test(w) && w.length > 3) return w;
+  if (/ada$/.test(w) && w.length > 4) return w.replace(/ada$/, 'ar');
+  if (/ida$/.test(w) && w.length > 4) return w.replace(/ida$/, 'er');
+  return null;
+}
+
+/** "você caminhou", "você acordou", "você correu" (o passado do verbo, para as frases dos padrões). */
+export function pastOf(verb: string): string {
+  if (verb.endsWith('ar')) return `${verb.slice(0, -2)}ou`;
+  if (verb.endsWith('er')) return `${verb.slice(0, -2)}eu`;
+  if (verb.endsWith('ir')) return `${verb.slice(0, -2)}iu`;
+  return verb;
+}
+
 /** "24 caminhadas" ou "24 dias feitos". */
 export function countNoun(n: number, short: string): string {
   const plural = pluralNoun(short);

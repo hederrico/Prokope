@@ -4,7 +4,7 @@
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { addEntry, markHabit, skipToday, spendBudget, unmarkHabit, unskipToday, type Undo } from '@/actions';
 import { showUndo } from '@/components/shell';
-import { formatAmount, formatTimePadded, isDoneLike, timeOf, weekdayName, type TodayItem } from '@/data';
+import { formatAmount, formatTime, isDoneLike, timeOf, weekdayName, type TodayItem } from '@/data';
 import type { DayKey, QuickAdd } from '@/types';
 import { choreography } from '@/motion/tokens';
 import { playSoftTick } from '@/motion/sound';
@@ -87,7 +87,7 @@ export function useTodayActions(ctx: TodayActionContext) {
           showUndo(
             {
               title: withParticiple(name, 'registrad'),
-              detail: formatTimePadded(time),
+              detail: formatTime(time),
               pillar: pillarOf(item),
               icon: 'check',
             },

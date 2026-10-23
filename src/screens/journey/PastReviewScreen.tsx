@@ -78,7 +78,7 @@ export default function PastReviewScreen() {
         {ratio != null && (
           <div className="jr-pr-ring">
             <Ring size={72} stroke={7} value={ratio} color="var(--accent-mark)" track="var(--accent-wash)" label={`${formatPercent(ratio)} na semana`}>
-              <span className="disp num">{formatPercent(ratio)}</span>
+              <span className="disp rv-num">{formatPercent(ratio)}</span>
             </Ring>
             <p>de constância na semana{r?.status !== 'done' ? ', até agora' : ''}.</p>
           </div>

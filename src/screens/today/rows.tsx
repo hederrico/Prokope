@@ -30,7 +30,6 @@ import {
   formatAmount,
   formatNumber,
   formatTime,
-  formatTimePadded,
   isDoneLike,
   mealWord,
   moodWord,
@@ -214,7 +213,7 @@ function controlFor(item: TodayItem, ctx: ReturnType<typeof useTodayCtx>): React
   switch (h.type) {
     case 'time': {
       if (item.registered && item.mark?.time) {
-        const v = formatTimePadded(item.mark.time);
+        const v = formatTime(item.mark.time);
         return (
           <ValuePill
             value={v}

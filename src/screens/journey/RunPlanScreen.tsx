@@ -59,7 +59,7 @@ export default function RunPlanScreen() {
     <>
       <NavBar />
       <div className="jr-pad jr-hero">
-        <PillarBubble icon={habit.icon} pillar={color} size="lg" />
+        <PillarBubble icon="person-simple-run" pillar={color} size="lg" />
         <h1 className="ttl2 jr-title" tabIndex={-1}>
           {capitalize(habit.description || habit.name)}
         </h1>

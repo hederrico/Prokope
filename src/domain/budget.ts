@@ -42,3 +42,11 @@ export function budgetWeek(habit: Habit, day: DayKey, data: DomainData, today: D
     resetsTomorrow: addDays(today, 1) === addDays(weekStart(today), 7),
   };
 }
+
+/**
+ * A ordem dos limites da semana (Hoje e Progresso): o que ainda tem mais folga primeiro, como no quadro
+ * ("Refeições livres 0 de 2" antes de "Tranqueiras 1 de 2"); no empate, a ordem da pessoa.
+ */
+export function compareBudgets(a: BudgetWeek | null | undefined, b: BudgetWeek | null | undefined): number {
+  return (b?.left ?? 0) - (a?.left ?? 0);
+}

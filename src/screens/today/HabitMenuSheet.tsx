@@ -15,7 +15,6 @@ import { ListGroup, ListItem, PillarBubble, type PillarColor } from '@/component
 import {
   formatAmount,
   formatTime,
-  formatTimePadded,
   isDoneLike,
   mealWord,
   useHabit,
@@ -49,7 +48,7 @@ export default function HabitMenuSheet({ params, close }: SheetScreenProps) {
   const when = isToday ? 'hoje' : `na ${weekdayName(day)}`;
   const skipped = hd.state === 'skipped';
 
-  // "Mente · meta 6h50 · hoje às 06h52"
+  // "Mente · meta 6h50 · hoje às 6h52"
   const goal =
     hd.goal.time !== undefined
       ? `meta ${formatTime(hd.goal.time)}`
@@ -63,7 +62,7 @@ export default function HabitMenuSheet({ params, close }: SheetScreenProps) {
   const record = skipped
     ? `não conta ${isToday ? 'hoje' : 'neste dia'}`
     : hd.mark?.time && hd.registered
-      ? `${when} às ${formatTimePadded(hd.mark.time)}`
+      ? `${when} às ${formatTime(hd.mark.time)}`
       : hd.mark?.rating
         ? `${when}: ${hd.mark.rating} · ${mealWord(hd.mark.rating)}`
         : isDoneLike(hd.state)

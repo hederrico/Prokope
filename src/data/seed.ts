@@ -20,28 +20,68 @@ const STORY = {
   /** zero refrigerante começou 2 dias antes da fase 1 (recorde de 21 dias, deslize há 12 dias) */
   sodaStart: 33,
   sodaSlip: 12,
-  walkMisses: [1, 4, 8, 11, 15, 18, 22, 27],
-  screensMisses: [1, 4, 6, 9, 12, 14, 17, 20, 24, 28],
-  wakeLate: { 1: '07:20', 6: '07:15', 13: '07:30', 20: '07:12', 26: '07:40' } as Record<number, TimeHM>,
+  /**
+   * Os dias sem caminhada perto do calendário do quadro: 23, 26 e 29 set; 7, 14, 16, 18 e 21 out (24 com e 8 sem,
+   * 17 em outubro). O quadro tem 3 out no lugar de 18 out, mas com ele a força ficaria em 75%, e não nos 72% da
+   * história (a força pesa mais os dias recentes).
+   */
+  walkMisses: [1, 4, 6, 8, 15, 23, 26, 29],
+  /** dias sem check-in (3 e 17 out no Humor do quadro: 20 check-ins em 22 dias) */
+  checkinMisses: [5, 19],
+  /**
+   * Telas, louça e jantar ficam mais para trás nos dias de acordar tarde: a constância do resto do dia dá 84% nos
+   * dias de acordar no horário e 61% nos outros, como no Progresso do quadro.
+   */
+  screensMisses: [1, 4, 6, 8, 10, 13, 15, 17, 19, 20, 24, 26, 31],
+  /** acordar fora do horário em 12 dias (20 com e 12 sem desde 21 set, como no quadro) */
+  wakeLate: {
+    1: '07:20',
+    4: '08:00',
+    6: '07:15',
+    8: '07:25',
+    10: '07:18',
+    13: '07:30',
+    15: '07:22',
+    19: '08:05',
+    20: '07:12',
+    23: '07:28',
+    26: '08:10',
+    29: '07:20',
+  } as Record<number, TimeHM>,
+  /**
+   * Deitar tarde em 14 noites (fora da tolerância, também no fim de semana). A energia do dia seguinte segue a noite:
+   * 3,6 depois de deitar até 22h e 2,8 depois das outras, como no Humor do quadro.
+   */
   bedLate: {
     3: '22:40',
-    5: '22:50',
+    7: '22:50',
     9: '23:10',
-    12: '22:35',
+    11: '23:20',
+    12: '23:15',
+    15: '22:50',
     16: '23:00',
-    19: '22:45',
+    18: '23:20',
+    21: '22:45',
     23: '23:20',
+    25: '23:10',
+    26: '23:15',
     28: '22:40',
+    30: '22:40',
   } as Record<number, TimeHM>,
-  dishesMisses: [6, 13, 19, 25],
+  dishesMisses: [4, 6, 8, 10, 13, 14, 19, 20, 22, 23, 27, 29],
+  /** o lixo esquecido numa segunda de coleta */
+  trashMiss: 10,
   /** sem nota do almoço na segunda e na terça desta semana (o anel da terça fica perto dos 75% do quadro) */
   lunchMisses: [2, 3, 7],
-  dinnerMisses: [1, 2, 6, 9],
+  dinnerMisses: [1, 2, 4, 6, 8, 9, 10],
   lunchRatings: [4, 3, 4, 5, 3, 4, 3, 4, 4, 3],
   /** o jantar de segunda com 4 (média do jantar na semana perto dos 3,9 do quadro) */
   dinnerRatings: [4, 4, 4, 5, 4, 4, 3, 4, 5, 4],
-  /** proteína dos dias da fase 2 (1 = ontem): seg 84, ter 92, qua 71 na história */
-  protein: [71, 92, 84, 78, 88, 95, 82, 76, 90, 85],
+  /**
+   * Proteína dos dias da fase 2 (1 = ontem): seg 84, ter 92, qua 71 na história; na semana passada, 80 g ou mais
+   * em 1 de 7 dias (o padrão "a proteína chegou a 80 g em 2 dos 3 dias fechados" do Progresso)
+   */
+  protein: [71, 92, 84, 76, 72, 84, 70, 74, 68, 75],
   /** água desta semana como no quadro: seg 3 L, ter 2,5 L, qua 3,2 L (3 L ou mais em 2 dos 3 dias fechados) */
   water: [3200, 2500, 3000, 2500, 3000, 2500, 3200, 2000, 3000, 2500],
   /** tranqueiras e refeições livres (dias atrás) */
@@ -72,9 +112,18 @@ function weightFor(age: number): number | null {
 
 const WEIGHT_FIXED: Record<number, number> = { 0: 83.6, 1: 83.3 };
 
-const MOOD_WITH = [4, 4, 5, 4, 3, 4, 4, 5, 4, 4, 3, 4, 5, 4, 4, 5, 3, 4, 5, 4, 4, 4, 4];
-const MOOD_WITHOUT = [3, 4, 3, 3, 4, 3, 4, 3];
-const ENERGY = [3, 3, 4, 3, 3, 2, 4, 3, 3, 4, 3, 2, 3, 4, 3];
+/**
+ * Humor de cada dia (índice = dias atrás; 0 = hoje). De 1 a 21 de outubro é o calendário do Humor do quadro
+ * (0 = sem check-in); setembro fecha a conta da caminhada: humor médio 4,1 com e 3,4 sem.
+ */
+const MOOD_BY_AGE = [
+  4, // hoje
+  3, 4, 4, 5, 0, 4, 4, 4, 3, 2, 3, 5, 4, 4, 3, 4, 3, 5, 0, 4, 4, // 21 a 1 out
+  5, 3, 5, 5, 2, 4, 5, 3, 5, 4, // 30 a 21 set
+];
+/** Energia do dia seguinte: depois de deitar no horário (média 3,6) e depois de deitar tarde (2,8). */
+const ENERGY_AFTER_ON_TIME = [4, 4, 3, 4, 3];
+const ENERGY_AFTER_LATE = [3, 3, 2, 3, 3];
 const GOOD = [
   ['Passeio com o cachorro', 'Café com calma'],
   ['Almoço caprichado', 'Conversa boa no trabalho', 'Dormi bem'],
@@ -130,6 +179,12 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
   }
   const soda = byKey.get('soda')!;
   soda.startDay = addDays(today, -STORY.sodaStart);
+  // Shorts e TikTok e o futebol já eram da rotina antes do plano (docs/visao.md: "Já ativo"): ficam fora das fases,
+  // e a fase 1 tem os 7 hábitos da história
+  for (const key of ['shorts', 'football']) {
+    const h = byKey.get(key);
+    if (h) h.phase = null;
+  }
 
   const ctx: SeedContext = { today, now, clock, habits: plan.habits, byKey, newId };
   const phases: Phase[] = plan.phases.map((ph) => {
@@ -204,9 +259,10 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
       ...extra,
     });
   };
+  /** grava um horário com a meta da época; devolve se ficou dentro da tolerância */
   const timeMark = (key: string, day: DayKey, registeredAt: TimeHM, time: TimeHM, registeredDay: DayKey = day) => {
     const h = byKey.get(key);
-    if (!h || !happened(ctx, registeredDay, registeredAt)) return;
+    if (!h || !happened(ctx, registeredDay, registeredAt)) return null;
     const goal = goalOn(h, day, data);
     const ok = timeMeetsGoal(time, goal.time, goal.toleranceMin, clock.dayStartHour);
     const instant = at(ctx, registeredDay, registeredAt);
@@ -221,6 +277,7 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
       at: instant,
       updatedAt: instant,
     });
+    return ok;
   };
   const entry = (key: string, day: DayKey, time: TimeHM, amount: number, item?: string, count = 1) => {
     const h = byKey.get(key);
@@ -241,8 +298,18 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
   const isFootball = (day: DayKey) => (byKey.get('football')?.schedule.days ?? []).includes(weekdayOf(day));
 
   // ---------- os dias que passaram ----------
-  let withIdx = 0;
-  let withoutIdx = 0;
+  let onTimeIdx = 0;
+  let lateIdx = 0;
+  // o deitar de cada noite ficou no horário? (com a tolerância do fim de semana)
+  const bedOk = new Map<number, boolean>();
+  /** a energia do dia segue a noite anterior: deitar no horário ou tarde (antes do plano, 3) */
+  const energyAfter = (age: number): number => {
+    const ok = bedOk.get(age + 1);
+    if (ok === undefined) return 3;
+    return ok
+      ? ENERGY_AFTER_ON_TIME[onTimeIdx++ % ENERGY_AFTER_ON_TIME.length]
+      : ENERGY_AFTER_LATE[lateIdx++ % ENERGY_AFTER_LATE.length];
+  };
   for (let age = STORY.phase1Start; age >= 1; age--) {
     const day = dayOf(ctx, age);
     const next = addDays(day, 1);
@@ -256,35 +323,42 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
       STORY.wakeLate[age] ?? (['06:48', '06:52', '06:45', '06:55', '06:50'] as TimeHM[])[age % 5],
     );
     // o deitar de ontem é registrado hoje às 6h58 (mais abaixo)
-    if (age > 1)
-      timeMark(
+    if (age > 1) {
+      const ok = timeMark(
         'bed',
         day,
         '06:58',
         STORY.bedLate[age] ?? (['22:05', '21:55', '22:10', '22:00'] as TimeHM[])[age % 4],
         next,
       );
+      if (ok !== null) bedOk.set(age, ok);
+    }
     if (!STORY.screensMisses.includes(age)) mark('screensOff', day, '21:04');
 
     // caminhada e o humor do dia
     const walked = !STORY.walkMisses.includes(age);
     if (walked) mark('walk', day, '07:43');
-    const mood = walked ? MOOD_WITH[withIdx++ % MOOD_WITH.length] : MOOD_WITHOUT[withoutIdx++ % MOOD_WITHOUT.length];
-    checkins.push({
-      id: day,
-      day,
-      mood,
-      energy: ENERGY[age % ENERGY.length],
-      good: GOOD[age % GOOD.length],
-      screenMinutes: 95 + Math.round(rand() * 60),
-      youtubeMinutes: 25 + Math.round(rand() * 30),
-      at: at(ctx, day, '20:40'),
-      updatedAt: at(ctx, day, '20:40'),
-    });
+    // os minutos sorteados sempre, para os dias sem check-in não mudarem os números dos outros
+    const screenMinutes = 95 + Math.round(rand() * 60);
+    const youtubeMinutes = 25 + Math.round(rand() * 30);
+    const mood = MOOD_BY_AGE[age] ?? 4;
+    if (mood && !STORY.checkinMisses.includes(age)) {
+      checkins.push({
+        id: day,
+        day,
+        mood,
+        energy: energyAfter(age),
+        good: GOOD[age % GOOD.length],
+        screenMinutes,
+        youtubeMinutes,
+        at: at(ctx, day, '20:40'),
+        updatedAt: at(ctx, day, '20:40'),
+      });
+    }
 
     // Família
     if (!STORY.dishesMisses.includes(age)) mark('dishes', day, '20:15');
-    if (isCollection(day) && age !== 17) mark('trash', day, '20:20');
+    if (isCollection(day) && age !== STORY.trashMiss) mark('trash', day, '20:20');
     // Corpo
     if (isFootball(day) && age !== 14) mark('football', day, '19:00');
 
@@ -295,7 +369,7 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
       if (!STORY.dinnerMisses.includes(age)) mark('dinner', day, '19:50', { rating: STORY.dinnerRatings[i % 10] });
       const total = STORY.protein[i] ?? 80;
       entry('protein', day, '07:10', 6, 'Ovo', 3);
-      entry('protein', day, '07:10', 6, 'Leite');
+      entry('protein', day, '07:11', 6, 'Leite');
       let left = total - 24;
       if (left >= 40) {
         entry('protein', day, '10:30', 22, 'Whey');
@@ -400,19 +474,22 @@ export function buildDemoOps(now: number, newId: () => string): WriteOp[] {
     });
   }
   entry('protein', d, '07:10', 6, 'Ovo', 3);
-  entry('protein', d, '07:10', 6, 'Leite');
+  // o leite logo depois dos ovos: na folha, o mais recente fica em cima (quadro: Leite, depois Ovo × 3)
+  entry('protein', d, '07:11', 6, 'Leite');
   mark('walk', d, '07:43');
   entry('water', d, '08:05', 500, '500 ml');
   entry('protein', d, '10:30', 22, 'Whey');
   entry('water', d, '11:40', 1000, '1 L');
-  entry('protein', d, '12:50', 30, 'Frango');
   mark('lunch', d, '13:05', { rating: 4, tags: ['Proteína', 'Salada ou legume', 'Carboidrato'] });
+  // o frango do almoço entra depois da nota (46 g às 12h41 e às 12h58, como no quadro)
+  entry('protein', d, '13:10', 30, 'Frango');
   entry('water', d, '16:30', 1000, '1 L');
   if (isFootball(d)) mark('football', d, '18:50');
   mark('dinner', d, '19:45', { rating: 4 });
   entry('protein', d, '19:50', 10, 'Iogurte');
   mark('dishes', d, '20:10');
-  if (isCollection(d)) mark('trash', d, '20:35');
+  // o lixo sai depois do check-in (20h36): às 20h36 são 9 feitos, e às 21h04 o dia fecha
+  if (isCollection(d)) mark('trash', d, '20:50');
   if (happened(ctx, d, '20:36')) {
     checkins.push({
       id: d,

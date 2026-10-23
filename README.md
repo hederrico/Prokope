@@ -16,6 +16,7 @@ App pessoal de hábitos, organizado em pilares e fases, para iPhone (instalado p
 | [docs/revisao/](docs/revisao/README.md) | A revisão de usabilidade: o que mudou, as decisões e as perguntas em aberto |
 | [docs/desenvolvimento.md](docs/desenvolvimento.md) | A ordem de construção, etapa por etapa |
 | [docs/firebase.md](docs/firebase.md) | Como ligar o projeto do Firebase, o login e a publicação |
+| [docs/primeira-versao.md](docs/primeira-versao.md) | O que a primeira versão tem, como testar e o que ficou para decidir |
 
 ## Rodar
 

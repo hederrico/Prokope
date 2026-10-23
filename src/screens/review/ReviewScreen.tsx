@@ -14,6 +14,7 @@ import {
   formatNumber,
   formatPercent,
   formatRange,
+  useDataStatus,
   useDrafts,
   useHabits,
   useJourney,
@@ -39,6 +40,7 @@ export default function ReviewScreen() {
   const goBack = useGoBack();
   const habits = useHabits('all');
   const drafts = useDrafts();
+  const { status } = useDataStatus();
 
   const week = rv?.week ?? (semana ? weekStart(semana) : '');
   const steps = rv ? (rv.steps === 3 && rv.next ? 3 : 2) : 3;
@@ -56,12 +58,8 @@ export default function ReviewScreen() {
   useEffect(() => {
     if (rv?.readOnly) void navigate(pastReviewPath(rv.window.day, 'jornada'), { replace: true });
   }, [rv?.readOnly, rv?.window.day, navigate]);
-  // o passo da URL fora do intervalo vira o último possível
-  useEffect(() => {
-    if (rv && rawStep !== n) goTo(n);
-  }, [rv, rawStep, n, goTo]);
-
-  if (!rv) return <FullScreen />;
+  // espera as fases chegarem: antes disso, a revisão de fim de fase pareceria de 2 passos
+  if (!rv || status !== 'ready') return <FullScreen />;
 
   /** O que está no rascunho, no formato da ação. */
   const patchFromDraft = (d: ReviewDraft | undefined): ReviewStepPatch => {
@@ -195,7 +193,7 @@ function StepOne({
             track="var(--accent-wash)"
             label={s.constancy != null ? `${formatPercent(s.constancy)} na semana` : undefined}
           >
-            <span className="disp num">{s.constancy != null ? formatPercent(s.constancy) : '–'}</span>
+            <span className="disp rv-num">{s.constancy != null ? formatPercent(s.constancy) : '–'}</span>
             <span className="cap">na semana</span>
           </Ring>
         </div>

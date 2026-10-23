@@ -162,8 +162,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const stopTogether = startTogether();
     const stopDrafts = startDraftWatcher();
     const saved = readMode();
+    // só em desenvolvimento: ?sem-acesso=pessoa@exemplo.com abre "Conta sem acesso" sem Firebase (para conferir a tela)
+    const deniedEmail =
+      import.meta.env.DEV && typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('sem-acesso')
+        : null;
     const boot = async () => {
       await Promise.resolve();
+      if (deniedEmail) {
+        setMode('demo');
+        setAuthUser({ name: deniedEmail.split('@')[0] ?? '', email: deniedEmail });
+        setStatus('denied');
+        return;
+      }
       if (saved === 'demo') await openDemo('boot');
       else if (isFirebaseConfigured) await bootFirebase();
       else setStatus('signedOut');

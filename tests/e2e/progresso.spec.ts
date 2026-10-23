@@ -86,6 +86,11 @@ test.describe('hábito e progresso', () => {
     // visão geral
     await expect(page.getByRole('meter', { name: 'Constância da semana, 76% até agora' })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Família\s*88%/ })).toBeVisible();
+    // o que os dados mostram: até 3 padrões de hábitos diferentes, com a mesma base do hábito (24 com e 8 sem)
+    await expect(page.getByText(/a constância do resto do dia foi \d+%\. Nos outros, \d+%\./)).toBeVisible();
+    await expect(page.getByText(/^A proteína chegou a 80 g em \d dos \d dias fechados desta semana/)).toBeVisible();
+    await expect(page.getByText('Nos dias com caminhada, seu humor médio foi 4,1. Nos outros, 3,4.')).toBeVisible();
+    await expect(page.getByText('24 dias com · 8 dias sem')).toBeVisible();
     await expect(page.getByRole('group', { name: 'Período' })).toContainText('19 – 25 de outubro');
     await expect(page.getByRole('button', { name: 'Próximo período' })).toHaveAttribute('aria-disabled', 'true');
 
@@ -100,6 +105,8 @@ test.describe('hábito e progresso', () => {
     await chip(page, 'Humor');
     await expect(page).toHaveURL(/periodo=mes/);
     await expect(page.getByRole('group', { name: 'Período' })).toContainText('Outubro');
+    // dois padrões de hábitos diferentes
+    await expect(page.getByText(/a energia do dia seguinte foi \d,\d\. Nas outras, \d,\d\./)).toBeVisible();
     await page.getByRole('button', { name: /^21 de outubro, humor/ }).click();
     const sheet = page.getByRole('dialog');
     await expect(sheet.getByRole('heading', { name: 'Quarta, 21 de outubro' })).toBeVisible();

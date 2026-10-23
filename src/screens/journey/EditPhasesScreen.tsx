@@ -253,7 +253,7 @@ function PhaseCard({
       {p.status === 'future' && (
         <div className="jr-frow">
           <span>Duração</span>
-          <button type="button" className="jr-valbtn" onClick={onDuration} aria-label={`Duração, ${weeksText(p.weeks)}, alterar`}>
+          <button type="button" className="jr-valbtn hit" onClick={onDuration} aria-label={`Duração, ${weeksText(p.weeks)}, alterar`}>
             {weeksText(p.weeks)}
           </button>
         </div>

@@ -4,8 +4,9 @@
 // formulário do pilar; "Criar outro pilar" abre um novo. Pilar fora do plano nasce arquivado.
 import { AnimatePresence, m } from 'motion/react';
 import { AddRow, Card, Chip, EmptyState, PillarBubble, Switch, pillarAttrs } from '@/components/ui';
-import { laterSummary, planChips, toggleChip, type DraftPillar, type PlanDraft } from '@/data';
+import { planChips, toggleChip, type DraftPillar, type PlanDraft } from '@/data';
 import { cascade, fadeUp, fadeUpItem, spring, tween } from '@/motion/tokens';
+import { laterLine } from './plan';
 import { StepHead } from './StepHead';
 import { useFirstShow } from './useFirstShow';
 
@@ -23,7 +24,7 @@ function PillarBlock({
   isNew: boolean;
 }) {
   const chips = draft.mode === 'template' ? planChips(draft, pillar.key) : [];
-  const later = laterSummary(pillar.key);
+  const later = laterLine(pillar.key);
   const subtitle = later || pillar.description || '';
   const anyOn = chips.some((c) => c.on && !c.measurement);
   const attrs = pillarAttrs(pillar.color);
@@ -39,11 +40,7 @@ function PillarBlock({
       data-pillar={attrs['data-pillar']}
     >
       <div className="ob-pil-row">
-        <button
-          type="button"
-          className="pk-reset ob-pil-open"
-          onClick={onEdit}
-        >
+        <button type="button" className="pk-reset ob-pil-open" onClick={onEdit}>
           <PillarBubble icon={pillar.icon} pillar={pillar.color} />
           <span className="pk-ht">
             <b>{pillar.name}</b>

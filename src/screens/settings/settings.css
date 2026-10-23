@@ -1058,6 +1058,21 @@
     padding-top: 22px;
     padding-bottom: 14px;
   }
+  /* Pausar: o botão fica preso no pé da tela (acima das abas), como no quadro */
+  .st-screen.st-fill {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+  .st-fill-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .st-cta-bottom {
+    margin-top: auto;
+  }
   .st-cta .cap {
     margin: 10px 0 0;
     text-align: center;

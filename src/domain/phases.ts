@@ -34,13 +34,22 @@ export interface PhaseView {
   /** dia da fase (1 = primeiro dia) */
   dayIndex: number | null;
   daysLeft: number | null;
-  /** hábitos que entram nesta fase (ativos ou à espera) */
+  /** hábitos que entram nesta fase (ativos ou à espera), sem as medições e com "deitar e acordar" como um só */
   habits: Habit[];
   /** constância de fechamento (concluída) ou até agora (atual) */
   constancy: number | null;
   weekBars: PhaseWeek[];
   /** a semana atual é a última da fase */
   lastWeek: boolean;
+}
+
+/**
+ * "Deitar e acordar" é um hábito só no plano (docs/visao.md, o chip do primeiro acesso, "Os 7 hábitos da fase 1"):
+ * na lista de uma fase, o deitar fica junto do acordar quando os dois entram nela. No Hoje, continuam duas linhas.
+ */
+export function sleepPairAsOne(habits: Habit[]): Habit[] {
+  if (!habits.some((h) => h.role === 'wake')) return habits;
+  return habits.filter((h) => h.role !== 'bed');
 }
 
 /** As fases em ordem, com a atual e as datas previstas das futuras. */
@@ -63,7 +72,10 @@ export function phaseTimeline(data: DomainData, today: DayKey): PhaseView[] {
       end = addDays(start, p.weeks * 7 - 1);
     }
     cursor = end ? addDays(end, 1) : null;
-    const habits = data.habits.filter((h) => h.phase === p.number && !h.archived);
+    // as medições ("só medindo": peso, cintura, tempo de tela) não são hábitos da fase (docs/visao.md › Fases)
+    const habits = sleepPairAsOne(
+      data.habits.filter((h) => h.phase === p.number && !h.archived && !h.goal.measuring),
+    );
     let weekIndex: number | null = null;
     let dayIndex: number | null = null;
     let daysLeft: number | null = null;

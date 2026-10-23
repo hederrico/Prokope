@@ -25,6 +25,7 @@ import {
 } from '@/data';
 import type { Pillar } from '@/types';
 import { PhasePath } from './PhasePath';
+import { countsInTheDay } from './shared';
 import './journey.css';
 
 export default function JourneyScreen() {
@@ -58,7 +59,10 @@ export default function JourneyScreen() {
   const carried = useMemo(() => {
     if (!current) return { count: 0, phases: [] as number[] };
     const before = j.phases.filter((p) => p.number < current.number);
-    const count = before.reduce((n, p) => n + p.habits.filter((h) => h.startDay && h.startDay <= today).length, 0);
+    const count = before.reduce(
+      (n, p) => n + p.habits.filter((h) => h.startDay && h.startDay <= today && countsInTheDay(h)).length,
+      0,
+    );
     return { count, phases: before.map((p) => p.number) };
   }, [j.phases, current, today]);
 
@@ -119,7 +123,7 @@ export default function JourneyScreen() {
             }, ${j.run.weeks} semanas, ${j.run.perWeek} treinos por semana`}
           >
             <span className="jr-row">
-              <PillarBubble icon={runHabit.icon} pillar={runPillar?.color} />
+              <PillarBubble icon="person-simple-run" pillar={runPillar?.color} />
               <span>
                 <b className="jr-t">Plano de corrida</b>
                 {runHabit.description && <span className="cap">{capitalize(runHabit.description)}</span>}

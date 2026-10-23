@@ -28,6 +28,9 @@
 .rv-ring {
   margin-top: 14px;
 }
+.rv-num {
+  font-variant-numeric: tabular-nums;
+}
 .rv-ring .disp {
   font-size: 34px;
   line-height: 1;

@@ -20,7 +20,8 @@ import type { DayKey } from '@/types';
 import { shortOf } from '@/screens/habit/text';
 import { useDrawGate, useDrawnValue } from './draw';
 import { MorePatterns, PatternWaitCard } from './PatternWaitCard';
-import { Chevron, CorrelationInsight } from './shared';
+import { Chevron, InsightItem } from './shared';
+import { overviewInsights } from './insights';
 import { pillarColor } from './format';
 
 export interface OverviewViewProps {
@@ -122,6 +123,14 @@ export function OverviewView({ p, today, onTheme, onPhase, onMonth }: OverviewVi
       : null;
 
   const data = useDomain();
+  // até 3 padrões, sem repetir hábito: o resto do dia, a meta da semana de um contador (só na semana atual)
+  // e as correlações com o humor que o domínio já calcula
+  const focusPillar = phase ? (p.pillars.find((x) => focusOf(x.pillar.name))?.pillar.id ?? null) : null;
+  const cards = overviewInsights(data, today, {
+    currentWeek: range.period === 'week' && range.isCurrent,
+    focusPillar,
+    insights: p.insights,
+  });
   const waiting = p.insights.length === 0 ? p.waiting : null;
   const waitHabit = waiting ? data.habitById.get(waiting.habitId) : null;
   // quantos outros padrões estão a caminho, além do cartão (contados no domínio)
@@ -211,19 +220,19 @@ export function OverviewView({ p, today, onTheme, onPhase, onMonth }: OverviewVi
         </m.section>
       )}
 
-      {(p.insights.length > 0 || waiting) && (
+      {(cards.length > 0 || waiting) && (
         <m.section variants={fadeUpItem} aria-labelledby="pg-dados">
           <SectionLabel id="pg-dados">O que os seus dados mostram</SectionLabel>
           <div className="pg-pad pg-stack">
-            {p.insights.map((ins) => {
-              const h = data.habitById.get(ins.habitId);
-              if (!h) return null;
+            {cards.map((c) => {
+              const h = c.habitId ? data.habitById.get(c.habitId) : null;
               return (
-                <CorrelationInsight
-                  key={`${ins.habitId}:${ins.correlation.metric}`}
-                  insight={ins}
-                  habit={h}
-                  pillar={pillarColor(data.pillarById.get(h.pillarId))}
+                <InsightItem
+                  key={c.key}
+                  text={c.text}
+                  basis={c.basis}
+                  icon={c.icon ?? 'sparkle'}
+                  pillar={h ? pillarColor(data.pillarById.get(h.pillarId)) : undefined}
                 />
               );
             })}

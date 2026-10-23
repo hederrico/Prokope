@@ -29,11 +29,12 @@ export default function PauseScreen() {
   const { today } = useNow();
   const current = pause.current;
   return (
-    <div className="st-screen">
+    <div className="st-screen st-fill">
       <NavBar />
       <AnimatePresence mode="wait" initial={false}>
         <m.div
           key={current ? `p-${current.id}` : 'form'}
+          className="st-fill-body"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: tween.base }}
           exit={{ opacity: 0, transition: tween.exit }}
@@ -198,7 +199,7 @@ function PauseForm({ today }: { today: DayKey }) {
         estavam.
       </Foot>
 
-      <div className="st-pad st-cta">
+      <div className="st-pad st-cta st-cta-bottom">
         <Button wide icon="pause" iconWeight="fill" disabled={disabled} onClick={() => void go()}>
           <span>
             Pausar <NumberFlow value={total} /> {total === 1 ? 'dia' : 'dias'}
@@ -323,7 +324,7 @@ function InPause({ pause, today, scheduled }: { pause: Pause; today: DayKey; sch
           : `Os contadores de dias sem estão parados e voltam a contar no dia ${Number(back.slice(8))}, de onde pararam.`}
       </Foot>
 
-      <div className="st-pad st-cta">
+      <div className="st-pad st-cta st-cta-bottom">
         <Button wide variant="secondary" disabled={busy} onClick={() => void finish()}>
           {scheduled ? 'Cancelar a pausa' : 'Encerrar a pausa'}
         </Button>

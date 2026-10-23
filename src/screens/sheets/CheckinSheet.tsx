@@ -272,7 +272,8 @@ function MinutesField({
   const [editing, setEditing] = useState<string | null>(null);
   const shown = editing ?? (value != null ? formatMinutes(value) : '');
   return (
-    <span className="rg-mins hit">
+    // a caixa inteira (e a área de 44 px em volta) é o rótulo do campo: tocar fora do número também foca
+    <label className="rg-mins hit">
       <span className="rg-auto" data-value={shown || 'min'}>
         <input
           ref={inputRef}
@@ -298,6 +299,6 @@ function MinutesField({
           }}
         />
       </span>
-    </span>
+    </label>
   );
 }

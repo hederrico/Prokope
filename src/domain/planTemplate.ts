@@ -78,6 +78,8 @@ export interface TemplatePhase {
   number: number;
   name: string;
   weeks: number | null;
+  /** o que entra (docs/visao.md › Fases), curto como no quadro da Jornada */
+  description: string;
 }
 
 export const TEMPLATE_PILLARS: TemplatePillar[] = [
@@ -94,10 +96,10 @@ export const TEMPLATE_PILLARS: TemplatePillar[] = [
 ];
 
 export const TEMPLATE_PHASES: TemplatePhase[] = [
-  { number: 1, name: 'Base', weeks: 3 },
-  { number: 2, name: 'Alimentação', weeks: 3 },
-  { number: 3, name: 'Movimento', weeks: 3 },
-  { number: 4, name: 'Profundidade', weeks: null },
+  { number: 1, name: 'Base', weeks: 3, description: 'Sono, telas, cachorro e a casa em dia' },
+  { number: 2, name: 'Alimentação', weeks: 3, description: 'Proteína, água e refeições' },
+  { number: 3, name: 'Movimento', weeks: 3, description: 'Academia, corrida e menos tela' },
+  { number: 4, name: 'Profundidade', weeks: null, description: 'Sono, silêncio e tempo a dois' },
 ];
 
 const SLEEP_RITUAL = [
@@ -384,7 +386,7 @@ export const TEMPLATE_HABITS: TemplateHabit[] = [
     name: 'Corrida',
     short: 'corrida',
     type: 'weekly',
-    icon: 'sneaker-move',
+    icon: 'person-simple-run',
     pillar: 'corpo',
     phase: 3,
     role: 'run',
@@ -699,6 +701,7 @@ export function buildPlan(draft: PlanDraft, opts: BuildPlanOptions): BuiltPlan {
         id: String(p.number),
         number: p.number,
         name: p.name,
+        description: p.description,
         weeks: p.weeks,
         start: isFirst ? startDay : null,
         end: isFirst && p.weeks ? addDays(startDay, p.weeks * 7 - 1) : null,

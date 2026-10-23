@@ -74,6 +74,10 @@ test.describe('ajustes', () => {
     await page.keyboard.press('Space');
     await page.waitForTimeout(500);
     expect((await pillarNames(page))[0]).toBe(moved);
+    // as setas sozinhas também movem a linha com foco, e gravam
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(500);
+    expect((await pillarNames(page))[1]).toBe(moved);
   });
 
   test('novo pilar: Criar só acende com nome; o pilar novo abre vazio', async ({ page }) => {
@@ -199,12 +203,18 @@ test.describe('ajustes', () => {
   test('pausar este hábito: Pausar abre com o hábito já marcado', async ({ page }) => {
     await enterDemo(page);
     await go(page, '/ajustes/habitos');
-    await page.getByRole('button', { name: /^Caminhada com o cachorro/ }).first().click();
+    await page
+      .getByRole('button', { name: /^Caminhada com o cachorro/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/ajustes\/habitos\/[^/]+$/);
     await page.getByRole('button', { name: /Pausar este hábito/ }).click();
     await expect(page).toHaveURL(/\/ajustes\/pausar\?habito=/);
     await expect(page.getByRole('radio', { name: 'Alguns hábitos' })).toHaveAttribute('aria-checked', 'true');
-    await expect(page.getByRole('checkbox', { name: 'Caminhada com o cachorro' })).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByRole('checkbox', { name: 'Caminhada com o cachorro' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     await expect(page.getByRole('button', { name: /^Pausar/ })).toBeEnabled();
   });
 

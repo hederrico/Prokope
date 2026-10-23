@@ -11,7 +11,7 @@ import type { Pause, Pillar } from '@/types';
 import { Chip, Ring, Tag } from '@/components/ui';
 import { Icon } from '@/icons';
 import { cascadeDelay, distance, spring, tween } from '@/motion';
-import { habitsPhrase, phaseTitle } from './shared';
+import { phaseSummary, phaseTitle } from './shared';
 
 export interface PhasePathProps {
   phases: PhaseView[];
@@ -103,7 +103,7 @@ function DonePhase({ p, fresh, onOpen }: { p: PhaseView; fresh: boolean; onOpen:
 
 function FuturePhase({ p, onOpen }: { p: PhaseView; onOpen: () => void }) {
   const when = p.start ? `Pode começar em ${formatDayShort(p.start)}` : 'Depois da fase anterior';
-  const what = habitsPhrase(p.habits);
+  const what = phaseSummary(p.phase as { description?: string | null }, p.habits);
   return (
     <>
       <span className="jr-node next" aria-hidden="true">

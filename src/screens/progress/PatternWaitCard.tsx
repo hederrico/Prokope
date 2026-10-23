@@ -19,8 +19,8 @@ export interface PatternWaitCardProps {
   needed: number;
   /** cabeçalho com o nome do padrão (no Progresso) */
   showHeader?: boolean;
-  /** "Você caminhou em quase todos os dias...": quando faltam só dias sem e quase todos tiveram o hábito */
-  almostAll?: boolean;
+  /** "Você caminhou em quase todos os dias, então ainda não dá para comparar.": quando faltam só dias sem */
+  almostAll?: string;
   onOpen?: () => void;
 }
 
@@ -51,9 +51,7 @@ export function PatternWaitCard({
   const missingWithout = Math.max(0, needed - withoutDays);
   const what = metric === 'mood' ? 'humor' : 'energia';
   const sentence =
-    almostAll && missingWith === 0
-      ? `Quase todos os dias tiveram ${short}, então ainda não dá para comparar.`
-      : waitingSentence(missingWith, missingWithout, short, needed);
+    almostAll && missingWith === 0 ? almostAll : waitingSentence(missingWith, missingWithout, short, needed);
   const w = Math.min(withDays, needed);
   const wo = Math.min(withoutDays, needed);
   const a11y = `${capitalize(short)} e ${what}, em formação. ${

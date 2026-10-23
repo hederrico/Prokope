@@ -564,6 +564,7 @@ export function DaysSinceSection() {
         <DaysSinceTile habit={HABITS.shorts} days={32} record={32} what="Shorts e TikTok" onOpen={noop} />
         <DaysSinceTile habit={HABITS.refri} days={12} record={21} what="refrigerante" onOpen={noop} />
         <DaysSinceTile habit={HABITS.shorts} days={1} record={32} what="Shorts e TikTok" onOpen={noop} />
+        <DaysSinceTile habit={HABITS.refri} days={1} record={1} what="refrigerante" onOpen={noop} />
       </div>
       <Controls>
         <Button

@@ -5,6 +5,7 @@ import {
   collectionHabit,
   countChosen,
   formatSpan,
+  laterLine,
   routineRows,
   sleepSpan,
   withMode,
@@ -54,6 +55,15 @@ describe('primeiro acesso', () => {
     expect(routineRows(d).find((r) => r.key === 'screensOff')?.subtitle).toBe('às 21h');
     // deitar à meia-noite: as telas às 23h
     expect(withTime(defaultPlanDraft('template'), 'bed', '00:15').schedule.screensOff).toBe('23:15');
+  });
+
+  it('"Depois: …" resume os hábitos das próximas fases numa linha', () => {
+    expect(laterLine('corpo')).toBe('Depois: academia e corrida');
+    expect(laterLine('alim')).toBe('Depois: proteína, água e mais 3');
+    expect(laterLine('mente')).toBe('Depois: limite do YouTube e mais 2');
+    expect(laterLine('familia')).toBe('Depois: programa a dois e mais 1');
+    expect(laterLine('mente', 80)).toBe('Depois: limite do YouTube, ritual do sono e silêncio');
+    expect(laterLine('novo-1')).toBe('');
   });
 
   it('a duração até acordar atravessa a meia-noite', () => {

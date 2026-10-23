@@ -105,7 +105,8 @@ describe('a história, na quinta', () => {
 
   it('check-ins com humor e energia; caminhada e humor 4,1 contra 3,4', () => {
     const { data } = storyAt(THU, '12:41');
-    expect(data.checkins.size).toBe(31);
+    // 31 dias passados, menos 3 e 17 out (sem check-in, como no Humor do quadro)
+    expect(data.checkins.size).toBe(29);
     for (const c of data.checkins.values()) {
       expect(c.mood).toBeGreaterThanOrEqual(1);
       expect(c.energy).toBeGreaterThanOrEqual(1);
@@ -127,7 +128,8 @@ describe('a história, na quinta', () => {
     expect(protein('07:05').total).toBe(0);
     const early = protein('07:42');
     expect(early.total).toBe(24);
-    expect(early.lines.map((l) => `${l.item} × ${l.count}`)).toEqual(['Ovo × 3', 'Leite × 1']);
+    // o leite (7h11) depois dos ovos (7h10): o mais recente fica em cima, como no quadro
+    expect(early.lines.map((l) => `${l.item} × ${l.count}`)).toEqual(['Leite × 1', 'Ovo × 3']);
     expect(protein('12:41').total).toBe(46);
     expect(protein('21:00').total).toBe(86);
     const water = (t: string) => {
@@ -158,10 +160,13 @@ describe('a história, na quinta', () => {
     ]);
     expect(m.layout.groups[2].items).toHaveLength(6);
     expect(md.habitById.get(m.nudge!.habitId)?.name).toBe('Caminhada com o cachorro');
+    // os limites com mais folga primeiro, como no quadro
     expect(m.layout.limits.map((i) => `${i.habit.name} ${i.budget!.used} de ${i.budget!.limit}`)).toEqual([
-      'Tranqueiras 1 de 2',
       'Refeições livres 0 de 2',
+      'Tranqueiras 1 de 2',
     ]);
+    // a manhã: o peso, o acordar e a caminhada (quadro: "peso, acordar e caminhada")
+    expect(m.layout.groups[0].items.map((i) => i.habit.name)).toEqual(['Peso', 'Acordar', 'Caminhada com o cachorro']);
     const quick = Object.values(m.quickAdds).find((q) => q.some((x) => x.name === 'Ovo'))!;
     expect(quick.map((q) => q.name)).toEqual(['Ovo', 'Leite', 'Whey']);
 
@@ -202,7 +207,8 @@ describe('a história, na quinta', () => {
     const p = progressView(data, 'week', 'overview', THU, THU);
     expect(p.range.label).toBe('19 – 25 de outubro');
     expect(Math.round(p.constancy! * 100)).toBe(76);
-    expect(p.insights[0].text).toBe('Nos dias com caminhada, seu humor médio foi 4,1. Nos outros, 3,4.');
+    const walkInsight = p.insights.find((i) => data.habitById.get(i.habitId)?.name.startsWith('Caminhada'));
+    expect(walkInsight?.text).toBe('Nos dias com caminhada, seu humor médio foi 4,1. Nos outros, 3,4.');
   });
 
   it('funciona em qualquer dia da semana', () => {
@@ -235,5 +241,49 @@ describe('primeiro dia da fase 3 (segunda, 2 nov)', () => {
     expect(phase3.weekBars[0].ratio).toBeNull();
     // o dia conta os dias sem como feitos (2 de 12), como no Hoje
     expect(dayCount(data, NOV2, NOV2).done).toBe(2);
+  });
+});
+
+describe('a história nos detalhes do quadro', () => {
+  it('proteína às 12h58, o lixo depois do check-in, outubro no Humor e a fase 1 com 7 hábitos', () => {
+    const at = (t: string) => storyAt(THU, t);
+    const protein = (t: string) => {
+      const { data, now } = at(t);
+      const h = data.habits.find((x) => x.role === 'protein')!;
+      return counterView(data, h.id, THU, THU, logicalMinutesOf(now, data.clock))!.total;
+    };
+    // o frango do almoço entra depois da nota (13h05)
+    expect(protein('12:58')).toBe(46);
+    // às 20h36, com o check-in feito, são 9 (o lixo sai depois)
+    const n = at('20:36').data;
+    expect(dayCount(n, THU, THU).done).toBe(9);
+
+    const { data } = at('20:44');
+    const oct = [...data.checkins.values()].filter((c) => c.day >= '2026-10-01');
+    expect(oct).toHaveLength(20);
+    const avg = (k: 'mood' | 'energy') => Math.round((oct.reduce((n, c) => n + c[k], 0) / oct.length) * 10) / 10;
+    expect([avg('mood'), avg('energy')]).toEqual([3.8, 3.2]);
+    // os 3 dias "muito bem" de outubro caem no fim de semana (4, 10 e 18)
+    expect(oct.filter((c) => c.mood === 5).map((c) => c.day)).toEqual(['2026-10-04', '2026-10-10', '2026-10-18']);
+
+    const walk = byName(data, 'Caminhada com o cachorro');
+    const octWalks = [...data.marks.values()].filter((m) => m.habitId === walk.id && m.day >= '2026-10-01');
+    expect(octWalks).toHaveLength(17);
+    const wake = data.habits.find((h) => h.role === 'wake')!;
+    expect(habitTotals(wake, THU, data, THU)).toMatchObject({ withDays: 20, withoutDays: 12 });
+
+    // fase 1: os 7 hábitos da história (acordar e deitar contam como um; sem medições); Shorts e futebol já eram ativos
+    const phases = phaseTimeline(data, THU);
+    expect(phases[0].habits.map((h) => h.name).sort()).toEqual(
+      ['Acordar', 'Caminhada com o cachorro', 'Check-in do dia', 'Lixo e recicláveis', 'Louça', 'Telas desligadas', 'Zero refrigerante'].sort(),
+    );
+    expect(byName(data, 'Futebol').phase).toBeNull();
+    expect(byName(data, 'Sem Shorts e TikTok').phase).toBeNull();
+    expect(phases.map((p) => p.phase.description)).toEqual([
+      'Sono, telas, cachorro e a casa em dia',
+      'Proteína, água e refeições',
+      'Academia, corrida e menos tela',
+      'Sono, silêncio e tempo a dois',
+    ]);
   });
 });

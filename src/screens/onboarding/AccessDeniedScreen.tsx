@@ -1,6 +1,8 @@
 // Conta sem acesso (docs/interacao/telas/estados.md › Conta sem acesso; quadro: estados › Conta sem acesso).
 // Depois do Google, quando o e-mail não está na lista. O e-mail fica à vista (é texto) para a pessoa conferir;
 // "Copiar o e-mail" vira "E-mail copiado" por 2 s, sem toast. O bloco central entra inteiro com fadeUp; a mão não acena.
+// Sem Firebase, a sessão nunca fica "denied": para conferir a tela, use /entrar?sem-acesso=pessoa@exemplo.com
+// (só em desenvolvimento).
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { FullScreen } from '@/components/shell';
@@ -13,7 +15,12 @@ import './onboarding.css';
 
 export default function AccessDeniedScreen() {
   const session = useSession();
-  const email = session.user?.email ?? '';
+  return <AccessDeniedView email={session.user?.email ?? ''} />;
+}
+
+/** A tela com o e-mail recusado. Em desenvolvimento, /entrar?sem-acesso=e-mail mostra esta tela sem o Firebase. */
+export function AccessDeniedView({ email }: { email: string }) {
+  const session = useSession();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);

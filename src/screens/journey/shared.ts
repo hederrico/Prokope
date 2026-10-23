@@ -90,6 +90,33 @@ export function runLegend(w: RunWeek): { kind: RunBlock['kind']; label: string; 
   return out;
 }
 
+/** O hábito entra no "x de N" do dia ou na constância (fora: medições, limites e contadores sem meta).
+ *  Espelha a regra do domínio (countsInConstancy), que não sai por '@/data'. */
+export function countsInTheDay(h: Habit): boolean {
+  if (h.archived) return false;
+  switch (h.type) {
+    case 'check':
+    case 'time':
+    case 'rating':
+    case 'checklist':
+    case 'daysSince':
+    case 'weekly':
+      return true;
+    case 'counter':
+      return h.goal.value !== undefined;
+    case 'number':
+      return h.goal.value !== undefined && !h.goal.measuring;
+    default:
+      return false;
+  }
+}
+
+/** Resumo de uma fase: a descrição gravada, quando houver; senão, os nomes dos hábitos. */
+export function phaseSummary(phase: { description?: string | null }, habits: Habit[]): string {
+  const d = phase.description?.trim();
+  return d ? capitalize(d) : habitsPhrase(habits);
+}
+
 /** Cor do pilar para os componentes (a chave da paleta do pilar). */
 export function pillarColor(p: Pillar | null | undefined): PillarColor | undefined {
   return p?.color;

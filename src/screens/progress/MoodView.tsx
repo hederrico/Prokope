@@ -17,7 +17,8 @@ import {
 } from '@/data';
 import type { DayKey } from '@/types';
 import { MonthCalendar, type CalCell } from '@/screens/habit/MonthCalendar';
-import { CorrelationInsight } from './shared';
+import { InsightItem } from './shared';
+import { moodInsights } from './insights';
 import { fmt1 } from './format';
 
 export interface MoodViewProps {
@@ -34,6 +35,8 @@ export function MoodView({ p, today, selected, onOpenDay }: MoodViewProps) {
   const data = useDomain();
   const mood = p.mood;
   const range = p.range;
+  // dois padrões de hábitos diferentes: a energia do dia seguinte, os dias "muito bem" e as correlações
+  const cards = mood ? moodInsights(data, today, mood.days, mood.insights) : [];
   if (!mood) return null;
 
   const byDay = new Map(mood.days.map((d) => [d.day, d]));
@@ -125,15 +128,13 @@ export function MoodView({ p, today, selected, onOpenDay }: MoodViewProps) {
           </Card>
         </m.div>
       </div>
-      {mood.insights.length > 0 && (
+      {cards.length > 0 && (
         <m.section variants={fadeUpItem} aria-labelledby="pg-humor-dados">
           <SectionLabel id="pg-humor-dados">O que os seus dados mostram</SectionLabel>
           <div className="pg-pad pg-stack">
-            {mood.insights.map((ins) => {
-              const h = data.habitById.get(ins.habitId);
-              if (!h) return null;
-              return <CorrelationInsight key={`${ins.habitId}:${ins.correlation.metric}`} insight={ins} habit={h} pillar="accent" />;
-            })}
+            {cards.map((c) => (
+              <InsightItem key={c.key} text={c.text} basis={c.basis} icon={c.icon ?? 'sparkle'} pillar="accent" />
+            ))}
           </div>
         </m.section>
       )}
