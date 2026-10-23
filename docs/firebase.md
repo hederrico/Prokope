@@ -1,6 +1,8 @@
 # Firebase: ligar o projeto
 
-O código já está pronto para o Firebase; falta só o projeto. Enquanto o `.env.local` não tiver a configuração, o app roda no **modo demonstração**, com os dados no próprio aparelho.
+**Onde está:** o projeto `prokope-app` existe desde 23 de outubro de 2026, na conta Google da Kouros, a marca de desenvolvedor. Ele tem o app web, o Firestore em São Paulo e as regras publicadas, e o app está em <https://prokope-app.web.app>. Faltam o login com Google (passo 5) e a `allowlist` (passo 6), que são feitos no console. Nesta pasta, o CLI usa a conta da Kouros (`firebase login:use`).
+
+Enquanto o `.env.local` não tiver a configuração, o app roda no **modo demonstração**, com os dados no próprio aparelho.
 
 O que já está no repositório:
 
@@ -18,7 +20,7 @@ Os comandos abaixo usam o Firebase CLI, que já está instalado e logado na sua 
 
 ## 1. Liberar a cota de projetos
 
-A conta estourou o limite de projetos, e **projetos apagados continuam contando na cota por 30 dias** (ficam em "exclusão pendente"). Por isso a criação ainda falha com `exceeded your allotted project quota`, pelo CLI ou pelo console. Em 23 de outubro de 2026, com todos os projetos já apagados, ela ainda falhou. Apagar mais projetos não ajuda. Há três saídas; escolha uma:
+Resolvido com uma conta nova (a saída 3). A conta pessoal estourou o limite de projetos, e **projetos apagados continuam contando na cota por 30 dias** (ficam em "exclusão pendente"). Por isso a criação ainda falha com `exceeded your allotted project quota`, pelo CLI ou pelo console. Em 23 de outubro de 2026, com todos os projetos já apagados, ela ainda falhou. Apagar mais projetos não ajuda. Há três saídas; escolha uma:
 
 1. **Pedir aumento de cota.** Preencha o formulário de cota de projetos do Google Cloud: <https://support.google.com/code/contact/project_quota_increase>. Diga que é um app pessoal no plano gratuito. A resposta costuma chegar por e-mail em um ou dois dias.
 2. **Restaurar um projeto apagado e reaproveitá-lo.** No console do Google Cloud, abra **IAM e administrador › Gerenciar recursos** (<https://console.cloud.google.com/cloud-resource-manager>), clique em **Exclusão pendente**, marque o projeto e toque em **Restaurar**. Depois:
@@ -36,6 +38,11 @@ firebase projects:create prokope-app --display-name "Prokope"
 ```
 
 O id precisa ser único no mundo todo. Se `prokope-app` estiver ocupado, use outro (por exemplo `prokope-hd`) e troque no `.firebaserc`.
+
+Numa conta nova, o Google pede dois aceites que só se fazem no navegador:
+
+- **Termos do Google Cloud.** Sem eles, a criação falha com `Callers must accept Terms of Service`. Abra <https://console.cloud.google.com> com a conta e aceite.
+- **Termos do Firebase.** Sem eles, o projeto nasce no Google Cloud, mas o Firebase falha com `403 The caller does not have permission`. No console do Firebase, use **Criar um projeto › Adicionar o Firebase a um projeto do Google Cloud**, escolha o projeto, aceite e deixe o Google Analytics desligado.
 
 ## 3. Criar o app web e o `.env.local`
 
@@ -64,10 +71,10 @@ Essa configuração não é segredo (vai junto com o app para o navegador), mas 
 ## 4. Criar o Firestore em São Paulo
 
 ```sh
-firebase firestore:databases:create "(default)" --location=southamerica-east1 --project prokope-app
+firebase deploy --only firestore
 ```
 
-Ou pelo console: **Firestore Database › Criar banco de dados**, modo de produção, local **southamerica-east1 (São Paulo)**. O local não muda depois.
+O deploy liga a API do Firestore, cria o banco no local do `firebase.json` (`southamerica-east1`, São Paulo) e publica as regras e os índices. Sem o `location` no `firebase.json`, o banco nasceria nos Estados Unidos (`nam5`). O local não muda depois.
 
 ## 5. Ativar o login com Google
 

@@ -71,7 +71,7 @@ As branches estão no GitHub. A `main` continua como estava.
 
 ## O que ficou para depois
 
-- **Firebase:** a conta Google atingiu a cota de projetos (os apagados contam por 30 dias). Os caminhos estão em [firebase.md](firebase.md). O código já está pronto para ele. Até lá, o login com Google não existe, e o app funciona só na demonstração.
+- **Firebase:** o projeto existe, e o app com o Firebase está em <https://prokope-app.web.app>. Faltam ligar o login com Google e cadastrar os e-mails de quem pode entrar ([firebase.md](firebase.md), passos 5 e 6). A demonstração no GitHub Pages continua sem Firebase.
 - **Layout do computador:** por enquanto, o app aparece numa coluna central. O desenho próprio do computador vem depois, como combinado (mobile first).
 - **Regras do Firestore:** não foram testadas no emulador, que pede Java 11 (a máquina tem o 8).
 
