@@ -5,6 +5,11 @@ import AxeBuilder from '@axe-core/playwright';
 // passos do Começar e "O dia" no Hoje, Ajustes › Tutorial, "Sair do tutorial", e as ofertas com a chave de teste.
 // Os testes rodam com VITE_TOUR_AUTO=off: o Zeno só se oferece com localStorage['pk-tour-auto'] = 'on'.
 // O gancho window.__pkTour está declarado em src/tutorial/tour.ts (sempre ligado, como o window.__pkShell).
+// O Zeno de verdade entra em cena (o WebGL dos testes roda na CPU e anda mais devagar): as esperas têm folga.
+// O capítulo "O dia" inteiro, com os Primeiros passos, está em tutorial-dia.spec.ts.
+
+test.describe.configure({ timeout: 120_000 });
+const SLOW = { timeout: 20_000 };
 
 // o balão que sai na troca de passo fica de fora (data-leaving)
 const balloon = (page: Page) => page.locator('.tt-pos:not([data-leaving]) .tt-balloon');
@@ -68,7 +73,7 @@ test.describe('tutorial', () => {
     await expect(page).toHaveURL(/\/comecar\/1/);
 
     // passo 1: o Zeno se apresenta, sem véu; o foco fica com o título do passo
-    await expect(balloon(page)).toContainText('Oi, eu sou o Zeno. Vou com você nos primeiros passos.');
+    await expect(balloon(page)).toContainText('Oi, eu sou o Zeno. Vou com você nos primeiros passos.', SLOW);
     expect(await tourState(page)).toMatchObject({ run: 'comecar', veil: 'none' });
     await expect(page.locator('.tt-veil-layer')).toHaveCount(0);
     await expect(balloon(page).getByRole('button', { name: 'Sair do tutorial' })).toHaveCount(0);
@@ -83,7 +88,7 @@ test.describe('tutorial', () => {
 
     // passo 2: aponta para o primeiro chip; usar a tela recolhe o balão
     await expect(page).toHaveURL(/\/comecar\/2/);
-    await expect(balloon(page)).toContainText('Cada pilar é uma parte da sua vida.');
+    await expect(balloon(page)).toContainText('Cada pilar é uma parte da sua vida.', SLOW);
     await page.getByRole('button', { name: 'Sem Shorts e TikTok' }).click();
     await expect(balloon(page)).toHaveCount(0);
     expect((await tourState(page)).collapsed).toBe(true);
@@ -91,12 +96,15 @@ test.describe('tutorial', () => {
 
     // passo 3: o primeiro horário
     await expect(page).toHaveURL(/\/comecar\/3/);
-    await expect(balloon(page)).toContainText('Seus horários guiam o dia. Dá para mudar depois em Ajustes › Horários.');
+    await expect(balloon(page)).toContainText(
+      'Seus horários guiam o dia. Dá para mudar depois em Ajustes › Horários.',
+      SLOW,
+    );
     await page.getByRole('button', { name: 'Começar a fase 1' }).click();
 
     // no Hoje, o Zeno vai junto e "O dia" começa pelo condutor, com o véu e o anel
     await expect(page).toHaveURL(/\/hoje$/);
-    await expect(balloon(page)).toContainText('Aqui fica a sua semana.');
+    await expect(balloon(page)).toContainText('Este é o seu dia.', SLOW);
     expect(await tourState(page)).toMatchObject({ run: 'hoje', veil: 'look', practice: true });
     await expect(page.locator('.tt-ring')).toHaveCount(1);
     // o foco vai para o balão
@@ -104,11 +112,12 @@ test.describe('tutorial', () => {
     // passo de olhar: o toque fora do alvo não faz nada (nem nas abas)
     expect(await hitAt(page, '[role="tab"][aria-selected="false"]')).toBe('véu');
     await axe(page);
-    await balloon(page).getByRole('button', { name: 'Concluir' }).click();
+    // o capítulo inteiro está em tutorial-dia.spec.ts; aqui o teste sai, e nada fica gravado
+    await balloon(page).getByRole('button', { name: 'Sair do tutorial' }).click();
     await expect(balloon(page)).toHaveCount(0);
     await expect(page.locator('.tt-veil-layer')).toHaveCount(0);
     expect(await tourState(page)).toMatchObject({ run: null, practice: false });
-    await expect.poll(async () => (await savedTutorial(page)).done?.hoje ?? 0).toBeGreaterThan(0);
+    expect((await savedTutorial(page)).done?.hoje).toBeUndefined();
   });
 
   test('Ajustes › Tutorial lista os capítulos e começa um na aba dele', async ({ page }) => {
@@ -124,7 +133,7 @@ test.describe('tutorial', () => {
 
     await page.getByRole('button', { name: /^O progresso/ }).click();
     await expect(page).toHaveURL(/\/progresso/);
-    await expect(balloon(page)).toContainText('Aqui fica o seu progresso');
+    await expect(balloon(page)).toContainText('Aqui fica o seu progresso', SLOW);
     expect((await tourState(page)).run).toBe('progresso');
     await balloon(page).getByRole('button', { name: 'Concluir' }).click();
     await expect(balloon(page)).toHaveCount(0);
@@ -137,7 +146,7 @@ test.describe('tutorial', () => {
     // "Os ajustes": passo de fazer, só o alvo responde; o toque nele anda (e abre o Tutorial)
     await page.getByRole('button', { name: /^Os ajustes/ }).click();
     await expect(page).toHaveURL(/\/ajustes$/);
-    await expect(balloon(page)).toContainText('Toque em Tutorial.');
+    await expect(balloon(page)).toContainText('Toque em Tutorial.', SLOW);
     expect((await tourState(page)).veil).toBe('do');
     await expect(balloon(page).getByRole('button', { name: /Próximo|Concluir/ })).toHaveCount(0);
     expect(await hitAt(page, '[data-tour="ajustes-tutorial"] button')).toBe('alvo');
@@ -153,7 +162,7 @@ test.describe('tutorial', () => {
     // quem estava com o foco quando o capítulo começou recebe o foco de volta no fim
     await page.getByRole('tab', { name: 'Hoje' }).focus();
     await page.evaluate(() => window.__pkTour!.start('hoje'));
-    await expect(balloon(page)).toContainText('Aqui fica a sua semana.');
+    await expect(balloon(page)).toContainText('Este é o seu dia.', SLOW);
     await expect(balloon(page)).toBeFocused();
     expect(await tourState(page)).toMatchObject({ run: 'hoje', practice: true, veil: 'look' });
     await expect(page.locator('.tt-veil-layer')).toHaveCount(1);
@@ -169,12 +178,14 @@ test.describe('tutorial', () => {
 
     // pela API também, e Esc no balão sai
     await page.evaluate(() => window.__pkTour!.start('jornada'));
-    await expect(balloon(page)).toContainText('Aqui fica a sua jornada');
+    await expect(balloon(page)).toContainText('Aqui fica a sua jornada', SLOW);
+    // Esc com o foco no balão (o foco chega quando o balão assenta)
+    await expect(balloon(page)).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(balloon(page)).toHaveCount(0);
     expect((await tourState(page)).run).toBeNull();
     await page.evaluate(() => window.__pkTour!.start('progresso'));
-    await expect(balloon(page)).toContainText('Aqui fica o seu progresso');
+    await expect(balloon(page)).toContainText('Aqui fica o seu progresso', SLOW);
     await page.evaluate(() => window.__pkTour!.stop());
     await expect(balloon(page)).toHaveCount(0);
     await expect(page.locator('.tt-veil-layer')).toHaveCount(0);
@@ -189,13 +200,13 @@ test.describe('tutorial', () => {
     await enterDemo(page);
 
     // a conta da demonstração já existia (tem plano) e o Zeno ainda não se apresentou
-    await expect(balloon(page)).toContainText('Oi, eu sou o Zeno. Vou andar com você por aqui.', { timeout: 5000 });
+    await expect(balloon(page)).toContainText('Oi, eu sou o Zeno. Vou andar com você por aqui.', SLOW);
     expect(await tourState(page)).toMatchObject({ run: 'intro', offer: 'intro', veil: 'none' });
     await expect(page.locator('.tt-veil-layer')).toHaveCount(0);
     await axe(page);
     await balloon(page).getByRole('button', { name: 'Agora não' }).click();
     await expect(balloon(page)).toContainText('Tudo bem. Fica em Ajustes › Tutorial.');
-    await expect(balloon(page)).toHaveCount(0, { timeout: 5000 });
+    await expect(balloon(page)).toHaveCount(0, SLOW);
     expect((await tourState(page)).run).toBeNull();
     await expect.poll(async () => (await savedTutorial(page)).introAt ?? 0).toBeGreaterThan(0);
 
@@ -207,7 +218,7 @@ test.describe('tutorial', () => {
 
     // o Progresso, na primeira vez: "Mostrar" ou "Agora não", e as duas gravam
     await page.getByRole('tab', { name: 'Progresso' }).click();
-    await expect(balloon(page)).toContainText('Quer que eu mostre o Progresso?', { timeout: 5000 });
+    await expect(balloon(page)).toContainText('Quer que eu mostre o Progresso?', SLOW);
     expect((await tourState(page)).offer).toBe('progresso');
     await balloon(page).getByRole('button', { name: 'Agora não' }).click();
     await expect(balloon(page)).toHaveCount(0);
@@ -223,9 +234,9 @@ test.describe('tutorial', () => {
 
     // a Jornada: "Mostrar" começa o capítulo
     await page.getByRole('tab', { name: 'Jornada' }).click();
-    await expect(balloon(page)).toContainText('Quer que eu mostre a Jornada?', { timeout: 5000 });
+    await expect(balloon(page)).toContainText('Quer que eu mostre a Jornada?', SLOW);
     await balloon(page).getByRole('button', { name: 'Mostrar' }).click();
-    await expect(balloon(page)).toContainText('Aqui fica a sua jornada');
+    await expect(balloon(page)).toContainText('Aqui fica a sua jornada', SLOW);
     expect((await tourState(page)).run).toBe('jornada');
     await balloon(page).getByRole('button', { name: 'Sair do tutorial' }).click();
     await expect(balloon(page)).toHaveCount(0);

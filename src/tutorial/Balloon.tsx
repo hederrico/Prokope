@@ -21,10 +21,13 @@ export interface BalloonProps {
   secondary?: BalloonAction | null;
   /** "Sair do tutorial" */
   onExit?: (() => void) | null;
-  /** onde fica a ponta, em px a partir da borda esquerda; null sem ponta */
+  /** onde fica a ponta, em px a partir da borda esquerda (em cima e embaixo) ou do topo (dos lados); null sem ponta */
   tail: number | null;
-  /** o balão está embaixo da âncora (a ponta fica em cima) ou em cima (a ponta fica embaixo) */
-  side: 'above' | 'below' | 'dock';
+  /**
+   * o balão está embaixo da âncora (a ponta fica em cima), em cima (a ponta fica embaixo), ou à esquerda e à direita
+   * da cabeça do Zeno (a ponta fica na borda do lado dele)
+   */
+  side: 'above' | 'below' | 'dock' | 'left' | 'right';
   width: number;
   /** altura mínima (encostado em cima, cobre o título do passo por inteiro) */
   minHeight?: number;
@@ -81,7 +84,12 @@ export const Balloon = forwardRef<HTMLElement, BalloonProps>(function Balloon(
         </div>
       )}
       {tail !== null && side !== 'dock' && (
-        <span className="tt-tail" data-side={side} style={{ left: tail }} aria-hidden="true" />
+        <span
+          className="tt-tail"
+          data-side={side}
+          style={side === 'left' || side === 'right' ? { top: tail } : { left: tail }}
+          aria-hidden="true"
+        />
       )}
     </m.section>
   );

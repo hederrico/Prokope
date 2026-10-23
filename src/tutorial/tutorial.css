@@ -36,6 +36,15 @@
     touch-action: none;
   }
 
+  /* no Começar com o Zeno: o fundo da tela por cima do título do passo, abaixo do Zeno (o balão cobre só o lado
+     dele do título, e nenhuma meia linha aparece entre os dois) */
+  .tt-cover {
+    position: absolute;
+    z-index: 60;
+    background: var(--bg);
+    pointer-events: none;
+  }
+
   /* ---------- o balão ---------- */
   .tt-balloon-layer {
     position: absolute;
@@ -128,6 +137,20 @@
   .tt-tail[data-side='above'] {
     bottom: -7px;
     box-shadow: 1px 1px 0 0 var(--border);
+  }
+  /* ao lado da cabeça do Zeno: a ponta sai da borda do lado dele */
+  .tt-tail[data-side='left'],
+  .tt-tail[data-side='right'] {
+    margin-left: 0;
+    margin-top: -7px;
+  }
+  .tt-tail[data-side='left'] {
+    right: -7px;
+    box-shadow: 1px -1px 0 0 var(--border);
+  }
+  .tt-tail[data-side='right'] {
+    left: -7px;
+    box-shadow: -1px 1px 0 0 var(--border);
   }
 
   /* a região viva do texto do balão: fora da tela, lida pelo leitor de tela */

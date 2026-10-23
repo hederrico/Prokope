@@ -145,6 +145,24 @@ Enquanto o tutorial pede (`useTour().practice`), o Hoje mostra o grupo "Primeiro
 - **Testes e capturas:** `window.__pkPractice.show(true)` liga o grupo sem o condutor do tutorial (sempre ligado; não grava nada).
 - **Implementação:** `PracticeGroup.tsx` (o grupo e as linhas), `practiceActions.ts` (os gestos, os toasts e os avisos), `PracticeRatingSheet.tsx` (a folha) e as ações `practiceMark`, `practiceAdd` e `practiceRate` (`src/actions/practice.ts`).
 
+## Alvos do tutorial
+
+O capítulo "O dia" ([tutorial.md](tutorial.md) › Capítulo "O dia") aponta para elementos de verdade do Hoje, marcados com `data-tour`. Onde o mesmo nome aparece em vários lugares, o condutor usa o primeiro à mostra.
+
+| Alvo | Onde | Em que estado |
+|---|---|---|
+| `hoje-grupo` | A seção do primeiro momento (Manhã, ou o primeiro horário na Linha do tempo); à noite, a seção Ainda hoje | Dia, noite e "Seu plano começa amanhã" |
+| `hoje-fechado` | O anel do dia fechado, com "Dia fechado", a frase e "Ver o dia" | Dia fechado |
+| `hoje-linha` | O botão do nome de cada linha de hábito (`HabitRow`, prop `tour`); o tutorial usa a primeira | Sempre que há linhas à mostra |
+| `hoje-semana` | O cartão da semana (`TodayWeekCard`) | Fora da noite no Resumo, e fora do domingo com a revisão |
+| `hoje-jeito` | O botão do jeito de ver, no topo | Fora do dia fechado e de um dia que passou |
+| `hoje-checkin` | O momento recolhido que tem o check-in (`FoldedGroup`, prop `tour`), a linha do check-in ou o cartão do check-in à noite | Quando o plano tem check-in e o dia não fechou |
+| `hoje-dias-sem` e `hoje-limites` | As seções Dias sem e Limites da semana | Quando o plano tem |
+| `toast` | O toast (`showUndo`, `showToast`) | Enquanto ele está na tela. `holdToasts(true)` segura o fio do Desfazer enquanto o tutorial aponta para ele |
+| `pp-group`, `pp-mark`, `pp-add`, `pp-rate`, `pp-rate-options`, `pp-rate-save` | Os Primeiros passos e a folha da nota (acima) | Enquanto o grupo aparece |
+
+O seletor provisório `[data-flip="week"] .pk-card` saiu: o cartão da semana é `hoje-semana`.
+
 ## Hoje · manhã  (7h42)
 
 **Ao aparecer:** como nas regras comuns. O convite gentil não anima ao entrar: ele já está lá, parado.

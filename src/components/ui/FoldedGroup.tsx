@@ -26,6 +26,8 @@ export type FoldedGroupProps = {
   /** as linhas (HabitRow) que aparecem ao abrir */
   children?: ReactNode;
   className?: string;
+  /** o alvo do tutorial no cartão (data-tour, src/tutorial) */
+  tour?: string;
 };
 
 export function FoldedGroup({
@@ -38,6 +40,7 @@ export function FoldedGroup({
   onToggle,
   children,
   className,
+  tour,
 }: FoldedGroupProps) {
   const reduced = useReduced();
   const id = useId();
@@ -51,7 +54,7 @@ export function FoldedGroup({
   const shown = icons.slice(0, 4);
   const extra = (more ?? 0) + Math.max(0, icons.length - 4);
   return (
-    <div className={clsx('pk-card pk-foldc', className)}>
+    <div className={clsx('pk-card pk-foldc', className)} data-tour={tour}>
       <button
         type="button"
         className="pk-reset pk-fold"

@@ -104,10 +104,15 @@ export function FullBlocks({ layout, quick, liveOf, next, nudgeFor }: ViewBlocks
   const ctx = useTodayCtx();
   return (
     <>
-      {layout.groups.map((g) => {
+      {layout.groups.map((g, gi) => {
         const [counters, rows] = splitCounters(g.items, ctx.isPast);
         return (
-          <section key={g.key} aria-label={g.title} data-flip={`g-${g.key}`}>
+          <section
+            key={g.key}
+            aria-label={g.title}
+            data-flip={`g-${g.key}`}
+            data-tour={gi === 0 ? 'hoje-grupo' : undefined}
+          >
             <SectionLabel className={next()}>{g.title}</SectionLabel>
             <div className="td-pad td-stack" data-flip={`g-${g.key}-open`}>
               <Counters items={counters} quick={quick} liveOf={liveOf} next={next} />
@@ -175,6 +180,7 @@ export function TimelineBlocks({
               className={clsx('td-tl-slot', past && 'past', s.kind === 'moment' && 'moment')}
               aria-label={title}
               data-flip={`tl-${s.key}`}
+              data-tour={i === 0 ? 'hoje-grupo' : undefined}
             >
               <h2 className={clsx('td-tl-h', next())}>
                 <i className="td-tl-dot" aria-hidden="true" />

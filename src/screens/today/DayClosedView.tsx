@@ -98,7 +98,7 @@ export function DayClosedView({
 
   return (
     <div className="td-closed-root">
-      <div className="td-closed">
+      <div className="td-closed" data-tour="hoje-fechado">
         <Ring
           size={196}
           stroke={14}

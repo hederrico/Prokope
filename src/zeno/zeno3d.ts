@@ -20,7 +20,17 @@ import {
 import type { Oklch } from './color';
 import { talkSeconds, ZENO_LINES } from './lines';
 import { FrameLoop } from './loop';
-import { canvasBox, drawRatio, spotAwayFrom, spotFor, unitPx, type Rect, type Spot, type StageMetrics } from './place';
+import {
+  canvasBox,
+  cornerSpot,
+  drawRatio,
+  spotAwayFrom,
+  spotFor,
+  unitPx,
+  type Rect,
+  type Spot,
+  type StageMetrics,
+} from './place';
 import * as S from './scenes';
 import {
   aim,
@@ -112,6 +122,8 @@ export class ZenoRuntime {
   private unit = 1;
   readonly home = new THREE.Vector3();
   spot: Spot = { side: 'left', row: 'bottom', x: 0, y: 0 };
+  /** o último lugar pedido (enter, moveTo): a barra de abas que aparece ou a tela que gira refazem a conta */
+  private place: ZenoPlace = 'bottom';
 
   private idleNext = 3;
   private lastUser = 0;
@@ -275,13 +287,19 @@ export class ZenoRuntime {
       const t = tb.getBoundingClientRect();
       if (t.height > 0 && t.top < app.bottom) bottom = Math.max(bottom, app.bottom - t.top);
     }
+    // numa tela cheia, o pé preso (o Continuar do Começar) conta como a barra de abas: ele fica em cima do botão
+    for (const el of (shell ?? document).querySelectorAll('.sh-full-foot')) {
+      const f = el.getBoundingClientRect();
+      if (f.height > 0 && f.top < app.bottom && f.top > app.top + app.height / 2)
+        bottom = Math.max(bottom, app.bottom - f.top);
+    }
     let top = safeTop;
     for (const el of (shell ?? document).querySelectorAll('.sh-main .sh-hd, .sh-main .sh-nb, .sh-main .sh-steptop')) {
       const b = el.getBoundingClientRect();
       if (b.height > 0 && b.bottom > app.top && b.top < app.top + app.height / 3)
         top = Math.max(top, b.bottom - app.top);
     }
-    return { width: this.W, height: this.H, bottomInset: bottom, topInset: Math.min(top, this.H / 2) };
+    return { width: this.W, height: this.H, bottomInset: bottom, topInset: Math.min(top, this.H / 2), safeTop };
   }
 
   private layout = () => {
@@ -315,8 +333,9 @@ export class ZenoRuntime {
       this.snapCanvas.height = this.canvas.height;
     }
     this.box = null;
-    // o mesmo lugar (lado e fileira) com as medidas novas: desliza até lá, ou vai direto se a tela mudou de tamanho
-    const next = spotFor(this.spot.side, this.spot.row, this.measure());
+    // o mesmo lugar (lado e fileira, ou o canto) com as medidas novas: desliza até lá, ou vai direto se a tela mudou
+    // de tamanho
+    const next = this.placeAgain();
     if (this.present && (next.x !== this.spot.x || next.y !== this.spot.y)) this.setHome(next, !resized);
     else if (!this.present) this.setHome(next);
     if (this.renderer && this.present) {
@@ -355,16 +374,42 @@ export class ZenoRuntime {
     return this.screenToPlane(spot.x, spot.y);
   }
 
-  /** Um lugar pedido pelo app. Embaixo e em cima ficam do lado onde ele já está. */
+  /** Um lugar pedido pelo app. Embaixo, em cima e o canto sem lado ficam do lado onde ele já está. */
   resolvePlace(place: ZenoPlace): Spot {
     const m = this.measure();
     const side = this.present ? this.spot.side : 'left';
     if (place === 'bottom' || place === 'top') return spotFor(side, place, m);
+    const app = this.appRect();
+    const rel = (el: Element): Rect => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left - app.left, top: r.top - app.top, width: r.width, height: r.height };
+    };
+    if ('corner' in place) {
+      const ledge = place.ledge ? resolveTarget(place.ledge) : null;
+      const r = ledge?.isConnected ? rel(ledge) : null;
+      return cornerSpot(place.side ?? side, place.corner, m, r ? r.top + r.height : null);
+    }
     const el = resolveTarget(place.awayFrom);
     if (!el) return spotFor(side, 'bottom', m);
-    const r = el.getBoundingClientRect();
-    const app = this.appRect();
-    return spotAwayFrom({ left: r.left - app.left, top: r.top - app.top, width: r.width, height: r.height }, m);
+    return spotAwayFrom(rel(el), m, place.room, this.present ? this.spot : null);
+  }
+
+  /** O lugar pedido por último, com as medidas de agora (o alvo ou a borda que sumiu ficam no mesmo canto). */
+  private placeAgain(): Spot {
+    const p = this.place;
+    const m = this.measure();
+    if (typeof p === 'object') {
+      const ref = 'corner' in p ? p.ledge : p.awayFrom;
+      const el = ref ? resolveTarget(ref) : null;
+      if (!ref || el?.isConnected) return this.resolvePlace(p);
+      if ('corner' in p || p.room !== undefined) return cornerSpot(this.spot.side, this.spot.row, m);
+    }
+    return spotFor(this.spot.side, this.spot.row, m);
+  }
+
+  /** O corpo pega o toque (padrão) ou deixa passar para a tela de baixo (o tutorial, com a pessoa usando a tela). */
+  setTouch(on: boolean): void {
+    this.hit.style.pointerEvents = on ? '' : 'none';
   }
 
   /** O rootX (em relação ao lugar) que deixa ele inteiro fora da tela, do lado pedido. */
@@ -1138,6 +1183,7 @@ export class ZenoRuntime {
       if (wave) await this.wave();
       return;
     }
+    this.place = place;
     this.setHome(this.resolvePlace(place));
     await this.play(async (run) => {
       await S.walkIn(this, run, this.spot.side);
@@ -1160,6 +1206,7 @@ export class ZenoRuntime {
 
   moveTo(place: ZenoPlace): Promise<void> {
     const spot = this.resolvePlace(place);
+    this.place = place;
     return this.play(async (run) => {
       this.hold = null;
       await S.standUp(this, run);

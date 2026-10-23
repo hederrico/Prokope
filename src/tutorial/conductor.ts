@@ -8,7 +8,8 @@ import { CHAPTERS } from '@/domain/tutorial';
 import type { ExampleMode } from '@/data/example';
 import { onTour, useTour, type TourEvent, type TourRun } from '@/stores/tour';
 import type { Habit, TutorialChapter } from '@/types';
-import type { ZenoController } from '@/zeno';
+import type { ZenoController, ZenoPlace } from '@/zeno';
+import { ZENO_ROOM } from './placement';
 import type { StepTarget, StepWait, TourContext, TourScript, TourStep, ZenoMove } from './types';
 
 // ---------- o que a camada desenha ----------
@@ -84,6 +85,12 @@ const CHAPTER_IDS = new Set<string>(CHAPTERS.map((c) => c.id));
 /** As raízes das abas (navegacao.md › Rotas): o primeiro trecho da rota diz a aba. */
 const TAB_ROOTS = ['/hoje', '/progresso', '/jornada', '/ajustes'];
 export const isChapter = (run: TourRun): run is TutorialChapter => CHAPTER_IDS.has(run);
+
+/**
+ * Quanto o passo espera o Zeno chegar ao lugar antes de mostrar o balão (ms). No iPhone, uns 3 s; num aparelho lento,
+ * o tempo da cena anda mais devagar.
+ */
+const ZENO_MOVE_MS = 9000;
 
 /** Só o caminho, sem a busca. */
 const pathPart = (to: string) => to.split(/[?#]/)[0] || '/';
@@ -244,6 +251,35 @@ export function createConductor(deps: ConductorDeps) {
     return [onEvent(wait)];
   }
 
+  /**
+   * Onde o Zeno fica num passo, sempre num canto, com o balão ao lado da cabeça dele:
+   * - no modo acompanhar com o título coberto (o Começar), no canto de cima à direita, com os pés no fim do título:
+   *   o balão cobre o título, e os dois ficam longe dos controles e do botão preso;
+   * - num passo com alvo, longe dele: a faixa do Zeno com o balão não cobre o alvo nem a região em volta;
+   * - sem alvo, no canto de baixo.
+   */
+  function zenoPlaceFor(a: Active, region: Element | null): ZenoPlace {
+    const cover = a.script.follow?.cover;
+    if (cover) {
+      const ledge = deps.find(cover, a.ctx);
+      return { corner: 'top', side: 'right', ...(ledge ? { ledge } : {}) };
+    }
+    return region ? { awayFrom: region, room: ZENO_ROOM } : { corner: 'bottom' };
+  }
+
+  /** Leva o Zeno ao lugar do passo e espera ele chegar (até ZENO_MOVE_MS), antes de o balão aparecer ao lado dele. */
+  async function placeZeno(a: Active, place: ZenoPlace): Promise<void> {
+    const z = deps.zeno();
+    if (!z.available || !z.present) return;
+    await waitAny(a, [
+      (done) => {
+        void z.moveTo(place).then(() => done('moved'));
+        return () => undefined;
+      },
+      after(ZENO_MOVE_MS),
+    ]);
+  }
+
   function zenoAct(moves: ZenoMove | ZenoMove[] | undefined, el: Element | null, text: string | null) {
     const z = deps.zeno();
     if (!z.available) return;
@@ -342,6 +378,9 @@ export function createConductor(deps: ConductorDeps) {
 
       await step.enter?.(ctx);
       if (!live(t)) return;
+      // o Zeno vai para um canto longe do alvo (e da região em volta), e o balão fica ao lado dele
+      await placeZeno(a, zenoPlaceFor(a, aroundOf(step, el) ?? el));
+      if (!live(t)) return;
       index++;
       a.shown++;
       const wait = step.wait ?? 'next';
@@ -432,6 +471,9 @@ export function createConductor(deps: ConductorDeps) {
       }
       await step.enter?.(ctx);
       if (!live(t)) return;
+      // o Zeno fica no canto de cima, ao lado do título do passo, que o balão cobre
+      await placeZeno(a, zenoPlaceFor(a, el));
+      if (!live(t)) return;
       a.shown++;
       const wait = step.wait ?? 'none';
       const text = textOf(step, ctx);
@@ -486,7 +528,7 @@ export function createConductor(deps: ConductorDeps) {
         if (!live(t)) return;
       }
       const z = deps.zeno();
-      if (z.available && !z.present && !opts.keepZeno) await z.enter({ place: 'bottom', wave: false });
+      if (z.available && !z.present && !opts.keepZeno) await z.enter({ place: zenoPlaceFor(a, null), wave: false });
       if (!live(t)) return;
       if (a.script.follow) await runFollow(a);
       else await runGuided(a);

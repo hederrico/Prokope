@@ -74,6 +74,7 @@ export function TodayViewButton({ view, onOpen }: { view: TodayViewPref; onOpen:
       aria-haspopup="dialog"
       aria-label={`Jeito de ver o dia: ${current.title}. Trocar`}
       onClick={onOpen}
+      data-tour="hoje-jeito"
     >
       <Icon name={current.icon} weight="bold" />
       <span>{current.title}</span>

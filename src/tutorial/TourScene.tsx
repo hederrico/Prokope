@@ -6,10 +6,12 @@ import { AnimatePresence, animate, m, useIsPresent } from 'motion/react';
 import { spring, tween } from '@/motion/tokens';
 import { usePrefersReducedMotion } from '@/motion/reducedMotion';
 import type { ZenoController } from '@/zeno';
+import { zenoPx } from '@/zeno/place';
 import { Balloon } from './Balloon';
 import type { TourView } from './conductor';
 import { coveredBottom, coveredTop, isShown, queryTarget, radiusOf, toBox } from './dom';
 import {
+  besideWidth,
   blockersAround,
   boxBottom,
   clampHole,
@@ -17,12 +19,16 @@ import {
   inflate,
   mixBox,
   placeBalloon,
+  placeBeside,
   veilPath,
+  zenoCorner,
   type BalloonPlacement,
   type Box,
 } from './placement';
 
 const BALLOON_MAX = 340;
+/** abaixo disto, o balão não cabe ao lado do Zeno (texto de três palavras por linha) */
+const BESIDE_MIN = 200;
 
 export interface BalloonModel {
   key: string;
@@ -36,7 +42,7 @@ export interface BalloonModel {
   /**
    * near: perto da âncora (a cabeça do Zeno, ou o alvo), do lado preferido; sem nenhum dos dois, encostado embaixo.
    * top e bottom: encostado em cima (sobre o título) ou embaixo, com a ponta apontando para o alvo. Com o Zeno em
-   * cena, sempre perto da cabeça dele.
+   * cena (num canto), sempre ao lado da cabeça dele.
    */
   place: 'near' | 'top' | 'bottom';
   /** encostado em cima, cobre este elemento por inteiro (o título do passo) */
@@ -176,9 +182,10 @@ type Hole = Box & { radius: number };
 
 /**
  * O furo desliza de um alvo para o outro com a mola calma; ao rolar, acompanha sem animar. Entre um passo e outro
- * (sem alvo), ele fica onde estava. Com movimento reduzido, troca de lugar de uma vez.
+ * (`keep`), ele fica onde estava; um passo sem alvo (o fim do capítulo) fecha o furo. Com movimento reduzido, troca
+ * de lugar de uma vez.
  */
-function useGlidingHole(hole: Hole | null, el: Element | null, reduced: boolean): Hole | null {
+function useGlidingHole(hole: Hole | null, el: Element | null, reduced: boolean, keep: boolean): Hole | null {
   const [mem, setMem] = useState<{ el: Element | null; hole: Hole | null }>({ el, hole });
   const [glide, setGlide] = useState<{ from: Hole; seq: number } | null>(null);
   const [t, setT] = useState(1);
@@ -194,7 +201,7 @@ function useGlidingHole(hole: Hole | null, el: Element | null, reduced: boolean)
     const a = animate(0, 1, { ...spring.calma, onUpdate: setT, onComplete: () => setGlide(null) });
     return () => a.stop();
   }, [glide]);
-  const current = hole ?? mem.hole;
+  const current = hole ?? (keep ? mem.hole : null);
   if (!current) return null;
   return glide && t < 1 ? mixBox(glide.from, current, t) : current;
 }
@@ -207,7 +214,8 @@ function Veil({ view, target: el, scene }: { view: TourView; target: Element | n
     : null;
   const area = { width: app.width, height: app.height };
   const target = rel ? clampHole(holeFor(rel, scene.radius), area) : null;
-  const hole = useGlidingHole(target, el, reduced);
+  // entre um passo e outro (sem balão), o furo espera o alvo novo; com o balão de um passo sem alvo, ele fecha
+  const hole = useGlidingHole(target, el, reduced, !view.balloon);
   // passo de fazer: só o furo deixa o toque passar; passo de olhar (ou sem alvo): o véu segura todos os toques
   const blockers = view.veil === 'do' && target ? blockersAround(area, target) : [{ left: 0, top: 0, ...area }];
   return (
@@ -264,10 +272,13 @@ function Veil({ view, target: el, scene }: { view: TourView; target: Element | n
 function PositionedBalloon({
   model,
   scene,
+  ringed,
   firstOfRunRef,
 }: {
   model: BalloonModel;
   scene: Scene;
+  /** o alvo tem o anel (com o véu): o balão guarda a folga do anel em volta dele */
+  ringed: boolean;
   firstOfRunRef: RefObject<boolean>;
 }) {
   const id = useId();
@@ -275,12 +286,19 @@ function PositionedBalloon({
   // o balão que sai (na troca de passo) não recebe toque nem foco, e sai da árvore do leitor de tela
   const present = useIsPresent();
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-  const pinned = model.place !== 'near' && !scene.head;
+  // com o Zeno em cena (num canto), o balão fica ao lado da cabeça dele, do lado de dentro da tela; se a tela for
+  // estreita demais para os dois lado a lado, perto da cabeça, como sem o canto
+  const head = scene.head;
+  const besideW = head ? besideWidth(scene.bounds, head, scene.app, BALLOON_MAX) : 0;
+  const beside = !!head && besideW >= BESIDE_MIN;
+  const pinned = model.place !== 'near' && !head;
   // encostado, o balão ocupa a largura toda da área (sem fresta do título por trás)
-  const width = pinned ? scene.bounds.width : Math.min(BALLOON_MAX, scene.bounds.width);
-  // encostado em cima, cobre o título do passo por inteiro (sem meia linha aparecendo embaixo)
+  const width = beside ? besideW : pinned ? scene.bounds.width : Math.min(BALLOON_MAX, scene.bounds.width);
+  // encostado em cima (sem o Zeno, ou ao lado dele no Começar), cobre o título do passo por inteiro, sem meia linha
+  // aparecendo embaixo
+  const coverTop = beside ? !!model.cover : pinned && model.place === 'top';
   const minHeight =
-    pinned && model.place === 'top' && scene.cover ? Math.max(0, boxBottom(scene.cover) + 4 - scene.bounds.top) : 0;
+    coverTop && scene.cover ? Math.max(0, boxBottom(scene.cover) + 4 - scene.bounds.top) : 0;
 
   // a altura muda com o texto (a resposta) e com a letra maior: mede de novo
   useLayoutEffect(() => {
@@ -300,33 +318,54 @@ function PositionedBalloon({
   }, []);
 
   // o foco vai para o balão ao abrir; nos passos seguintes, se ele estava no balão (ou se perdeu na troca).
-  // Cada passo monta um balão novo (a chave é o passo), então isto roda uma vez por passo, já medido.
+  // Cada passo monta um balão novo (a chave é o passo), então isto roda uma vez por passo, já medido. Roda de novo
+  // quando o balão volta depois de começar a sair (a tela trocou o elemento do alvo por um instante): enquanto saía,
+  // ele ficou inert e o foco caiu no body
   const measured = !!size;
   const wantsFocus = model.focus;
   useEffect(() => {
-    if (!wantsFocus || !measured) return;
+    if (!wantsFocus || !measured || !present) return;
     const active = document.activeElement;
     const inLayer = !!active?.closest('.tt-balloon-layer');
     if (firstOfRunRef.current || !active || active === document.body || inLayer) {
       firstOfRunRef.current = false;
       ref.current?.focus({ preventScroll: true });
     }
-  }, [wantsFocus, measured, firstOfRunRef]);
+  }, [wantsFocus, measured, present, firstOfRunRef]);
 
   let place: BalloonPlacement | null = null;
   if (size) {
     // o balão não cobre o alvo (com o anel) nem a região em volta dele
     const region = scene.around ?? scene.target;
-    const avoid = region ? inflate(region, 10) : null;
-    place = placeBalloon({
-      size: { width, height: size.height },
-      bounds: scene.bounds,
-      anchor: pinned ? null : (scene.head ?? avoid),
-      avoid,
-      prefer: model.prefer,
-      dock: model.place === 'top' ? 'top' : 'bottom',
-      pointTo: pinned ? region : null,
-    });
+    // com o anel, a folga dele (6 px e o halo); sem o anel (o Começar), só não encostar
+    const avoid = region ? inflate(region, ringed ? 10 : 2) : null;
+    const box = { width, height: size.height };
+    if (beside && head) {
+      // ao lado dele; se ali cobriria o alvo, encostado na borda de cima ou de baixo, longe do alvo
+      place =
+        placeBeside(
+          { size: box, bounds: scene.bounds, head, height: zenoPx(scene.app.height), avoid, pinTop: !!model.cover },
+          scene.app,
+        ) ??
+        placeBalloon({
+          size: box,
+          bounds: scene.bounds,
+          anchor: null,
+          avoid,
+          dock: zenoCorner(head, scene.app).row === 'top' ? 'bottom' : 'top',
+          pointTo: region,
+        });
+    } else {
+      place = placeBalloon({
+        size: box,
+        bounds: scene.bounds,
+        anchor: pinned ? null : (head ?? avoid),
+        avoid,
+        prefer: model.prefer,
+        dock: model.place === 'top' ? 'top' : 'bottom',
+        pointTo: pinned ? region : null,
+      });
+    }
   }
   const left = place ? place.left - scene.app.left : 0;
   const top = place ? place.top - scene.app.top : 0;
@@ -370,16 +409,43 @@ export interface TourSceneProps {
 export default function TourScene({ view, target, veil, model, zeno, firstOfRunRef }: TourSceneProps) {
   const probe = useRef<HTMLDivElement>(null);
   const scene = useScene(veil || !!model, target, target ? view.around : null, model?.cover ?? null, zeno, probe);
+  // no Começar com o Zeno, o balão cobre o título só do lado dele: um fundo da cor da tela cobre o resto do título
+  // por baixo do Zeno, para nenhuma meia linha aparecer entre os dois
+  const cover = model?.cover && scene?.cover && scene.head ? scene.cover : null;
   return (
     <>
       <AnimatePresence>
         {veil && scene && <Veil key="veil" view={view} target={target} scene={scene} />}
       </AnimatePresence>
+      <AnimatePresence>
+        {cover && scene && (
+          <m.div
+            key="cover"
+            className="tt-cover"
+            style={{
+              left: cover.left - scene.app.left,
+              top: cover.top - scene.app.top,
+              width: cover.width,
+              height: cover.height,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: tween.base }}
+            exit={{ opacity: 0, transition: tween.exit }}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
       <div className="tt-balloon-layer">
         {/* um balão por vez: o do passo novo entra depois de o anterior sair (micro) */}
         <AnimatePresence mode="wait">
           {model && scene && (
-            <PositionedBalloon key={model.key} model={model} scene={scene} firstOfRunRef={firstOfRunRef} />
+            <PositionedBalloon
+              key={model.key}
+              model={model}
+              scene={scene}
+              ringed={veil && !!target}
+              firstOfRunRef={firstOfRunRef}
+            />
           )}
         </AnimatePresence>
         <div ref={probe} className="tt-safe" aria-hidden="true" />

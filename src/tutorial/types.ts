@@ -69,7 +69,7 @@ export interface TourStep {
    * - 'near': perto do alvo, sem cobri-lo (padrão nos capítulos); sem alvo, encostado embaixo;
    * - 'top': encostado em cima, sobre o título da tela, com a ponta apontando para o alvo (padrão no Começar);
    * - 'bottom': encostado embaixo, acima da barra de abas ou do botão preso, apontando para o alvo.
-   * Com o Zeno em cena, o balão fica sempre perto da cabeça dele.
+   * Com o Zeno em cena, ele fica num canto e o balão fica ao lado da cabeça dele (no Começar, cobrindo o título).
    */
   place?: 'near' | 'top' | 'bottom';
   /** o que acontece depois da ação, antes de andar (o aceno de cabeça e o "Isso.") */

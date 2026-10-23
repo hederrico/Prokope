@@ -4,6 +4,9 @@ import { cssColor, shellPlates, ZENO_COLORS } from '../color';
 import { talkSeconds } from '../lines';
 import {
   canvasBox,
+  cornerBand,
+  cornerInset,
+  cornerSpot,
   drawRatio,
   footprint,
   spotAwayFrom,
@@ -132,6 +135,35 @@ describe('o lugar na tela', () => {
     const s3 = spotAwayFrom(band, m);
     expect(s3.row).toBe('top');
     expect(intersects(footprint(s3, m.height), band)).toBe(false);
+  });
+
+  it('num canto: mais perto da borda; em cima com borda, os pés no fim do título e a cabeça na área segura', () => {
+    const r = cornerSpot('right', 'bottom', m);
+    expect(r.x).toBe(390 - cornerInset(844));
+    expect(r.y).toBe(spotFor('right', 'bottom', m).y);
+    // o corpo inteiro na tela (o casco tem uns 0,45 de meia largura)
+    expect(r.x + unitPx(844) * 0.45).toBeLessThanOrEqual(390);
+    const ledge = cornerSpot('right', 'top', { ...m, topInset: 48, safeTop: 0 }, 197);
+    expect(ledge.y).toBe(197);
+    // um título baixo demais não faz a cabeça passar da área segura
+    expect(cornerSpot('right', 'top', { ...m, safeTop: 47 }, 120).y).toBe(47 + 164 + 4);
+  });
+
+  it('longe do alvo com o balão ao lado: a faixa dele com o balão não cobre o alvo, e ele fica onde está se dá', () => {
+    const intersects = (a: Rect, b: Rect) =>
+      a.left < b.left + b.width && b.left < a.left + a.width && a.top < b.top + b.height && b.top < a.top + a.height;
+    // o alvo no meio: embaixo, no canto do lado oposto
+    const mid: Rect = { left: 280, top: 300, width: 80, height: 50 };
+    const s = spotAwayFrom(mid, m, 200);
+    expect(s).toMatchObject({ side: 'left', row: 'bottom', x: cornerInset(844) });
+    expect(intersects(cornerBand(s, m, 200), mid)).toBe(false);
+    // o toast embaixo: a faixa de baixo cobriria, ele sobe
+    const toast: Rect = { left: 16, top: 712, width: 358, height: 64 };
+    const up = spotAwayFrom(toast, m, 200);
+    expect(up.row).toBe('top');
+    expect(intersects(cornerBand(up, m, 200), toast)).toBe(false);
+    // já embaixo à direita, e dali não cobre: fica
+    expect(spotAwayFrom(mid, m, 200, { side: 'right', row: 'bottom' })).toMatchObject({ side: 'right', row: 'bottom' });
   });
 
   it('o canvas: inteiro em pixels, só em volta dele, com folga para os braços, a touca e o pulo', () => {

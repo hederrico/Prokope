@@ -615,7 +615,7 @@ function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, show
                 </>
               )}
               {layout.limits.length > 0 && (
-                <section aria-label="Limites da semana" data-flip="limits">
+                <section aria-label="Limites da semana" data-flip="limits" data-tour="hoje-limites">
                   <SectionLabel className={next()}>Limites da semana</SectionLabel>
                   <div className={clsx('td-pad', next())}>
                     <LimitsList items={layout.limits.map(liveOf)} />
@@ -623,7 +623,7 @@ function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, show
                 </section>
               )}
               {layout.daysSince.length > 0 && (
-                <section aria-label="Dias sem" data-flip="dsr">
+                <section aria-label="Dias sem" data-flip="dsr" data-tour="hoje-dias-sem">
                   <SectionLabel className={next()}>Dias sem</SectionLabel>
                   <div className={clsx('td-pad', next())}>
                     <DaysSinceGrid items={layout.daysSince.map(liveOf)} />
@@ -773,7 +773,7 @@ function DayBlocks({ layout, quick, liveOf, next, nudgeFor }: BlocksProps & { qu
   const ctx = useTodayCtx();
   return (
     <>
-      {layout.groups.map((g) => {
+      {layout.groups.map((g, gi) => {
         const times = g.items
           .map((i) => i.time)
           .filter((t): t is string => !!t)
@@ -785,7 +785,13 @@ function DayBlocks({ layout, quick, liveOf, next, nudgeFor }: BlocksProps & { qu
         // "não conta hoje" desce para o fim do grupo na arrumação (o estado congelado decide)
         const rows = g.folded ? [] : g.items.filter((i) => !asCard(i)).sort(skippedLast);
         return (
-          <section key={g.key} aria-label={g.title} data-flip={`g-${g.key}`}>
+          // o primeiro momento é o alvo do primeiro passo do tutorial "O dia"
+          <section
+            key={g.key}
+            aria-label={g.title}
+            data-flip={`g-${g.key}`}
+            data-tour={gi === 0 ? 'hoje-grupo' : undefined}
+          >
             <SectionLabel trailing={from} className={next()}>
               {g.title}
             </SectionLabel>
@@ -868,6 +874,8 @@ function GroupFold({
     <FoldedGroup
       icons={items.slice(0, 3).map((i) => ({ icon: i.habit.icon, pillar: pillarColor(i) as PillarColor }))}
       more={Math.max(0, items.length - 3)}
+      // recolhido (a Noite de manhã), o momento que tem o check-in é o alvo do passo do check-in do tutorial
+      tour={items.some((i) => i.habit.role === 'checkin') ? 'hoje-checkin' : undefined}
       title={complete ? 'Tudo feito' : `${items.length} ${items.length === 1 ? 'hábito' : 'hábitos'}`}
       subtitle={listNames(items.map((i) => shortOf(i.habit)))}
       complete={complete}
@@ -894,7 +902,7 @@ function NightBlocks({ layout, liveOf, next, nudgeFor }: BlocksProps) {
   const [open, toggle] = useFold(foldKey.done(ctx.day));
   const counters = layout.counters.map(liveOf);
   return (
-    <section aria-label="Ainda hoje" data-flip="night">
+    <section aria-label="Ainda hoje" data-flip="night" data-tour="hoje-grupo">
       <SectionLabel trailing={<span className="pk-num">{left}</span>} className={next()}>
         Ainda hoje
       </SectionLabel>

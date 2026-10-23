@@ -1,7 +1,7 @@
 // O lado do DOM do tutorial: achar o alvo de um passo, esperar ele aparecer e assentar, rolar até ele e medir a área
 // segura onde o balão pode ficar. As contas puras ficam em placement.ts.
 import { prefersReducedMotion } from '@/motion/reducedMotion';
-import { boxBottom, scrollTopFor, type Box } from './placement';
+import { boxBottom, scrollTopFor, ZENO_ROOM, type Box } from './placement';
 
 /** 'pp-mark' vira [data-tour="pp-mark"]; o resto é um seletor CSS. */
 export function selectorOf(target: string): string {
@@ -121,6 +121,8 @@ export async function revealTarget(el: Element, isLive: () => boolean = () => tr
       band,
       scrollTop: scroller.scrollTop,
       maxScroll: scroller.scrollHeight - scroller.clientHeight,
+      // o canto de cima do Zeno com o balão: o alvo fica abaixo dele, e um alvo alto continua para baixo da tela
+      above: ZENO_ROOM + 20,
     });
     if (next !== null) scroller.scrollTo({ top: next, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
