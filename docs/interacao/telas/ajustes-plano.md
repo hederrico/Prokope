@@ -12,6 +12,7 @@ Como se comportam as telas onde a pessoa monta o próprio plano: a lista de Ajus
 | Cartão do perfil | Toque | Abre Dados e conta (`/ajustes/dados`) | Empurrar com `calma` | — | — |
 | Hábitos, Pilares | Toque | Abre a lista | Empurrar com `calma` | — | — |
 | Pausar, Horários, Lembretes, Aparência, A dois | Toque | Abre a tela do grupo F ([ajustes-rotina-conta.md](ajustes-rotina-conta.md)) | Empurrar com `calma` | — | — |
+| Tutorial (fim do grupo App) | Toque | Abre Ajustes › Tutorial ([ajustes-rotina-conta.md › Tutorial](ajustes-rotina-conta.md)) | Empurrar com `calma` | — | — |
 
 **Estados desta tela:** com pausa ativa, a linha Pausar troca "Férias, doença, viagem" por "Pausado até 2 jan". Os valores mudam "ao abrir", sem animação ([comunicacao.md](../comunicacao.md)). Fases não aparece aqui: a edição fica na Jornada (`/jornada/fases`).
 **Como sai:** pelas abas, ou empurrando um item.

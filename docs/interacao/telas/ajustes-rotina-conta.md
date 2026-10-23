@@ -132,6 +132,20 @@ Se o iPhone mudar com o app aberto, o aviso entra com `fadeUp` ou sai em `micro`
 **Estados desta tela:** sem internet e com escritas na fila, o perfil mostra "3 registros esperando internet" ([estados.md](../estados.md)). Nesse caso, Sair pede confirmação numa folha: "Ainda há registros esperando internet para subir.", com "Esperar" (principal) e "Sair mesmo assim".
 **Implementação:** ao sair, chame `terminate` e `clearIndexedDbPersistence`, para outra conta no mesmo aparelho não ver o cache. Do `localStorage`, só a cópia do tema fica.
 
+## Tutorial  (rota: `/ajustes/tutorial`)
+
+**Como chega:** pela linha "Tutorial", a última do grupo App em Ajustes, com o ícone `compass` numa bolha neutra e a frase "Os capítulos com o Zeno". Ela fica no fim do App porque fala do app em si (como Aparência), e é a que menos se abre: não empurra para baixo nada do dia a dia.
+**Ao aparecer:** nada anima, como o resto de Ajustes.
+
+| Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
+|---|---|---|---|---|---|
+| Um capítulo (O dia, O hábito e os padrões, O progresso, A jornada, Os ajustes) | Toque | Abre a aba do capítulo e começa ali, pelo condutor ([tutorial.md](tutorial.md#condutor)) | A passagem da aba; depois o véu, o anel e o balão | No fim, `profile.tutorial.done` (`markChapterDone`, só a primeira vez) | A linha ganha "Visto" |
+
+**A lista:** os capítulos na ordem de `CHAPTERS`, cada um com a frase (`summary`) e o selo "Visto" (`Tag` com ✓) quando foi até o fim. O ícone de cada um é o da aba onde ele acontece (o hábito, o calendário). Embaixo: "Cada capítulo leva poucos minutos. Sair no meio não apaga nada, e dá para ver de novo quando quiser."
+**Estados desta tela:** nenhum capítulo visto (sem selo); rever um capítulo já visto não muda a data. Com "Mostrar o Zeno" desligado, o capítulo roda igual, só com o balão.
+**Acessibilidade:** cada linha é um botão com o título, a frase e "Visto": "O progresso, A semana, os pilares, o humor e as medidas, Visto. Botão."
+**Implementação:** `src/screens/settings/TutorialScreen.tsx`, com `Row` de `parts.tsx`, `ListGroup` e `Tag`; `startTour(capítulo)` de `@/tutorial`. A linha de Ajustes leva `data-tour="ajustes-tutorial"`, o alvo do capítulo "Os ajustes".
+
 ## Apagar todos os dados  (rota: `/ajustes/dados/apagar`; o quadro mostra o conteúdo aberto sob a linha)
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |

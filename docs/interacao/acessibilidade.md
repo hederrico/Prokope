@@ -34,6 +34,7 @@ O VoiceOver repassa o toque longo quando a pessoa toca duas vezes e segura, ent�
 | Dia fechado | `role="status"` | "Dia fechado. 11 de 12." | Uma vez, quando fecha |
 | Reordenar | `role="status"` | "Mente, posição 2 de 4." | Depois de cada movimento |
 | Erro de escrita | `role="alert"` | "Não deu para salvar. Tente de novo em instantes." | Ao acontecer |
+| Balão do Zeno (tutorial) | `aria-live="polite"`, sempre montada na camada do tutorial | O texto do passo, a resposta ("Isso.") e as ofertas | A cada passo, resposta ou oferta |
 
 O toast não rouba o foco. Os 5 segundos do Desfazer param enquanto o toast tem foco. Quem não alcançar o toast desfaz pelo próprio controle (desmarcar) ou pelo menu do hábito, então nenhuma ação depende do tempo.
 
@@ -45,6 +46,7 @@ O toast não rouba o foco. Os 5 segundos do Desfazer param enquanto o toast tem 
 - **Abrir um grupo recolhido:** o foco fica no botão, que passa a "Expandido". O primeiro item novo é o próximo da ordem.
 - **Apagar um item** (proteína, água): o foco vai para o próximo item, ou para o título da lista quando não houver próximo.
 - **Trocar o dia** (Hoje · outro dia): o foco vai para a faixa "Quarta, 21 out", que tem "Voltar para hoje".
+- **Tutorial:** ao abrir um capítulo, o foco vai para o balão (uma região com o nome "Zeno"); nos passos seguintes, fica no balão. Ao sair (ou no fim), volta para quem estava com ele quando o capítulo começou. No Começar e nas ofertas, o foco fica onde está, e o texto é só anunciado. `Esc` no balão sai do tutorial. O véu segura o toque, mas não o teclado: com `Tab`, a pessoa continua andando pela tela, e no passo de fazer o alvo continua com o nome e o papel dele ([telas/tutorial.md](telas/tutorial.md#acessibilidade)).
 - **Ordem:** a ordem do código é a ordem visual. À noite, o check-in sobe para o topo também no código, e não só no desenho.
 - **No computador:** primeiro o link "Ir para o conteúdo" (visível com foco), depois a barra lateral, a área principal e, por fim, o painel da folha, quando aberto. Com o painel aberto, o resto fica inerte (`inert`) até ele fechar.
 

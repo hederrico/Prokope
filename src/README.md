@@ -14,6 +14,7 @@ Código do app. Nomes em inglês; textos da interface e rotas em português (vej
 | `domain/` | Funções puras com testes: dia lógico, constância, força, dias sem, correlações, fases |
 | `actions/` | `markHabit`, `addEntry`, `rate`... cada uma devolve o seu desfazer |
 | `icons/` | `Icon` (Phosphor pelo nome em kebab-case) e a `Salsicha` |
+| `tutorial/` | O tutorial com o Zeno: o condutor dos passos, os roteiros, a camada (véu, anel e balão) e as ofertas (docs/interacao/telas/tutorial.md) |
 | `styles/` | `tokens.css` (tokens e `@theme` do Tailwind), `fonts.css`, `global.css` (base e utilitários do quadro), `palette.ts` |
 | `types/` | Tipos compartilhados e do ambiente (`env.d.ts`) |
 

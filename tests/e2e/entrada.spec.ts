@@ -200,6 +200,8 @@ test.describe('entrada', () => {
     await expect(page).toHaveURL(/\/comecar\/3/);
     await page.getByRole('button', { name: 'Começar', exact: true }).click();
     await expect(page).toHaveURL(/\/hoje/);
+    // no Hoje, o Zeno começa "O dia" (tutorial.spec.ts); aqui o teste sai do tutorial
+    await page.getByRole('button', { name: 'Sair do tutorial' }).click();
 
     // do zero também nasce com a fase 1 (sem fim), para a Jornada ter uma fase atual
     await page.getByRole('tab', { name: 'Jornada' }).click();

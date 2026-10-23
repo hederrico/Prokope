@@ -23,7 +23,13 @@ export function StartStep({ draft, onMode }: { draft: PlanDraft; onMode: (mode: 
       <StepHead step={1} title="Como você quer começar?" lead="Dá para mudar tudo depois, em Ajustes." />
       <div className="ob-body">
         <OptionGroup<PlanDraft['mode']> value={draft.mode} onChange={onMode} label="Como começar" className="ob-opts">
-          <m.div variants={cascade} initial={animateIn ? 'hidden' : false} animate="shown" className="pk-opts ob-opts">
+          <m.div
+            variants={cascade}
+            initial={animateIn ? 'hidden' : false}
+            animate="shown"
+            className="pk-opts ob-opts"
+            data-tour="ob-opcoes"
+          >
             <m.div variants={fadeUpItem}>
               <BaseRadio.Root
                 value="template"

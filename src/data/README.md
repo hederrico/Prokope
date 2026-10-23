@@ -351,6 +351,7 @@ async function onCheck() {
 | `createInvite()` | `undo.url` é o link `/convite/:id` para compartilhar; `undo.invite` |
 | `cancelInvite(id)`, `declineInvite(id)`, `markInviteSeen(id)`, `acceptInvite(id)`, `unlink()` | convite e ligação |
 | `setSharing({ mood: true })`, `setSharedHabit(habitId, on)`, `sendHug()` | o que mostrar e o carinho (um por minuto) |
+| `markIntro()`, `markChapterDone('progresso')`, `markOffered('jornada')` | o tutorial com o Zeno, em `profile.tutorial` (leia com `tutorialOf`): a apresentação, um capítulo visto até o fim e um capítulo oferecido. Cada uma grava por mescla, só a primeira vez; sem perfil, não grava. Quem chama é o tutorial (`src/tutorial`), não as telas |
 
 ## Celebrar ou não: de onde veio a mudança
 

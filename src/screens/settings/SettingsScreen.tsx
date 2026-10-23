@@ -1,4 +1,5 @@
-// Ajustes (aba): o perfil, que leva a Dados e conta, e os grupos Meu plano, Rotina e App, com bolhas neutras.
+// Ajustes (aba): o perfil, que leva a Dados e conta, e os grupos Meu plano, Rotina e App (com o Tutorial no fim),
+// com bolhas neutras.
 // É um menu parado: nada anima ao aparecer, e os valores chegam prontos (docs/interacao/telas/ajustes-plano.md).
 // No modo demonstração, um grupo a mais deixa começar de novo a história de exemplo ou testar o primeiro acesso
 // (uma conta vazia, sem Firebase).
@@ -118,6 +119,15 @@ export default function SettingsScreen() {
             value={togetherValue}
             onClick={() => void navigate('/ajustes/a-dois')}
           />
+          {/* o fim do grupo App: é sobre o app em si, e é o que menos se abre (o alvo do capítulo "Os ajustes") */}
+          <div data-tour="ajustes-tutorial">
+            <ListItem
+              icon="compass"
+              title="Tutorial"
+              subtitle="Os capítulos com o Zeno"
+              onClick={() => void navigate('/ajustes/tutorial')}
+            />
+          </div>
         </ListGroup>
       </div>
 

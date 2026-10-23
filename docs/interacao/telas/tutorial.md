@@ -41,6 +41,81 @@ Cada passo de um capítulo diz:
 - **Sempre à vista:** "Sair do tutorial" no balão. Sair no meio não marca o capítulo como visto e não apaga nada.
 - **Fechar o app no meio:** o capítulo não fica como visto. Na próxima vez, nada aparece sozinho, e o capítulo continua em Ajustes › Tutorial.
 
+## Formato dos passos
+
+Os roteiros ficam em `src/tutorial/scripts.ts`, um objeto por capítulo, no formato de `src/tutorial/types.ts`. Escrever um capítulo é só preencher este formato: o condutor faz o resto.
+
+```ts
+const hoje: TourScript = {
+  run: 'hoje',
+  example: false,                         // padrão: o "example" do capítulo em CHAPTERS
+  exampleHome: 'tab',                     // ao sair do exemplo: a raiz da aba (padrão), uma rota, ou null
+  enter: (ctx) => ctx.setPractice(true),  // gancho do roteiro, no começo (pode ser assíncrono)
+  leave: (ctx) => ctx.setPractice(false), // na saída: (ctx, 'done' | 'stop')
+  then: undefined,                        // ao terminar, começa outro roteiro, com o Zeno junto
+  steps: [
+    {
+      id: 'marcar',                       // nome curto, para os testes (__pkTour.state.stepId)
+      where: '/hoje',                     // a rota; ou (ctx) => caminho
+      target: 'pp-mark',                  // data-tour="pp-mark"; ou um seletor CSS; ou (ctx) => Element
+      around: '[data-tour="pp-group"]',   // opcional: um ancestral do alvo que o balão também não cobre
+      text: 'Toque no círculo para marcar.',
+      wait: { event: 'pp-mark' },         // 'next' | 'tap' | { event, match? } | 'none'
+      reply: { text: 'Isso. Um pé depois do outro.', zeno: 'nod', ms: 1600 }, // depois da ação
+      zeno: 'point',                      // ou uma lista: ['wave', 'point']
+      place: 'near',                      // 'near' | 'top' | 'bottom' (sem o Zeno em cena)
+      when: (ctx) => true,                // falso pula o passo ("Dias sem" só se o plano tiver)
+      timeout: 3000,                      // quanto espera o alvo aparecer antes de pular
+      nextLabel: 'Próximo',               // só no passo de olhar; no último, o padrão é "Concluir"
+      enter: (ctx) => {}, leave: (ctx) => {}, // ganchos do passo
+    },
+  ],
+};
+```
+
+| Campo | O que faz |
+|---|---|
+| `where` | O condutor navega pelo router se a pessoa está em outra rota, e espera a rota chegar (até 4 s). A busca (`?periodo=mes`) vai junto na navegação, mas a comparação é só pelo caminho |
+| `target` | Um nome sem pontuação vira `[data-tour="nome"]`. O condutor espera o alvo existir e ficar parado (a passagem da tela, a cascata) e rola até ele. Um alvo que não aparece em `timeout` faz o passo ser pulado e sair da conta |
+| `wait: 'next'` | Passo de olhar: o balão tem "Próximo" e o véu segura todos os toques, até no alvo |
+| `wait: 'tap'` | Passo de fazer: só o alvo responde. O toque segue para ele e faz o que sempre faz (abrir, navegar); o passo anda logo depois |
+| `wait: { event }` | Passo de fazer: espera o aviso pelo canal `onTour` (`pp-mark`, `pp-add`, `pp-rate`, `undo` ou um `custom`). `match` filtra (`(e) => e.type === 'pp-rate' && e.rating === 5`). Sem alvo, o passo fica sem véu |
+| `reply` | A resposta depois da ação: o texto troca no mesmo balão, sem botão, o Zeno faz o gesto (padrão: aceno de cabeça) e o passo anda depois de `ms` |
+| `when` | Avaliada no começo (para a conta "3 de 9") e de novo na hora do passo. Use `ctx.hasHabitType('budget')`, `ctx.habits()` ou `ctx.path()` |
+| `zeno` | `wave`, `point` (aponta para o alvo), `look`, `nod`, `hop`, `sit`, `stand`, `rest`, `celebrate` (aceno de cabeça), `party` (pulinho e aceno), `shell`. Sem o Zeno, nada acontece |
+| `place` | Sem o Zeno em cena: `near` fica perto do alvo sem cobri-lo (sem alvo, embaixo, acima da barra de abas); `top` e `bottom` encostam na borda, com a ponta apontando para o alvo |
+
+**O contexto** (`ctx`) traz `run`, `path()`, `navigate(to)`, `zeno` (o controlador), `example` (o modo exemplo), `setPractice(on)` (o grupo Primeiros passos no Hoje), `habits()` e `hasHabitType(type)`.
+
+## Condutor
+
+O condutor (`src/tutorial/conductor.ts`) roda um roteiro por vez. Quem escreve no `useTour` (`run`, `step`, `practice`) é só ele.
+
+1. **Começo:** o gancho `enter` do roteiro, o modo exemplo (nos capítulos com exemplo) e o Zeno, que entra por baixo se estiver disponível.
+2. **Cada passo:**
+   1. entre um passo e outro, o balão sai e o anel some, e o véu fica;
+   2. navega até `where`, espera o alvo e rola até ele, deixando lugar para o balão embaixo;
+   3. roda o `enter` do passo e mostra o anel, o véu e o balão, com o foco no balão;
+   4. pede o gesto ao Zeno e a fala (`talk`);
+   5. espera a ação; mostra a resposta; roda o `leave`.
+3. **Fim:** grava o capítulo como visto (`markChapterDone`, só a primeira vez e só se algum passo apareceu), roda o `leave` do roteiro, sai do exemplo, desliga o `practice` e manda o Zeno embora. Com `then`, o próximo roteiro começa com o Zeno em cena.
+4. **Sair** (`stopTour`, o botão "Sair do tutorial", `Esc` com o foco no balão, ou começar outro capítulo): a tela fica limpa na hora (véu, anel, balão e `practice`). Depois sai do exemplo e manda o Zeno embora. Nada é gravado. Começar outro capítulo espera o de antes sair, e só então começa.
+5. **Sair do exemplo** (no fim ou no meio): antes de os dados da pessoa voltarem, o condutor leva a pessoa para a raiz da aba de agora (`exampleHome: 'tab'`, o padrão), para uma rota (`exampleHome: '/progresso'`) ou a deixa onde está (`exampleHome: null`). Uma tela do exemplo, como um hábito que só existe na história, mostraria "Este hábito não existe mais."
+
+**Modo acompanhar** (`follow`, o Começar): sem véu e sem navegar. Cada passo aparece uma vez, quando a pessoa chega à rota dele, e o balão se recolhe quando ela toca na tela, abre uma folha ou o alvo some. Chegar a `follow.end` termina o roteiro e começa o `then`; sair de `follow.within` por outro caminho (trocar de conta) termina sem seguir. O foco fica com o título do passo, e o balão não tem "Sair do tutorial": ele não segura nada.
+
+**O balão** fica perto da cabeça do Zeno (`zeno.anchor()`) quando ele está em cena; sem ele, perto do alvo, sem cobri-lo. Ele fica dentro da área segura, fora da barra de abas, do pé preso de uma tela cheia e do teclado, e acompanha a rolagem, o giro, o teclado e as mudanças de tamanho do alvo. A conta da posição é pura (`src/tutorial/placement.ts`, com testes).
+
+**O desenho** (`TourScene`) carrega sob demanda, na primeira vez que o tutorial aparece. A camada (`TourLayer`) fica uma vez só no `RootLayout` e liga o condutor ao router, ao Zeno e ao modo exemplo.
+
+**Para quem escreve os roteiros:**
+
+- Ponha `data-tour` nos alvos (um nome curto, `pg-semana`), em vez de seletores de classe. Os roteiros mínimos de hoje usam dois seletores provisórios: `[data-flip="week"] .pk-card` (a semana do Hoje) e `header.sh-hd` (o cabeçalho da aba).
+- Um alvo grande (um cartão inteiro) é melhor que um pequeno demais: o anel cresce 6 px em volta e o balão precisa de lugar embaixo ou em cima.
+- Um passo dentro de uma folha funciona (a folha fica abaixo do véu), mas a folha prende o foco: confira o foco do balão com o teclado nesse caso.
+- Os alvos dos Primeiros passos: `pp-group`, `pp-mark`, `pp-add`, `pp-rate` e `pp-journey`, e, dentro da folha de nota de treino (`primeira-nota`), `pp-rate-options` e `pp-rate-save`.
+- A camada fica dentro de `.sh-app`, no mesmo contexto de empilhamento das folhas e do palco do Zeno: é isso que faz a ordem véu 60, Zeno 70 e balão 80 valer.
+
 ## Voz
 
 A do README do Zeno: frases curtas, no presente, tratando por "você". Nunca "falhou", "esqueceu", "de novo" ou "ainda não", e nunca conta o que faltou. A nota 1 e a nota 5 recebem o mesmo "Obrigado por contar." Na revisão, os textos seguem o tom de [../../visao.md](../../visao.md).
@@ -56,7 +131,13 @@ O Zeno conversa uma vez por passo e depois fica à toa num canto, sem véu: a pe
 | 3 · Sua rotina | Aponta para o primeiro horário | "Seus horários guiam o dia. Dá para mudar depois em Ajustes › Horários." |
 | Começar a fase 1 | Vai junto para o Hoje | Começa "O dia" |
 
-`tutorial.introAt` é gravado no passo 1.
+`tutorial.introAt` é gravado no passo 1 (e de novo no fim, uma vez só, para o primeiro login com Google, em que o perfil pode chegar depois).
+
+- **O roteiro:** `comecar` em `scripts.ts`, no modo acompanhar. A tela do Começar começa o roteiro ao montar, e chegar ao Hoje começa "O dia" pelo condutor.
+- **Onde fica o balão:** no passo 1, embaixo, no espaço vazio acima do Continuar, apontando para as opções. Nos passos 2 e 3, em cima, cobrindo por inteiro o título do passo (`.ob-head`), com a ponta apontando para o alvo. Assim ele nunca cobre os chips, os horários nem o Continuar.
+- **Alvos:** `ob-opcoes` (as duas opções), `ob-chips` (os chips do primeiro pilar com hábitos), `ob-novo-pilar` ("Criar o primeiro pilar", do zero) e `ob-horario` (o primeiro horário).
+- **Recolher:** o primeiro toque fora do balão, uma folha aberta (o formulário do pilar) ou o alvo sumindo recolhem o balão. Com o Zeno, ele fica à toa (`rest`). Voltar a um passo já visto não repete o balão.
+- **Sem o Zeno:** tudo igual, só com o balão.
 
 ## Capítulo "O dia" (`hoje`)
 
@@ -97,6 +178,11 @@ Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"),
 - **Conta que já existia** (com plano e sem `introAt`), no Hoje: o Zeno entra e acena. "Oi, eu sou o Zeno. Vou andar com você por aqui. Quer conhecer o app comigo?" "Vamos" começa "O dia"; "Agora não" responde "Tudo bem. Fica em Ajustes › Tutorial." e ele sai. As duas gravam `introAt`.
 - **Capítulo ao abrir uma aba** (Progresso, Jornada, Ajustes; e "O hábito" ao abrir um hábito): uma vez por capítulo, se ele não foi visto, se o Zeno já se apresentou e se nenhum tutorial está rodando. "Quer que eu mostre o Progresso?", com "Mostrar" e "Agora não". As duas gravam `offered`.
 - Nada é oferecido com o Zeno desligado, nos testes (`VITE_TOUR_AUTO=off`) ou no meio de uma folha aberta.
+- **Quando:** a oferta espera a tela assentar (900 ms). Ela fica embaixo, acima da barra de abas (ou perto da cabeça do Zeno), sem véu, e a pessoa pode seguir usando a tela. A apresentação é o `run` `'intro'` enquanto está na tela.
+- **Sem resposta:** sair da tela ou abrir uma folha tira a oferta sem gravar. Ela não volta nesta abertura do app, só na próxima.
+- **Onde:** a raiz de Progresso, Jornada e Ajustes; "O hábito" em `/hoje/habito/:id`, `/progresso/habito/:id` e `/ajustes/habitos/:id`. A conta é pura (`offerFor`, em `src/tutorial/offerStore.ts`, com testes).
+- **Sem WebGL:** por enquanto, a oferta olha só "Mostrar o Zeno" (`zenoShown`). Não oferecer capítulos num aparelho que não desenha WebGL (`zeno.available` falso) fica para quando o Zeno de verdade entrar, porque o provisório nunca está disponível.
+- **Chave de teste:** `localStorage['pk-tour-auto'] = 'on'` liga as ofertas mesmo com `VITE_TOUR_AUTO=off`. Ela é lida junto com `tourAuto` e só liga: no app de verdade as ofertas já estão ligadas, então a chave não muda nada.
 
 ## Primeiros passos
 
@@ -119,17 +205,25 @@ Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"),
 
 ## Ajustes
 
-- **Ajustes › Tutorial** (`/ajustes/tutorial`): os capítulos, na ordem de `CHAPTERS`, cada um com a frase e "Visto" quando foi até o fim. Tocar começa o capítulo na aba dele.
+- **Ajustes › Tutorial** (`/ajustes/tutorial`): os capítulos, na ordem de `CHAPTERS`, cada um com a frase e "Visto" quando foi até o fim. Tocar começa o capítulo na aba dele. A linha "Tutorial" fica no fim do grupo App, em Ajustes ([ajustes-rotina-conta.md › Tutorial](ajustes-rotina-conta.md)).
+- **Capítulos sem roteiro completo:** por enquanto, "O hábito", "O progresso", "A jornada", "Os ajustes" e "O dia" têm um roteiro mínimo de um passo. "Os ajustes" é um passo de fazer (tocar em Tutorial).
 - **Ajustes › Aparência:** o interruptor "Mostrar o Zeno" (`prefs.zeno`).
 
 ## Acessibilidade
 
-- O balão é texto de verdade, anunciado com `aria-live="polite"`. Ao abrir, o foco vai para ele.
+- O balão é texto de verdade, anunciado com `aria-live="polite"`. Ao abrir, o foco vai para ele, e no fim volta para quem estava com ele quando o tutorial começou. No Começar e nas ofertas, o foco fica onde está (o título do passo, a tela), e o texto é só anunciado.
+- O balão é uma região com o nome "Zeno". `Esc`, com o foco nele, sai do tutorial.
+- O véu e o anel ficam escondidos do leitor de tela. Com o teclado, a pessoa continua andando pela tela toda.
 - O desenho do Zeno fica escondido do leitor de tela (`aria-hidden`).
 - No passo de fazer, o alvo continua com o nome e o papel dele, e o balão diz o que fazer.
 - Com movimento reduzido, o Zeno troca de pose por opacidade, e o balão e o anel entram sem deslocamento.
 
 ## Testes
 
-- `window.__pkTour` (como o `window.__pkShell`): `start(capítulo)`, `stop()` e o estado atual.
-- Nos e2e, o Zeno não se oferece sozinho. Os testes ligam o tutorial pela API ou por Ajustes › Tutorial.
+- `window.__pkTour`, sempre ligado (como o `window.__pkShell`):
+  - `start(run)`: um capítulo, `'comecar'` ou `'intro'` (a oferta de apresentação);
+  - `stop()`: o mesmo que "Sair do tutorial";
+  - `state`: `run`, `step`, `practice`, `stepId`, `text`, `counter`, `veil` (`none`, `look`, `do`), `collapsed`, `offer` e `offerReply`.
+- Nos e2e, o Zeno não se oferece sozinho. Os testes ligam o tutorial pela API, por Ajustes › Tutorial ou pela chave `pk-tour-auto`.
+- Vitest: o condutor com dependências de mentira (`src/tutorial/__tests__/conductor.test.ts`), a posição do balão e o véu (`placement.test.ts`), as ofertas (`offers.test.ts`) e as ações (`src/actions/__tests__/tutorial.test.ts`).
+- E2e: `tests/e2e/tutorial.spec.ts`.

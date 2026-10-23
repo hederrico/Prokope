@@ -1,0 +1,150 @@
+/* Tutorial: o véu do passo (z-index 60), o anel no alvo e o balão do Zeno (80). O Zeno fica entre os dois (70),
+   as folhas abaixo (40) e os toasts acima de tudo. Tokens de src/styles/tokens.css; durações só pelos tokens. */
+
+@layer components {
+  /* ---------- o véu: leve, com o furo no alvo (o SVG não pega toque; quem segura são as faixas) ---------- */
+  .tt-veil-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    /* mais leve que o fundo da folha: a tela continua legível por baixo */
+    --tt-veil: color-mix(in oklch, var(--dim) 62%, transparent);
+  }
+  .tt-veil-svg {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+  .tt-veil {
+    fill: var(--tt-veil);
+  }
+  /* o anel: o mesmo traço do foco (2,5 px em --accent-mark), com um halo suave do destaque */
+  .tt-ring {
+    fill: none;
+    stroke: var(--accent-mark);
+    stroke-width: 2.5;
+  }
+  .tt-halo {
+    fill: none;
+    stroke: color-mix(in oklch, var(--accent-mark) 26%, transparent);
+    stroke-width: 9;
+  }
+  .tt-block {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  /* ---------- o balão ---------- */
+  .tt-balloon-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+  }
+  .tt-pos {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .tt-balloon {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    max-width: 100%;
+    padding: 14px 16px 12px;
+    border-radius: var(--r-lg);
+    background: var(--raised);
+    color: var(--text);
+    box-shadow:
+      var(--shadow-2),
+      0 0 0 1px var(--border);
+    pointer-events: auto;
+    outline: none;
+  }
+  .tt-balloon:focus-visible {
+    outline: 2.5px solid var(--accent-mark);
+    outline-offset: 2px;
+  }
+  .tt-who {
+    font: 600 12px/16px var(--font-ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+  }
+  .tt-text {
+    margin: 0;
+    font: 400 17px/24px var(--font-ui);
+    color: var(--text);
+    text-wrap: pretty;
+  }
+  .tt-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px 8px;
+    margin-top: 6px;
+  }
+  .tt-count {
+    margin-right: auto;
+    font: 500 13px/16px var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-3);
+  }
+  .tt-acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-left: auto;
+  }
+  /* "Sair do tutorial" é o botão de texto pequeno, num tom mais quieto que o "Próximo" */
+  .tt-balloon .pk-btn.g.sm {
+    padding-inline: 10px;
+  }
+  .tt-balloon .pk-btn.tt-exit {
+    color: var(--text-2);
+  }
+
+  /* a ponta, que aponta para a cabeça do Zeno ou para o alvo (um quadrado girado, metade para fora) */
+  .tt-tail {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    border-radius: 3px;
+    background: var(--raised);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+  .tt-tail[data-side='below'] {
+    top: -7px;
+    box-shadow: -1px -1px 0 0 var(--border);
+  }
+  .tt-tail[data-side='above'] {
+    bottom: -7px;
+    box-shadow: 1px 1px 0 0 var(--border);
+  }
+
+  /* a região viva do texto do balão: fora da tela, lida pelo leitor de tela */
+  .tt-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* lê as áreas seguras (env) em px */
+  .tt-safe {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  }
+}

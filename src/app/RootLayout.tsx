@@ -1,5 +1,5 @@
 // A raiz do app: movimento (LazyMotion e MotionConfig), aparência, guarda da sessão, a camada de cima
-// (as abas ou uma tela cheia, com a passagem certa), as folhas do ?folha= e os toasts.
+// (as abas ou uma tela cheia, com a passagem certa), as folhas do ?folha=, o tutorial e os toasts.
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, type FeatureBundle } from 'motion/react';
 import { useLocation, useNavigate, useNavigationType, useOutlet } from 'react-router';
@@ -9,6 +9,7 @@ import { SheetHost } from '@/components/shell/SheetHost';
 import { AppToaster } from '@/components/shell/toast';
 import { ScreenLayer, TransitionContext, type TransitionInfo } from '@/components/shell/ScreenLayer';
 import { RouteSteps } from '@/components/shell/RouteSteps';
+import { TourLayer } from '@/tutorial';
 import { setShellState, useShellState } from '@/components/shell/shellState';
 import { rootTransition } from '@/components/shell/transitions';
 import { usePreferences } from './preferences';
@@ -128,6 +129,8 @@ export function RootLayout() {
           </div>
           <SheetHost />
           <div id="sh-overlays" className="sh-sheets" />
+          {/* o tutorial: o véu (60) e o balão (80), por cima das folhas e abaixo dos toasts */}
+          <TourLayer />
           <AppToaster />
           <WriteErrorToast />
           {session.status === 'ready' && <SplashMemory />}

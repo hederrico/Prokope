@@ -206,6 +206,13 @@ export const SCREENS: ScreenDef[] = [
     load: () => import('@/screens/settings/AppearanceScreen'),
   },
   {
+    path: '/ajustes/tutorial',
+    kind: 'push',
+    tab: 'ajustes',
+    title: 'Tutorial',
+    load: () => import('@/screens/settings/TutorialScreen'),
+  },
+  {
     path: '/ajustes/pausar',
     kind: 'push',
     tab: 'ajustes',
