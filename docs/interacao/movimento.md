@@ -11,6 +11,20 @@ Este documento define como as coisas se mexem no Prokopē: os princípios, os to
 5. **Nada muda de lugar debaixo do dedo.** O que é tocado responde no lugar. Mudanças de posição (recolher um momento completo, mandar um hábito para o fim do grupo, reorganizar o Hoje pelo horário) acontecem na próxima vez que a tela aparece.
 6. **O corpo de quem usa manda.** Com movimento reduzido, deslocamento e escala viram troca de opacidade e cor. Nada de parallax, loop infinito ou animação que começa sozinha.
 
+## A exceção do Zeno
+
+O Zeno (o mascote, [../mascote/README.md](../mascote/README.md)) é a única exceção à regra "nada se mexe sozinho". Em cena, ele respira, pisca e olha em volta sem ninguém pedir, porque um personagem parado encarando a pessoa parece quebrado. A exceção tem limites:
+
+- **Só entra em momentos previstos:** o tutorial e os momentos combinados. Ele nunca aparece para chamar atenção, e fora de cena nada dele é desenhado.
+- **À toa, só coisinhas calmas.** A cada 4 a 7 s, uma coisinha sorteada sem repetir a anterior: olhar em volta, ajeitar o cachecol, coçar a bochecha, cantarolar, espiar o casco, chutar uma pedrinha, espreguiçar ou sentar um pouco. Entre elas, respira, pisca e muda o olhar a cada poucos segundos.
+- **O tédio acalma, não cobra.** Sem toque nem cena por 40 s, ele senta e fica. Aos 65 s, cochila sentado, com a bolha de dormir. Qualquer toque o acorda.
+- **Toques:** tocar na tela faz ele olhar para o ponto; tocar nele dá um "oi". Os olhos vão na frente e a cabeça vem depois.
+- **As mesmas molas do app:** `calma`, `toque` e `festa`, com `visualDuration` e `bounce`. As pontas do cachecol e da touca balançam como pêndulos, puxadas pela aceleração.
+- **Bateria:** 60 quadros por segundo nas ações, 30 à toa e dormindo. O desenho para quando ele sai de cena e quando o app vai para o fundo.
+- **A celebração segue a escada abaixo:** um aceno no dia fechado; a dancinha só na fase nova.
+- **Movimento reduzido:** cada gesto vira uma pose parada, trocada por opacidade em 150 ms. Não há respiração, piscada, pulo, giro nem coisinhas à toa. Dormindo, a bolha aparece parada. O desenho para assim que a pose assenta.
+- **Pode ser desligado** em Ajustes › Aparência, em "Mostrar o Zeno". Sem ele, o tutorial segue só com o balão.
+
 ## Tokens
 
 ### Durações
@@ -103,6 +117,7 @@ O app reduz o movimento quando o iPhone pede (`prefers-reduced-motion: reduce`) 
 | Cascata de entrada | Tudo entra junto |
 | Brilho do dia fechado | Brilho parado e suave |
 | Confete | Confete parado, desenhado ao redor do título |
+| Zeno andando, acenando, pulando | Poses paradas, trocadas por opacidade em 150 ms; entra e sai de cena também por opacidade. Sem respiração, piscada nem coisinhas à toa |
 
 No Motion, `<MotionConfig reducedMotion="user">` já desliga transformações e layout e mantém opacidade e cor. O interruptor do app troca esse valor para `"always"`.
 

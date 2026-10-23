@@ -10,6 +10,23 @@ export type ZenoGaze = ZenoTarget | 'person' | 'ground' | 'around';
 /** Onde ele fica na tela: embaixo (acima da barra de abas), em cima (abaixo do cabeçalho), ou longe do alvo. */
 export type ZenoPlace = 'bottom' | 'top' | { awayFrom: ZenoTarget };
 
+/**
+ * Um toque que o Zeno percebeu (extensão do contrato). O texto não é dele: `line` é a fala sugerida, na voz dele,
+ * para quem conduz pôr no balão, se quiser.
+ * - body: tocaram nele, e ele deu um "oi" (dormindo na pausa ou à noite, a bolha estoura e ele volta a dormir);
+ * - wake: ele cochilava de tédio e acordou ("Opa, cochilei.");
+ * - screen: tocaram na tela, e ele olhou para o ponto (x e y na tela, como clientX e clientY).
+ */
+export type ZenoTap =
+  { type: 'body'; line: string | null } | { type: 'wake'; line: string } | { type: 'screen'; x: number; y: number };
+
+/**
+ * As cenas prontas do laboratório (extensão do contrato), para os momentos ao longo do uso. Cada uma mexe a boca
+ * com a fala de ZENO_LINES (@/zeno/lines); quem conduz põe o texto no balão ao mesmo tempo.
+ */
+export type ZenoScene =
+  'acenar' | 'casco' | 'checkin' | 'obrigado' | 'dia' | 'fase' | 'pausa' | 'noite' | 'cochilo' | 'acordar' | 'sair';
+
 export interface ZenoController {
   /** pode aparecer: "Mostrar o Zeno" ligado e o aparelho desenha (WebGL). Falso: o tutorial segue só com o balão */
   readonly available: boolean;
@@ -42,4 +59,8 @@ export interface ZenoController {
   anchor(): DOMRect | null;
   /** avisa quando ele muda de lugar na tela ou sai (o balão acompanha); devolve o cancelamento */
   onMove(cb: () => void): () => void;
+  /** extensão: avisa os toques que ele percebeu (nele, na tela, ou o que o acordou); devolve o cancelamento */
+  onTap(cb: (tap: ZenoTap) => void): () => void;
+  /** extensão: uma cena pronta dos momentos ao longo do uso (dia fechado, fase nova, pausa, noite, casco...) */
+  scene(id: ZenoScene): Promise<void>;
 }

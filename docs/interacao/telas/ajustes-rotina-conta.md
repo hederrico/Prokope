@@ -2,7 +2,7 @@
 
 São telas de configurar, abertas poucas vezes e com calma. Por isso quase nada anima além da passagem. O cuidado fica onde algo muda o resto do app (horário, tema, pausa) e onde algo não volta (apagar tudo).
 
-Componentes novos: `ThemePreview` (mini tela do tema), `PauseStrip` (faixa dos dias da pausa), `DateSheet` (calendário em folha), `PeerCard` (como a outra pessoa aparece, com o carinho), `AlarmRow` e `NumberedSteps`. Coleções novas, fora de `users/{uid}`: `invites` e `links` (com `share`, `hugs` e `habits` dentro). Campos novos em `profile`: `schedule`, `collectionDays`, `weekendTolerance`, `prefs` (`theme`, `motion`, `sound`), `linkId` e `deleting`. Ações novas: `setScheduleTime`, `setWeeklyReview`, `setWeekendTolerance`, `setCollectionDays`, `setTheme`, `setMotion`, `setSound`, `startPause`, `updatePause`, `cancelPause`, `endPause`, `createInvite`, `cancelInvite`, `acceptInvite`, `declineInvite`, `unlink`, `setSharing`, `setSharedHabit`, `sendHug`, `exportData`, `signOut` e `deleteAllData`.
+Componentes novos: `ThemePreview` (mini tela do tema), `PauseStrip` (faixa dos dias da pausa), `DateSheet` (calendário em folha), `PeerCard` (como a outra pessoa aparece, com o carinho), `AlarmRow` e `NumberedSteps`. Coleções novas, fora de `users/{uid}`: `invites` e `links` (com `share`, `hugs` e `habits` dentro). Campos novos em `profile`: `schedule`, `collectionDays`, `weekendTolerance`, `prefs` (`theme`, `motion`, `sound`, `zeno`), `linkId` e `deleting`. Ações novas: `setScheduleTime`, `setWeeklyReview`, `setWeekendTolerance`, `setCollectionDays`, `setTheme`, `setMotion`, `setSound`, `setZenoShown`, `startPause`, `updatePause`, `cancelPause`, `endPause`, `createInvite`, `cancelInvite`, `acceptInvite`, `declineInvite`, `unlink`, `setSharing`, `setSharedHabit`, `sendHug`, `exportData`, `signOut` e `deleteAllData`.
 
 ## Comum às telas deste grupo
 
@@ -45,9 +45,15 @@ Componentes novos: `ThemePreview` (mini tela do tema), `PauseStrip` (faixa dos d
 | Animações | Toque na linha | Liga e desliga o movimento do app | Botão em `micro`; o modo reduzido entra 150 ms depois | `setMotion(false)` | O app todo: `data-motion="off"` no `html` |
 | Som suave ao marcar | Toque na linha | Liga, e o som toca uma vez para a pessoa ouvir | `micro` | `setSound(true)` | Nível 1 da escada de celebração |
 | Jeito de ver o Hoje (Resumo, Lista completa, Linha do tempo) | Toque num cartão | O Hoje passa a abrir naquele jeito ([hoje.md](hoje.md) › Os três jeitos de ver o dia) | rádio em `micro` | `profile.prefs.todayView` (`setTodayView`) | Hoje (o botão do topo mostra o mesmo jeito) |
+| Mostrar o Zeno (grupo Zeno) | Toque na linha | Liga e desliga o Zeno no app (abaixo) | `micro` | `profile.prefs.zeno` (`setZenoShown`) | O tutorial e os momentos com o Zeno; sem ele, só o balão |
 | Mostrar só a tendência do peso (grupo Privacidade) | Toque na linha | Esconde o número de cada dia no Hoje, na folha do peso e em Medidas; ficam a frase e a linha da média | `micro` | `profile.prefs.weightTrendOnly` | Hoje (a linha Peso mostra só o ✓), Progresso › Medidas |
 
 **Troca de tema ao vivo:** `setTheme` grava em `profile.prefs.theme` e na cópia do `localStorage`. Depois põe a classe `theme-fade` no `html` por 240 ms, com `transition: background-color, color, border-color, fill, stroke, box-shadow` em `--dur-base` e `--ease-in-out`, e troca o `data-theme`. Atualiza também `<meta name="theme-color">` e `color-scheme`. As prévias não mudam, porque têm as cores fixas de cada tema. Em Sistema, o mesmo efeito acontece quando o iPhone troca sozinho de claro para escuro com o app aberto (`matchMedia(...).addEventListener('change')`).
+**Mostrar o Zeno:** a linha diz "A tartaruga que apresenta o app e aparece em alguns momentos.", e o rodapé, "Sem ele, o tutorial segue igual, só com o texto." Num aparelho que não desenha WebGL, o rodapé troca para "Este aparelho não desenha o Zeno. O tutorial segue igual, só com o texto."
+- Documentos antigos não têm o campo, e vale mostrar: leia com `zenoShown(prefs)` (`src/domain/tutorial.ts`). Gravar põe `prefs.zeno` por mescla, e a ação devolve o desfazer, como as outras preferências. Como nos outros interruptores, não há toast.
+- Desligar com o Zeno em cena (no capítulo "Os ajustes", por exemplo) faz ele dar tchau e sair. Desligado, `useZeno().available` fica falso, nada dele carrega, e o Zeno não oferece capítulos sozinho ([tutorial.md](tutorial.md)).
+- A escolha vale para a pessoa, em todos os aparelhos. O movimento reduzido é outra coisa: com ele, o Zeno aparece, mas troca de pose por opacidade ([movimento.md](../movimento.md) › A exceção do Zeno).
+
 **Animações e o Reduzir Movimento do iPhone** (regra de [movimento.md](../movimento.md): o interruptor só reduz):
 
 | iPhone | Interruptor do app | O que vale | O que a tela mostra |

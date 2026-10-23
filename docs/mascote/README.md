@@ -35,11 +35,11 @@ O [laboratório](laboratorio.html) mostra o Zeno funcionando, com as cenas, os d
 - Não aparece no deslize.
 - A comemoração segue a escada de celebração de [movimento.md](../interacao/movimento.md): um aceno no dia fechado e a dancinha só na fase nova.
 - Fala pouco, em balões curtos. O texto do balão é texto de verdade na tela, lido pelo VoiceOver, e o desenho fica escondido do leitor de tela.
-- Vai poder ser escondido em Ajustes › Aparência.
+- Pode ser escondido em Ajustes › Aparência, no interruptor "Mostrar o Zeno".
 
 ## Onde ele aparece
 
-O Zeno entra **por cima da tela**, como no laboratório. Ele vai **conduzir o tutorial do primeiro uso** e **aparecer em alguns momentos ao longo do uso**. Como integrar isso ao app fica para uma próxima conversa.
+O Zeno entra **por cima da tela**, como no laboratório. Ele **conduz o tutorial do primeiro uso** e vai **aparecer em alguns momentos ao longo do uso**. O tutorial está em [tutorial.md](../interacao/telas/tutorial.md); a parte técnica dele no app está em [No app](#no-app), abaixo.
 
 | Momento | O que ele faz |
 |---|---|
@@ -93,12 +93,97 @@ O Zeno é a única exceção à regra "nada se mexe sozinho", com limites:
 - **Three.js 0.170**, com o personagem montado em código a partir de esferas, cápsulas e cones. Não há modelo do Blender nem artista no caminho.
 - **Cabeça, olhos e braços são peças separadas.** Por isso, "olhar para" e "apontar para" um botão de verdade da tela é uma conta: a posição do botão vira um ponto no espaço do Zeno.
 - **Alcance com a mão:** para pegar o cachecol, segurar o livro ou coçar a bochecha, uma busca pequena acha o ângulo do ombro e do cotovelo que leva a mão ao ponto. O cotovelo só dobra para a frente.
-- **Peso:** cerca de 150 KB comprimidos, carregados só quando o Zeno aparece. O personagem tem uns 33 mil triângulos, e as texturas do casco, da barriga e do cachecol são desenhadas em canvas na hora.
+- **Peso:** cerca de 140 KB comprimidos, carregados só quando o Zeno aparece. O personagem tem uns 36 mil triângulos, e as texturas do casco, da barriga e do cachecol são desenhadas em canvas na hora.
 - **O tempo da cena vem do relógio de verdade**, e não do carimbo de cada quadro. Assim, um aparelho lento mostra a cena mais devagar, mas nunca pula pedaços.
 - **API das cenas:** as cenas são roteiros curtos (`say`, `lookAt`, `pointAt`, `wave`, `hop`, `nod`, `eyesTo`) que esperam em tempo de cena e podem ser interrompidos por uma cena nova.
 
+## No app
+
+O Zeno do app é o do laboratório, só no estilo argila. A aparência, as molas, o olhar, as coisinhas à toa, o tédio e o sono são os mesmos. A tela `/dev/zeno` mostra o Zeno de verdade, com um botão para cada método e cada cena, alvos para apontar, o tema e o movimento reduzido. Ela existe no desenvolvimento e no build dos testes (`--mode e2e`), nunca no de produção.
+
+### Módulos (`src/zeno/`)
+
+| Arquivo | O que tem |
+|---|---|
+| `types.ts` | O contrato: `ZenoController`, `ZenoTarget`, `ZenoGaze`, `ZenoPlace`, e as extensões `ZenoTap` e `ZenoScene` |
+| `index.ts` | `useZeno()`, `<ZenoHost />`, o controlador (`zeno`), `webglSupported()` e o gancho dos testes. É o único arquivo no pedaço principal |
+| `zeno3d.ts` | O palco e o estado: o canvas que acompanha o Zeno, a câmera, o olhar, a fala, o desenho de cada quadro, os toques e a API do controlador |
+| `character.ts` | O boneco montado em código, as texturas em canvas, a luz da argila e as pontas que balançam (cachecol e touca) |
+| `scenes.ts` | Os roteiros: entrar, sair, andar, sentar, apontar, acenar, as cenas prontas e as coisinhas à toa |
+| `springs.ts` | Os parâmetros do corpo, a pose de descanso e as molas (`calma`, `toque`, `festa` e as só dele) |
+| `place.ts` | Os lugares na tela, o pedaço que o canvas cobre e a densidade do desenho. Conta pura |
+| `color.ts` | As cores fixas do corpo, a conta do OKLCH e as fileiras do casco. Conta pura |
+| `shell.ts` | As cores das placas: o fill da paleta dos pilares ativos. Fica no pedaço principal, e o controlador entrega as cores prontas ao desenho |
+| `loop.ts` | O laço de desenho: 60 ou 30 quadros por segundo, parado fora de cena e com o app no fundo |
+| `lines.ts` | As falas das cenas prontas, para o balão de quem conduz |
+
+### Carga sob demanda e sem internet
+
+- O `index.ts` não importa o three.js. O primeiro `enter()` faz `import('./zeno3d')`, e o boneco é montado nessa hora.
+- O pedaço do Zeno não importa nada do app. As cores dos pilares e o movimento reduzido chegam pela ponte (`ZenoBridge`), para o pedaço principal não se dividir por causa dele. Na abertura, o app carrega uns 2 KB comprimidos a mais.
+- O three.js e o desenho ficam num pedaço só, o `zeno3d-*.js`: uns 545 KB, ou 140 KB comprimidos. O pedaço principal não carrega nem pré-carrega esse arquivo.
+- O service worker guarda o `zeno3d-*.js` no pacote offline, como os outros `.js` (`globPatterns` em `vite.config.ts`). Ele fica abaixo do limite de 2 MiB do Workbox. Depois da primeira visita, o Zeno aparece sem internet.
+- Se o pedaço não chega (sem internet antes do pacote offline), `enter()` resolve sem fazer nada, e o tutorial segue só com o balão.
+
+### O palco
+
+- `<ZenoHost />` fica uma vez só no `RootLayout`, dentro do `.sh-app`, com z-index 70: acima das folhas (40) e do véu do tutorial (60), abaixo do balão (80). Os toasts ficam acima de tudo.
+- O canvas tem só o tamanho do Zeno (cerca de 240 × 270 pontos no iPhone) e anda com ele. A câmera é a da coluna inteira do app, e o canvas desenha só o pedaço em volta dele. Por isso o Zeno é igual ao do laboratório.
+- A densidade do desenho é a da tela, no máximo 2.
+- O palco não pega toque. Só o corpo dele pega, numa área que acompanha a cabeça e o casco.
+- O desenho fica escondido do leitor de tela (`aria-hidden`). O texto é do balão.
+
+### Lugares
+
+| Lugar | Onde fica |
+|---|---|
+| `'bottom'` | Os pés 4 pontos acima da barra de abas. Sem a barra de abas, acima da área segura |
+| `'top'` | A cabeça logo abaixo do cabeçalho da tela (`.sh-hd`, `.sh-nb` ou `.sh-steptop`) |
+| `{ awayFrom }` | O lado oposto ao alvo, sem cobrir o alvo. Prefere embaixo; se cobrir, vai para cima; depois tenta o outro lado |
+
+- Embaixo e em cima ficam do lado onde ele já está. Ele entra à esquerda.
+- Ele entra andando pela borda do lado do lugar. Na mesma fileira, atravessa a tela andando. Noutra fileira, sai pela borda e entra na fileira nova.
+- Quando a barra de abas aparece ou some, ele desliza até o lugar novo com a mola `calma`.
+
+### API
+
+| Método | O que faz |
+|---|---|
+| `available` | "Mostrar o Zeno" ligado (`zenoShown(profile.prefs)`) e o aparelho cria um contexto WebGL 2. Falso: todos os métodos resolvem na hora, sem fazer nada |
+| `present` | Está em cena (de quando começa a entrar até sair) |
+| `enter({ place, wave })` | Carrega na primeira vez, entra andando até o lugar e acena, se pedido. Já em cena, anda até o lugar |
+| `leave()` | Tchau e sai pela borda. Resolve quando ele saiu e o desenho parou |
+| `moveTo(place)` | Anda até outro lugar |
+| `lookAt(alvo, holdMs)` | Os olhos vão na frente e a cabeça vem depois. `'person'`, `'ground'`, `'around'` (volta ao olhar à toa) ou um elemento |
+| `pointAt(alvo)` | Olha, aponta e resolve com o braço no lugar. O braço fica no alvo até `rest()` |
+| `rest()` | Baixa os braços e volta ao corpo de descanso |
+| `talk(texto)` | Mexe a boca e a cabeça pelo tempo da fala (até 2,2 s). O texto fica no balão |
+| `wave`, `nod`, `hop`, `sit`, `stand` | Os gestos do laboratório |
+| `celebrate('small' \| 'medium')` | Aceno de cabeça, ou pulinho e aceno (a escada de celebração) |
+| `showShell()` | Dá as costas e olha por cima do ombro, para mostrar o casco |
+| `anchor()` | O retângulo da cabeça na tela, para o balão. Acompanha andar, sentar, recolher e a touca, mas não a respiração nem o olhar, para o balão não tremer. `null` fora de cena |
+| `onMove(cb)` | Avisa quando a âncora anda ou ele sai |
+| `onTap(cb)` | Extensão: avisa os toques. `body` (tocaram nele, com a fala sugerida "Oi!"), `wake` ("Opa, cochilei.") e `screen` (ele olhou para o ponto) |
+| `scene(id)` | Extensão: as cenas prontas, `acenar`, `casco`, `checkin`, `obrigado`, `dia`, `fase`, `pausa`, `noite`, `cochilo`, `acordar` e `sair`. A fala de cada uma está em `ZENO_LINES` (`@/zeno/lines`) |
+
+- Uma ação nova interrompe a anterior, e a promessa da anterior resolve. Nada rejeita.
+- `talk` e `lookAt` não interrompem nada.
+- No meio de uma ação pedida pelo app, um toque nele não interrompe: só chega no `onTap`.
+
+### Bateria
+
+- Nas ações, ele desenha a 60 quadros por segundo; à toa ou dormindo, a 30.
+- O laço para fora de cena, com o app no fundo e, no movimento reduzido, assim que a pose assenta.
+- 30 s depois de sair de cena, ele solta o contexto do WebGL, as geometrias e as texturas da GPU. O boneco continua montado na memória, e a próxima entrada cria o contexto de novo. Os 30 s evitam refazer tudo quando o tutorial tira e põe o Zeno entre dois passos.
+
+### Testes
+
+- `src/zeno/__tests__/zeno.test.ts`: as molas, os lugares, o canvas e as cores do casco.
+- `tests/e2e/zeno.spec.ts`: na `/dev/zeno`, entra (o pedaço chega só no `enter()`), aponta para um botão, sai (o desenho para), o movimento reduzido, "Mostrar o Zeno" desligado e um aparelho sem WebGL.
+- Com navegador automatizado, `window.__pkZeno` traz o controlador, `frames`, `drawing`, `stats()`, `params()` e `freeze()`, como o `window.Zeno` do laboratório.
+
 ## Para decidir depois
 
-- Como o tutorial do primeiro uso e os momentos ao longo do uso entram no app.
+- Quando cada momento ao longo do uso chama a cena dele (as cenas já existem no app).
 - A entrada dele na abertura do app, junto com a nova tela de carregamento.
 - O desenho do Zeno para o primeiro dia, para o "sem internet" e para a Jornada.

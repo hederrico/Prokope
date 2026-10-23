@@ -245,6 +245,17 @@ if (import.meta.env.DEV) {
     load: () => import('@/screens/dev/ComponentGallery'),
   });
 }
+// o laboratório do Zeno no app: também no build dos testes (--mode e2e), que é onde rodam os e2e e as capturas;
+// nunca no build de produção
+if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') {
+  SCREENS.push({
+    path: '/dev/zeno',
+    kind: 'dev',
+    open: true,
+    title: 'Zeno',
+    load: () => import('@/screens/dev/ZenoLab'),
+  });
+}
 
 const MATCHER: RouteObject[] = SCREENS.map((s) => ({ path: s.path, handle: s }));
 

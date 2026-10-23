@@ -342,7 +342,7 @@ async function onCheck() {
 
 | Ação | Faz |
 |---|---|
-| `setTheme('system' \| 'light' \| 'dark')`, `setMotion(on)`, `setSound(on)`, `setRunSound(on)`, `setWeightTrendOnly(on)`, `setTodayView('summary' \| 'full' \| 'timeline')` | preferências (o tema troca ao vivo pela casca; o jeito de ver o Hoje vale nos aparelhos da pessoa) |
+| `setTheme('system' \| 'light' \| 'dark')`, `setMotion(on)`, `setSound(on)`, `setRunSound(on)`, `setWeightTrendOnly(on)`, `setTodayView('summary' \| 'full' \| 'timeline')`, `setZenoShown(on)` | preferências (o tema troca ao vivo pela casca; o jeito de ver o Hoje e "Mostrar o Zeno" valem nos aparelhos da pessoa; leia o Zeno com `zenoShown(prefs)`) |
 | `setScheduleTime('wake' \| 'bed' \| 'screensOff' \| 'chores' \| 'checkin' \| 'caffeine', '22:30')` | vale a partir de hoje; o que passou guarda a meta da época |
 | `setWeeklyReview(6, '18:00')`, `setCollectionDays([0, 3])`, `setWeekendTolerance(on)`, `updateProfile({ name })` | rotina |
 | `setupPlan(draft, { name? })` | primeiro acesso: grava perfil, pilares, hábitos e fases num lote |

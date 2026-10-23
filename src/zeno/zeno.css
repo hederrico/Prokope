@@ -1,0 +1,65 @@
+/* O palco do Zeno (src/zeno/index.ts): por cima da tela, dentro do .sh-app. Camadas: folhas 40, véu do tutorial 60,
+   Zeno 70, balão 80. O palco não pega toque; só o corpo dele (.zn-hit). O desenho fica escondido do leitor de tela.
+   O canvas tem só o tamanho do Zeno e anda com ele (transform), nunca cobre a tela inteira. */
+@layer components {
+  .zn-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    overflow: hidden;
+    pointer-events: none;
+    contain: strict;
+  }
+  .zn-stage [hidden] {
+    display: none !important;
+  }
+  .zn-gl {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    pointer-events: none;
+  }
+  .zn-snap {
+    opacity: 0;
+  }
+  /* a área de toque acompanha a cabeça e o casco */
+  .zn-hit {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 45%;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* mede a área segura do aparelho (env() só vira número dentro de uma propriedade) */
+  .zn-probe {
+    position: absolute;
+    visibility: hidden;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+  /* a notinha de quando ele cantarola */
+  .zn-note {
+    position: absolute;
+    pointer-events: none;
+    font: 600 18px/1 var(--font-ui);
+    color: var(--accent-ink);
+    animation: zn-note 1400ms var(--ease-out) forwards;
+  }
+  @keyframes zn-note {
+    from {
+      opacity: 0;
+      transform: translate(0, 0) rotate(-8deg);
+    }
+    20% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      transform: translate(14px, -32px) rotate(10deg);
+    }
+  }
+}
