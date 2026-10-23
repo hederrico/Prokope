@@ -43,7 +43,7 @@ Cada passo de um capítulo diz:
 
 ## Formato dos passos
 
-Os roteiros ficam em `src/tutorial/scripts.ts`, um objeto por capítulo, no formato de `src/tutorial/types.ts`. Escrever um capítulo é só preencher este formato: o condutor faz o resto.
+Os roteiros ficam em `src/tutorial/scripts/`, um arquivo por roteiro (`hoje.ts`, `habito.ts`...), no formato de `src/tutorial/types.ts`. Escrever um capítulo é só preencher este formato: o condutor faz o resto.
 
 ```ts
 const hoje: TourScript = {
@@ -133,7 +133,7 @@ O Zeno conversa uma vez por passo e depois fica à toa num canto, sem véu: a pe
 
 `tutorial.introAt` é gravado no passo 1 (e de novo no fim, uma vez só, para o primeiro login com Google, em que o perfil pode chegar depois).
 
-- **O roteiro:** `comecar` em `scripts.ts`, no modo acompanhar. A tela do Começar começa o roteiro ao montar, e chegar ao Hoje começa "O dia" pelo condutor.
+- **O roteiro:** `comecar` em `scripts/comecar.ts`, no modo acompanhar. A tela do Começar começa o roteiro ao montar, e chegar ao Hoje começa "O dia" pelo condutor.
 - **Onde fica o balão:** no passo 1, embaixo, no espaço vazio acima do Continuar, apontando para as opções. Nos passos 2 e 3, em cima, cobrindo por inteiro o título do passo (`.ob-head`), com a ponta apontando para o alvo. Assim ele nunca cobre os chips, os horários nem o Continuar.
 - **Alvos:** `ob-opcoes` (as duas opções), `ob-chips` (os chips do primeiro pilar com hábitos), `ob-novo-pilar` ("Criar o primeiro pilar", do zero) e `ob-horario` (o primeiro horário).
 - **Recolher:** o primeiro toque fora do balão, uma folha aberta (o formulário do pilar) ou o alvo sumindo recolhem o balão. Com o Zeno, ele fica à toa (`rest`). Voltar a um passo já visto não repete o balão.

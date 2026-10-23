@@ -1,6 +1,6 @@
 // O formato dos roteiros do tutorial (docs/interacao/telas/tutorial.md › Formato dos passos).
 // Um roteiro é uma lista de passos declarativos; o condutor (conductor.ts) navega, acha o alvo, mostra o balão,
-// espera a ação e grava o capítulo como visto só no fim. Os roteiros ficam em scripts.ts.
+// espera a ação e grava o capítulo como visto só no fim. Os roteiros ficam em scripts/, um arquivo por roteiro.
 import type { ExampleMode } from '@/data/example';
 import type { TourEvent, TourRun } from '@/stores/tour';
 import type { Habit, HabitType } from '@/types';
