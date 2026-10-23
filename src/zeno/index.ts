@@ -51,6 +51,8 @@ let runtime: ZenoRuntime | null = null;
 let loading: Promise<ZenoRuntime | null> | null = null;
 /** a última ordem foi entrar (um leave() no meio da carga cancela a entrada) */
 let wanted = false;
+/** o corpo pega o toque (touch); vale também para o desenho que ainda vai carregar */
+let touchable = true;
 
 const bridge: ZenoBridge = {
   shell: (dark) => shellColors(pillarKeys, dark),
@@ -83,6 +85,7 @@ function load(): Promise<ZenoRuntime | null> {
     .then((mod) => {
       if (!host) return null;
       runtime = mod.createRuntime(host, bridge);
+      runtime.setTouch(touchable);
       return runtime;
     })
     .catch((err: unknown) => {
@@ -154,6 +157,10 @@ export const zeno: ZenoController = {
     };
   },
   scene: (id: ZenoScene) => live()?.scene(id) ?? done(),
+  touch(on) {
+    touchable = on;
+    runtime?.setTouch(on);
+  },
 };
 
 /** O controlador do Zeno; a tela redesenha quando available ou present mudam. */

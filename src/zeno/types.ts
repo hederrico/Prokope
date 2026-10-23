@@ -7,8 +7,19 @@ export type ZenoTarget = Element | string;
 /** Para onde ele olha: um elemento, quem está usando, o chão, ou em volta (à toa). */
 export type ZenoGaze = ZenoTarget | 'person' | 'ground' | 'around';
 
-/** Onde ele fica na tela: embaixo (acima da barra de abas), em cima (abaixo do cabeçalho), ou longe do alvo. */
-export type ZenoPlace = 'bottom' | 'top' | { awayFrom: ZenoTarget };
+/**
+ * Onde ele fica na tela: embaixo (acima da barra de abas), em cima (abaixo do cabeçalho), longe do alvo, ou num
+ * canto (extensão do contrato, para o balão ao lado da cabeça dele):
+ * - { awayFrom, room }: com `room` (a altura do balão, em px), ele vai para um canto, e a faixa dele com o balão
+ *   não cobre o alvo; fica onde está se dali já não cobre;
+ * - { corner }: encostado na borda do lado (`side`; padrão, o lado onde ele está), embaixo ou em cima. Em cima,
+ *   com `ledge`, os pés ficam no fim de baixo desse elemento (o título do passo, no Começar).
+ */
+export type ZenoPlace =
+  | 'bottom'
+  | 'top'
+  | { awayFrom: ZenoTarget; room?: number }
+  | { corner: 'top' | 'bottom'; side?: 'left' | 'right'; ledge?: ZenoTarget };
 
 /**
  * Um toque que o Zeno percebeu (extensão do contrato). O texto não é dele: `line` é a fala sugerida, na voz dele,
@@ -63,4 +74,10 @@ export interface ZenoController {
   onTap(cb: (tap: ZenoTap) => void): () => void;
   /** extensão: uma cena pronta dos momentos ao longo do uso (dia fechado, fase nova, pausa, noite, casco...) */
   scene(id: ZenoScene): Promise<void>;
+  /**
+   * extensão: o corpo dele pega o toque (padrão) ou deixa passar para a tela de baixo. Quem conduz desliga quando a
+   * pessoa está usando a tela por baixo dele (o Começar com o balão recolhido, uma oferta), para ele nunca segurar o
+   * toque num controle de verdade. O olhar para o ponto tocado continua
+   */
+  touch?(on: boolean): void;
 }

@@ -1,14 +1,17 @@
 // As contas do balão e do véu (placement.ts): perto da âncora sem cobrir o alvo, dentro da área segura.
 import {
+  besideWidth,
   blockersAround,
   boxBottom,
   clampHole,
   holeFor,
   intersects,
   placeBalloon,
+  placeBeside,
   scrollTopFor,
   TAIL_MARGIN,
   veilPath,
+  zenoCorner,
   type Box,
 } from '../placement';
 
@@ -56,10 +59,13 @@ describe('placeBalloon', () => {
     expect(free.side).toBe('above');
     expect(free.top).toBe(600 - 12 - size.height);
     expect(free.covers).toBe(false);
-    // o alvo logo acima da cabeça, e embaixo não cabe: fica no lado com mais espaço e avisa que cobre
+    // o alvo logo acima da cabeça, e embaixo não cabe: encosta na borda de cima, longe da cabeça, sem cobrir o alvo
     const tight = placeBalloon({ size, bounds, anchor: head, avoid: box(20, 470, 350, 60), prefer: 'above' });
-    expect(tight.side).toBe('above');
-    expect(tight.covers).toBe(true);
+    expect(tight.top).toBe(bounds.top);
+    expect(tight.covers).toBe(false);
+    // nem encostado cabe: fica no lado com mais espaço e avisa que cobre
+    const none = placeBalloon({ size, bounds, anchor: head, avoid: box(20, 100, 350, 560), prefer: 'above' });
+    expect(none.covers).toBe(true);
   });
 
   it('um alvo maior que a tela: o balão fica dentro da área e avisa que cobre', () => {
@@ -95,6 +101,58 @@ describe('placeBalloon', () => {
     const p = placeBalloon({ size, bounds: withKeyboard, anchor: target, avoid: target });
     expect(p.top + size.height).toBeLessThanOrEqual(boxBottom(withKeyboard));
     expect(intersects({ ...p, ...size }, target)).toBe(false);
+  });
+});
+
+describe('ao lado do Zeno', () => {
+  // o app inteiro (390 × 844) e a cabeça dele num canto: em cima à direita, ou embaixo à esquerda
+  const app: Box = { left: 0, top: 0, width: 390, height: 844 };
+  const topRight = box(298, 10, 71, 68);
+  const bottomLeft = box(22, 616, 71, 68);
+
+  it('sabe o canto pela cabeça', () => {
+    expect(zenoCorner(topRight, app)).toEqual({ side: 'right', row: 'top' });
+    expect(zenoCorner(bottomLeft, app)).toEqual({ side: 'left', row: 'bottom' });
+  });
+
+  it('o balão fica do lado de dentro, com a largura que sobra até o casco', () => {
+    const w = besideWidth(bounds, topRight, app, 340);
+    expect(16 + w).toBeLessThanOrEqual(topRight.left - 8);
+    expect(besideWidth(bounds, bottomLeft, app, 340)).toBe(Math.min(340, 16 + 358 - (22 + 71 + 8)));
+  });
+
+  it('em cima, o topo do balão fica na altura da cabeça; embaixo, o fim fica nos pés; a ponta sai do lado dele', () => {
+    const h = 164;
+    const top = placeBeside({ size: { width: 240, height: 150 }, bounds, head: box(298, 120, 71, 68), height: h }, app);
+    expect(top).toMatchObject({ top: 120, side: 'left' });
+    expect(top!.left + 240).toBeLessThanOrEqual(298);
+    expect(top!.tail).toBe(Math.round(120 + 34 - 120));
+    const low = placeBeside({ size: { width: 240, height: 150 }, bounds, head: bottomLeft, height: h }, app);
+    // os pés passam do fim da área (a barra de abas): o balão para no fim da área
+    expect(low).toMatchObject({ side: 'right', top: Math.min(616 + h, boxBottom(bounds)) - 150 });
+    expect(low!.left).toBeGreaterThanOrEqual(22 + 71);
+  });
+
+  it('encostado em cima (o Começar), e null quando cobriria o alvo', () => {
+    const pinned = placeBeside(
+      { size: { width: 240, height: 120 }, bounds, head: topRight, height: 164, pinTop: true },
+      app,
+    );
+    expect(pinned!.top).toBe(bounds.top);
+    // a cabeça fica acima do balão: a ponta sai perto do topo, longe do canto
+    expect(pinned!.tail).toBe(TAIL_MARGIN);
+    const blocked = placeBeside(
+      {
+        size: { width: 240, height: 120 },
+        bounds,
+        head: topRight,
+        height: 164,
+        pinTop: true,
+        avoid: box(16, 150, 358, 60),
+      },
+      app,
+    );
+    expect(blocked).toBeNull();
   });
 });
 
@@ -139,6 +197,13 @@ describe('scrollTopFor', () => {
     const next = scrollTopFor({ target: box(16, 1200, 358, 60), band, scrollTop: 0, maxScroll: 2000 });
     expect(next).toBe(Math.round(1200 - 780 * 0.25));
     expect(scrollTopFor({ target: box(16, 1200, 358, 60), band, scrollTop: 0, maxScroll: 500 })).toBe(500);
+  });
+
+  it('com o Zeno no canto de cima, o alvo fica abaixo dele, e um alvo alto continua para baixo da tela', () => {
+    const next = scrollTopFor({ target: box(16, 1200, 358, 60), band, scrollTop: 0, maxScroll: 2000, above: 220 });
+    expect(next).toBe(1200 - 220);
+    const tall = scrollTopFor({ target: box(16, 900, 358, 640), band, scrollTop: 0, maxScroll: 2000, above: 220 });
+    expect(tall).toBe(900 - 220);
   });
 
   it('um alvo perto da barra de abas sobe para o balão caber embaixo', () => {

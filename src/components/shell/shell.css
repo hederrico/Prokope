@@ -564,7 +564,8 @@
   animation-timing-function: linear;
   animation-fill-mode: forwards;
 }
-/* o tempo para enquanto o toast tem foco ou o dedo está sobre ele */
+/* o tempo para enquanto o toast tem foco ou o dedo está sobre ele, e enquanto o tutorial aponta para ele (holdToasts) */
+:root[data-toast-hold] .sh-toast-fio > i,
 .sh-toast:focus-within .sh-toast-fio > i,
 [data-sonner-toast]:focus .sh-toast-fio > i,
 .sh-toast[data-hold='true'] .sh-toast-fio > i {

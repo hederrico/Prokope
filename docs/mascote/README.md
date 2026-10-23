@@ -43,7 +43,11 @@ O Zeno entra **por cima da tela**, como no laboratório. Ele **conduz o tutorial
 
 | Momento | O que ele faz |
 |---|---|
-| Primeiro acesso | Entra andando, acena, se apresenta e aponta para o ✓. Quando a pessoa toca, comemora com um aceno de cabeça |
+| Primeiro acesso (o Começar) | Entra andando até o canto de cima, à direita, ao lado do título de cada passo, e acena: "Oi, eu sou o Zeno." Aponta para as opções, o primeiro chip e o primeiro horário. Fica à toa no canto enquanto a pessoa usa a tela, e vai junto para o Hoje |
+| "O dia" (o primeiro Hoje) | Num canto longe do que mostra, com o balão ao lado da cabeça: aponta para os momentos, os Primeiros passos, a semana, o botão do jeito e o check-in. Quando a pessoa marca, soma ou dá nota no treino, comemora com um aceno de cabeça ("Isso. Um pé depois do outro.", "Obrigado por contar."). No fim, pulinho e aceno, e sai |
+| Apresentação (contas que já existiam) | No Hoje, entra no canto de baixo e acena: "Oi, eu sou o Zeno. Vou andar com você por aqui. Quer conhecer o app comigo?" "Vamos" começa "O dia"; "Agora não", aceno de cabeça e "Tudo bem. Fica em Ajustes › Tutorial.", e ele sai |
+| Oferta de um capítulo | Na primeira vez numa aba (Progresso, Jornada, Ajustes, um hábito), entra no canto de baixo e pergunta: "Quer que eu mostre o Progresso?" |
+| Tocar nele, no tutorial | A fala dele aparece no balão por um instante: "Oi!", "Hehe.", "Tô aqui.", ou "Opa, cochilei." se ele cochilava |
 | Fase nova | Aponta para os hábitos novos. Na fase desbloqueada, pula, cai de costas, gira no casco esperneando e levanta num pulo |
 | Check-in das 20h30 | Senta, pergunta "Como foi hoje?" e agradece qualquer resposta |
 | Revisão de domingo | Conduz as perguntas, uma por vez |
@@ -137,11 +141,14 @@ O Zeno do app é o do laboratório, só no estilo argila. A aparência, as molas
 
 | Lugar | Onde fica |
 |---|---|
-| `'bottom'` | Os pés 4 pontos acima da barra de abas. Sem a barra de abas, acima da área segura |
+| `'bottom'` | Os pés 4 pontos acima da barra de abas. Numa tela cheia, acima do pé preso (o Continuar do Começar); sem nenhum dos dois, acima da área segura |
 | `'top'` | A cabeça logo abaixo do cabeçalho da tela (`.sh-hd`, `.sh-nb` ou `.sh-steptop`) |
 | `{ awayFrom }` | O lado oposto ao alvo, sem cobrir o alvo. Prefere embaixo; se cobrir, vai para cima; depois tenta o outro lado |
+| `{ awayFrom, room }` | Extensão, para o tutorial: num canto, e a faixa dele com o balão ao lado (`room` px de altura, de borda a borda) não cobre o alvo. Fica onde está se dali a faixa já não cobre |
+| `{ corner, side, ledge }` | Extensão: num canto, encostado na borda do lado (o meio a 0,55 unidade mais 8 pontos da borda), embaixo ou em cima. Em cima, com `ledge`, os pés ficam no fim de baixo desse elemento (o título do passo, no Começar), e a cabeça sobe até a área segura |
 
 - Embaixo e em cima ficam do lado onde ele já está. Ele entra à esquerda.
+- Quando a tela muda de tamanho ou a barra de abas aparece, ele refaz a conta do último lugar pedido (o canto continua canto).
 - Ele entra andando pela borda do lado do lugar. Na mesma fileira, atravessa a tela andando. Noutra fileira, sai pela borda e entra na fileira nova.
 - Quando a barra de abas aparece ou some, ele desliza até o lugar novo com a mola `calma`.
 
@@ -165,6 +172,7 @@ O Zeno do app é o do laboratório, só no estilo argila. A aparência, as molas
 | `onMove(cb)` | Avisa quando a âncora anda ou ele sai |
 | `onTap(cb)` | Extensão: avisa os toques. `body` (tocaram nele, com a fala sugerida "Oi!"), `wake` ("Opa, cochilei.") e `screen` (ele olhou para o ponto) |
 | `scene(id)` | Extensão: as cenas prontas, `acenar`, `casco`, `checkin`, `obrigado`, `dia`, `fase`, `pausa`, `noite`, `cochilo`, `acordar` e `sair`. A fala de cada uma está em `ZENO_LINES` (`@/zeno/lines`) |
+| `touch(on)` | Extensão: o corpo pega o toque (o padrão) ou deixa passar para a tela. O tutorial desliga quando a pessoa usa a tela por baixo dele (o Começar com o balão recolhido, uma oferta), para ele nunca segurar o toque num controle. Ele continua olhando para o ponto tocado |
 
 - Uma ação nova interrompe a anterior, e a promessa da anterior resolve. Nada rejeita.
 - `talk` e `lookAt` não interrompem nada.
@@ -178,7 +186,8 @@ O Zeno do app é o do laboratório, só no estilo argila. A aparência, as molas
 
 ### Testes
 
-- `src/zeno/__tests__/zeno.test.ts`: as molas, os lugares, o canvas e as cores do casco.
+- `src/zeno/__tests__/zeno.test.ts`: as molas, os lugares (com os cantos e a faixa dele com o balão), o canvas e as cores do casco.
+- `tests/e2e/tutorial-dia.spec.ts`: o Zeno de verdade no tutorial, no Começar e em "O dia", longe do alvo, com o toque nele e sem ele.
 - `tests/e2e/zeno.spec.ts`: na `/dev/zeno`, entra (o pedaço chega só no `enter()`), aponta para um botão, sai (o desenho para), o movimento reduzido, "Mostrar o Zeno" desligado e um aparelho sem WebGL.
 - Com navegador automatizado, `window.__pkZeno` traz o controlador, `frames`, `drawing`, `stats()`, `params()` e `freeze()`, como o `window.Zeno` do laboratório.
 

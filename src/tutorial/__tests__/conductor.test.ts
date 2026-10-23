@@ -317,6 +317,77 @@ describe('condutor', () => {
     await vi.waitFor(() => expect(zeno.leave).toHaveBeenCalled());
   });
 
+  it('com o Zeno, ele vai para um canto longe do alvo (e da região em volta) antes de o balão aparecer', async () => {
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<section data-tour="caixa"><button data-tour="dentro">+</button></section>',
+    );
+    const { c, zeno } = setup(
+      {
+        hoje: {
+          run: 'hoje',
+          steps: [
+            { id: 'a', target: 'semana', text: 'Um.' },
+            { id: 'b', target: 'dentro', around: '[data-tour="caixa"]', text: 'Dois.' },
+            { id: 'c', text: 'Fim.' },
+          ],
+        },
+      },
+      { zeno: true },
+    );
+    let arrive: () => void = () => undefined;
+    zeno.moveTo.mockImplementation(() => new Promise<void>((r) => (arrive = r)));
+    c.start('hoje');
+    await vi.waitFor(() => expect(zeno.moveTo).toHaveBeenCalledTimes(1));
+    expect(zeno.enter).toHaveBeenCalledWith({ place: { corner: 'bottom' }, wave: false });
+    expect(zeno.moveTo).toHaveBeenLastCalledWith({
+      awayFrom: document.querySelector('[data-tour="semana"]'),
+      room: 200,
+    });
+    // o balão espera ele chegar
+    await new Promise((r) => setTimeout(r, 20));
+    expect(balloon()).toBeNull();
+    arrive();
+    await vi.waitFor(() => expect(balloon()?.text).toBe('Um.'));
+    c.next();
+    // com a região em volta, ele fica longe dela inteira
+    await vi.waitFor(() => expect(zeno.moveTo).toHaveBeenCalledTimes(2));
+    expect(zeno.moveTo).toHaveBeenLastCalledWith({
+      awayFrom: document.querySelector('[data-tour="caixa"]'),
+      room: 200,
+    });
+    arrive();
+    await vi.waitFor(() => expect(balloon()?.text).toBe('Dois.'));
+    c.next();
+    // sem alvo, no canto de baixo
+    await vi.waitFor(() => expect(zeno.moveTo).toHaveBeenCalledTimes(3));
+    expect(zeno.moveTo).toHaveBeenLastCalledWith({ corner: 'bottom' });
+    arrive();
+    await vi.waitFor(() => expect(balloon()?.text).toBe('Fim.'));
+    c.stop();
+  });
+
+  it('no Começar (cover), o Zeno fica no canto de cima à direita, com os pés no fim do título', async () => {
+    document.body.insertAdjacentHTML('beforeend', '<header class="ob-head">Título</header>');
+    const { c, zeno } = setup(
+      {
+        comecar: {
+          run: 'comecar',
+          follow: { within: '/comecar/', end: '/hoje', cover: '.ob-head' },
+          steps: [{ id: 'oi', where: '/comecar/1', target: 'semana', text: 'Oi.' }],
+        },
+      },
+      { zeno: true },
+    );
+    c.setPath('/comecar/1');
+    c.start('comecar');
+    await vi.waitFor(() => expect(balloon()?.text).toBe('Oi.'));
+    const place = { corner: 'top', side: 'right', ledge: document.querySelector('.ob-head') };
+    expect(zeno.enter).toHaveBeenCalledWith({ place, wave: false });
+    expect(zeno.moveTo).toHaveBeenLastCalledWith(place);
+    c.stop();
+  });
+
   it('um capítulo sem nenhum passo à mostra não fica como visto', async () => {
     const { c, markDone } = setup({
       jornada: { run: 'jornada', steps: [{ id: 'x', target: 'nao-existe', text: 'X.', timeout: 20 }] },

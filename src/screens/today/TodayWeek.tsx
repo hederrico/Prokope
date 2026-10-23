@@ -120,7 +120,7 @@ export function TodayWeekCard({ week, today, head, selected, onSelect, footer, c
   );
 
   return (
-    <div className={clsx('pk-card pk-wkc td-wkc', className)}>
+    <div className={clsx('pk-card pk-wkc td-wkc', className)} data-tour="hoje-semana">
       <Head head={head} />
       <div
         className="td-wk-swipe"

@@ -1,5 +1,7 @@
 // A camada do tutorial, montada uma vez na raiz (RootLayout), por cima do app. Liga o condutor ao router, ao Zeno e
-// ao modo exemplo, decide as ofertas, devolve o foco no fim e anuncia o texto do balão numa região viva educada.
+// ao modo exemplo, decide as ofertas (com o Zeno entrando antes do balão), devolve o foco no fim e anuncia o texto do
+// balão numa região viva educada. Também decide quando o corpo do Zeno pega o toque e põe no balão a fala de quando
+// tocam nele ("Opa, cochilei.").
 // O desenho (o véu com o anel, z-index 60, e o balão, 80) fica em TourScene, que carrega sob demanda: o primeiro
 // Hoje não espera por ele, e o CSS dos componentes chega depois das camadas do Tailwind, como nas telas.
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -17,6 +19,9 @@ import type { BalloonModel } from './TourScene';
 import './tutorial.css';
 
 const TourScene = lazy(() => import('./TourScene'));
+
+/** Quanto a fala de quando tocam no Zeno ("Oi!", "Opa, cochilei.") fica no balão antes de o texto do passo voltar. */
+const TAP_LINE_MS = 1800;
 
 /** O elemento está dentro do balão (tocar nele não recolhe o balão do Começar). */
 const inBalloon = (node: EventTarget | Element | null) =>
@@ -95,6 +100,64 @@ export function TourLayer() {
   }, [viewTarget, spec]);
   const target = viewTarget && refound?.from === viewTarget ? refound.to : viewTarget;
 
+  // ---------- o Zeno nas ofertas ----------
+  // a oferta espera o Zeno chegar ao canto de baixo e aparece ao lado dele (na apresentação, com o aceno); sem o
+  // Zeno, aparece na hora. "Agora não" ou sair da tela sem responder: ele vai embora; "Vamos" e "Mostrar": ele fica
+  const offerKey = offer?.key ?? null;
+  const offerKind = offer?.kind ?? null;
+  const [offerArrived, setOfferArrived] = useState<string | null>(null);
+  useEffect(() => {
+    if (!offerKey || !zeno.available) return;
+    let live = true;
+    void (async () => {
+      await zeno.enter({ place: { corner: 'bottom' }, wave: false });
+      if (!live) return;
+      setOfferArrived(offerKey);
+      if (offerKind === 'intro') await zeno.wave();
+    })();
+    return () => {
+      live = false;
+    };
+  }, [offerKey, offerKind, zeno]);
+  const offerReady = !!offer && (!zeno.available || offerArrived === offer.key);
+  const offerText = offer ? (offer.reply ?? offer.text) : null;
+  useEffect(() => {
+    if (!offerReady || !offerText) return;
+    zeno.talk(offerText);
+    // a resposta ao "Agora não" da apresentação vem com um aceno de cabeça
+    if (offer?.reply) void zeno.nod();
+  }, [offerReady, offerText, offer?.reply, zeno]);
+  const hadOffer = useRef(false);
+  useEffect(() => {
+    if (offer) {
+      hadOffer.current = true;
+      return;
+    }
+    if (!hadOffer.current) return;
+    hadOffer.current = false;
+    // sem capítulo começando ("Vamos" e "Mostrar" começam um com o Zeno em cena), ele vai embora
+    if (!useTour.getState().run && zeno.present) void zeno.leave();
+  }, [offer, zeno]);
+
+  // o toque nele: a fala sugerida ("Oi!", "Opa, cochilei.") troca o texto do balão aberto por um instante
+  const [tapLine, setTapLine] = useState<{ key: string; text: string } | null>(null);
+  const balloonKey = useRef<string | null>(null);
+  useEffect(() => {
+    let timer: number | undefined;
+    const off = zeno.onTap((tap) => {
+      const line = tap.type === 'screen' ? null : tap.line;
+      const key = balloonKey.current;
+      if (!line || !key) return;
+      setTapLine({ key, text: line });
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setTapLine(null), TAP_LINE_MS);
+    });
+    return () => {
+      off();
+      window.clearTimeout(timer);
+    };
+  }, [zeno]);
+
   // ---------- o que desenhar ----------
   const tourBalloon = view.balloon && !view.collapsed ? view.balloon : null;
   let model: BalloonModel | null = null;
@@ -111,7 +174,7 @@ export function TourLayer() {
       cover: tourBalloon.cover,
       prefer: 'below',
     };
-  } else if (offer && !view.balloon) {
+  } else if (offer && offerReady && !view.balloon) {
     model = {
       key: offer.key,
       text: offer.reply ?? offer.text,
@@ -125,7 +188,23 @@ export function TourLayer() {
       prefer: 'above',
     };
   }
+  if (model && tapLine?.key === model.key) model = { ...model, text: tapLine.text };
   const veil = !!run && run !== 'intro' && view.veil !== 'none';
+  const shownKey = model?.key ?? null;
+  useEffect(() => {
+    balloonKey.current = shownKey;
+  }, [shownKey]);
+
+  // o corpo do Zeno pega o toque só quando nada de verdade fica por baixo dele: com o véu (passos de olhar e de fazer)
+  // e no Começar com o balão aberto (ele fica ao lado do título). Com o balão recolhido, numa oferta, ou num passo sem
+  // véu, o toque passa para a tela, e ele nunca segura o toque num controle
+  const busy = !!run || !!offer;
+  const touchable = veil || follow;
+  useEffect(() => {
+    if (!busy) return;
+    zeno.touch?.(touchable);
+    return () => zeno.touch?.(true);
+  }, [busy, touchable, zeno]);
 
   // o desenho carrega na primeira vez que algo aparece, e fica montado (para as saídas animarem)
   const [wanted, setWanted] = useState(false);

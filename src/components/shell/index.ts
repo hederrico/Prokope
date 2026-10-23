@@ -8,7 +8,15 @@ export { StepTransition } from './StepTransition';
 export { FullScreen, type FullScreenProps } from './FullScreen';
 export { TabBar, type TabBarProps } from './TabBar';
 export { Sheet, useSheetClose, type SheetProps } from './Sheet';
-export { showToast, showUndo, dismissToast, type ToastInput, type ToastAction, type UndoInput } from './toast';
+export {
+  showToast,
+  showUndo,
+  dismissToast,
+  holdToasts,
+  type ToastInput,
+  type ToastAction,
+  type UndoInput,
+} from './toast';
 export {
   habitPath,
   pastReviewPath,

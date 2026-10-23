@@ -63,6 +63,7 @@ function ToastCard({ id, input, fioMs }: { id: string | number; input: ToastInpu
     <div
       className="sh-toast"
       {...attrs}
+      data-tour="toast"
       data-noic={!icon || undefined}
       data-noact={!action || undefined}
       data-hold={hold || undefined}
@@ -150,6 +151,14 @@ export function showUndo(input: UndoInput, undo: () => void): string {
     },
     true,
   );
+}
+
+/**
+ * Segura o fio do Desfazer (o toast não sai sozinho) enquanto o tutorial aponta para ele: o passo "Desfazer" de
+ * "O dia" (src/tutorial/scripts/hoje.ts). Desligar devolve o tempo que faltava.
+ */
+export function holdToasts(on: boolean): void {
+  if (typeof document !== 'undefined') document.documentElement.toggleAttribute('data-toast-hold', on);
 }
 
 /** Dispensa um toast (ou o atual). */

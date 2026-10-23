@@ -433,6 +433,8 @@ export function ItemRow({ item, className, readOnly, withTime }: ItemRowProps) {
       onLongPress={readOnly ? undefined : () => ctx.openMenu(item.habit.id)}
       a11yLabel={`${item.habit.name}. ${sub.text ? `${sub.text}. ` : ''}Abre o hábito`}
       className={clsx('td-fl', `td-fl-${item.habit.id}`, className)}
+      // os alvos do tutorial "O dia": o nome de uma linha de verdade (a primeira à mostra) e o check-in
+      tour={readOnly ? undefined : item.habit.role === 'checkin' ? 'hoje-checkin' : 'hoje-linha'}
     />
   );
 }
@@ -672,7 +674,12 @@ export function CheckinCard({ item }: { item: TodayItem }) {
   const done = isDoneLike(item.state) && !!checkin;
   return (
     // td-fl-<id>: a faixa do dia acha o cartão como acha uma linha
-    <div className={`pk-card p td-ci td-fl-${item.habit.id}`} data-pillar="accent" data-flip="checkin">
+    <div
+      className={`pk-card p td-ci td-fl-${item.habit.id}`}
+      data-pillar="accent"
+      data-flip="checkin"
+      data-tour="hoje-checkin"
+    >
       <AnimatePresence mode="wait" initial={false}>
         {done && checkin ? (
           <m.button

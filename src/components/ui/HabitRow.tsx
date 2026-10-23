@@ -28,6 +28,8 @@ export type HabitRowProps = {
   /** nome lido pelo VoiceOver; o padrão junta o nome e o subtítulo */
   a11yLabel?: string;
   className?: string;
+  /** o alvo do tutorial no nome da linha (data-tour, src/tutorial) */
+  tour?: string;
 };
 
 const LONG_PRESS_MS = 500;
@@ -45,6 +47,7 @@ export function HabitRow({
   onLongPress,
   a11yLabel,
   className,
+  tour,
 }: HabitRowProps) {
   const rowRef = useRef<HTMLLIElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,6 +108,7 @@ export function HabitRow({
         type="button"
         className="pk-reset pk-hr-main"
         aria-label={label}
+        data-tour={tour}
         onClick={onClick}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

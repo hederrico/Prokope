@@ -28,6 +28,8 @@ export interface StageMetrics {
   bottomInset: number;
   /** o que fica em cima: o fim do cabeçalho da tela, ou a área segura */
   topInset: number;
+  /** só a área segura de cima (o entalhe): num canto com borda, a cabeça dele não passa daqui. Padrão: 0 */
+  safeTop?: number;
 }
 
 export type Side = 'left' | 'right';
@@ -67,10 +69,53 @@ function overlapArea(a: Rect, b: Rect, pad = 0): number {
 }
 
 /**
+ * No canto, o meio dele fica mais perto da borda que nos lugares de sempre: o corpo inteiro na tela, com 8 px de
+ * folga, e o resto da largura livre para o balão ao lado da cabeça dele.
+ */
+export function cornerInset(appHeight: number): number {
+  return Math.round(unitPx(appHeight) * 0.55) + 8;
+}
+
+/**
+ * Num canto: encostado na borda do lado, embaixo (acima da barra de abas) ou em cima (abaixo do cabeçalho).
+ * Em cima, com `ledge` (o fim de baixo de um elemento, como o título de um passo do Começar), os pés ficam nessa
+ * borda e a cabeça sobe até a área segura: ele fica ao lado do título, sem descer sobre o que vem depois.
+ */
+export function cornerSpot(side: Side, row: Row, m: StageMetrics, ledge?: number | null): Spot {
+  const inset = cornerInset(m.height);
+  const x = side === 'left' ? inset : m.width - inset;
+  const y =
+    row === 'top' && ledge != null
+      ? Math.max(ledge, (m.safeTop ?? 0) + zenoPx(m.height) + 4)
+      : spotFor(side, row, m).y;
+  return { side, row, x, y };
+}
+
+/**
+ * A faixa da tela que ele e o balão ao lado dele ocupam num canto, de borda a borda: a altura dele, ou `room` (a do
+ * balão), se for maior. Em cima, o balão começa na altura da cabeça e desce; embaixo, termina nos pés e sobe.
+ */
+export function cornerBand(spot: Pick<Spot, 'row' | 'y'>, m: StageMetrics, room: number): Rect {
+  const z = zenoPx(m.height) * 1.05;
+  const h = Math.max(z, room) + 4;
+  const top = spot.row === 'bottom' ? spot.y - h : spot.y - z;
+  return { left: 0, top, width: m.width, height: h };
+}
+
+/**
  * Longe do alvo: o lado oposto ao alvo, sem cobrir o alvo. Prefere embaixo (o lugar de sempre); se cobrir,
  * vai para cima do mesmo lado; depois tenta o outro lado. Se tudo cobre, fica onde cobre menos.
+ *
+ * Com `room` (o tutorial, com o balão ao lado dele), ele vai para um canto, e quem não pode cobrir o alvo é a faixa
+ * inteira dele com o balão (cornerBand, com `room` px de altura). Aí ele fica onde está (`current`), se dali a faixa
+ * não cobre o alvo: anda só quando precisa.
  */
-export function spotAwayFrom(target: Rect, m: StageMetrics): Spot {
+export function spotAwayFrom(
+  target: Rect,
+  m: StageMetrics,
+  room?: number,
+  current?: Pick<Spot, 'side' | 'row'> | null,
+): Spot {
   const cx = target.left + target.width / 2;
   const far: Side = cx < m.width / 2 ? 'right' : 'left';
   const near: Side = far === 'left' ? 'right' : 'left';
@@ -80,11 +125,13 @@ export function spotAwayFrom(target: Rect, m: StageMetrics): Spot {
     [near, 'bottom'],
     [near, 'top'],
   ];
+  const corner = room !== undefined;
+  if (corner && current) order.unshift([current.side, current.row]);
   let best: Spot | null = null;
   let bestArea = Infinity;
   for (const [side, row] of order) {
-    const s = spotFor(side, row, m);
-    const area = overlapArea(footprint(s, m.height), target, 8);
+    const s = corner ? cornerSpot(side, row, m) : spotFor(side, row, m);
+    const area = overlapArea(corner ? cornerBand(s, m, room) : footprint(s, m.height), target, 8);
     if (area === 0) return s;
     if (area < bestArea) {
       best = s;
