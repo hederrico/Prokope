@@ -30,8 +30,12 @@ export interface Session {
   firebaseAvailable: boolean;
   /** frase para a tela Entrar ("O login não terminou. Tente de novo."), ou null */
   error: string | null;
-  /** entra no modo demonstração (semeado com a história na primeira vez) */
-  enterDemo(): Promise<void>;
+  /**
+   * Entra no modo demonstração, com a história de exemplo (semeada na primeira vez, ou de novo se a demonstração
+   * ficou sem plano). Com `{ empty: true }`, entra como uma conta recém-criada: perfil sem plano, e a guarda leva ao
+   * primeiro acesso (/comecar/1), para testar o Começar sem Firebase.
+   */
+  enterDemo(opts?: { empty?: boolean }): Promise<void>;
   /** Google por redirecionamento; sem Firebase, rejeita com uma mensagem clara */
   signIn(): Promise<void>;
   signOut(): Promise<void>;
@@ -72,6 +76,21 @@ async function seed(source: DataSource) {
   await seedDemo(source, nowMs());
 }
 
+/** O perfil de uma conta nova na demonstração (sem plano: o app abre o primeiro acesso). */
+async function blankDemoProfile(source: DataSource) {
+  const { DEMO_NAME } = await import('./seed');
+  await source.write([
+    { op: 'set', col: 'profile', id: PROFILE_ID, data: newProfile(DEMO_NAME, nowMs(), clockOf(null)) },
+  ]);
+}
+
+/**
+ * Como abrir a demonstração. boot: reabrir o app (fica o que está no aparelho; só semeia se não houver nada, para
+ * "Apagar todos os dados" continuar apagado depois de recarregar). enter: "Explorar com dados de exemplo" (semeia
+ * também quando a demonstração ficou sem plano). fresh: "Começar de novo". empty: "Testar o primeiro acesso".
+ */
+type DemoOpen = 'boot' | 'enter' | 'fresh' | 'empty';
+
 const SessionContext = createContext<Session | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -85,15 +104,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const firebaseUnsub = useRef<(() => void) | null>(null);
   const firebaseSource = useRef<{ clearCache(): Promise<void> } | null>(null);
 
-  const openDemo = useCallback(async (fresh: boolean) => {
+  const openDemo = useCallback(async (how: DemoOpen) => {
     const previous = useDataStore.getState().source;
     if (previous) {
       disconnectSource();
       await previous.close();
     }
     const source = await LocalSource.open(DEMO_UID);
-    if (fresh) await source.deleteAll();
-    if (fresh || !source.hasData()) await seed(source);
+    const planless = source.hasData() && !source.get('profile', PROFILE_ID)?.planSetupAt;
+    if (how === 'empty') {
+      await source.deleteAll();
+      await blankDemoProfile(source);
+    } else if (how === 'fresh' || (how === 'enter' && planless)) {
+      await source.deleteAll();
+      await seed(source);
+    } else if (!source.hasData()) await seed(source);
     connectSource(source);
     await whenReady();
     writeMode('demo');
@@ -139,7 +164,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const saved = readMode();
     const boot = async () => {
       await Promise.resolve();
-      if (saved === 'demo') await openDemo(false);
+      if (saved === 'demo') await openDemo('boot');
       else if (isFirebaseConfigured) await bootFirebase();
       else setStatus('signedOut');
     };
@@ -151,6 +176,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       firebaseUnsub.current?.();
     };
   }, [openDemo, bootFirebase]);
+
+  // Demonstração sem perfil (depois de "Apagar todos os dados"): grava um perfil novo, sem plano, como no primeiro
+  // login. Assim o primeiro acesso continua depois de recarregar, em vez de a história voltar sozinha.
+  useEffect(() => {
+    if (mode !== 'demo' || !profileLoaded || profile) return;
+    const source = useDataStore.getState().source;
+    if (source?.kind === 'demo') blankDemoProfile(source).catch(() => undefined);
+  }, [mode, profile, profileLoaded]);
 
   // Firebase, primeiro login: grava o perfil (nome, fuso e virada às 4h); o plano vem no primeiro acesso
   useEffect(() => {
@@ -178,16 +211,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [mode, profile, profileLoaded, dataError, authUser]);
 
-  const enterDemo = useCallback(async () => {
-    setError(null);
-    setStatus('loading');
-    await openDemo(false);
-  }, [openDemo]);
+  const enterDemo = useCallback(
+    async (opts: { empty?: boolean } = {}) => {
+      setError(null);
+      setStatus('loading');
+      await openDemo(opts.empty ? 'empty' : 'enter');
+    },
+    [openDemo],
+  );
 
   const resetDemo = useCallback(async () => {
     setError(null);
     setStatus('loading');
-    await openDemo(true);
+    await openDemo('fresh');
   }, [openDemo]);
 
   const signIn = useCallback(async () => {

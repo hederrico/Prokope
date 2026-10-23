@@ -106,6 +106,8 @@ export function connectSource(source: DataSource) {
     source.listenProfile((profile, meta) => {
       const s = useDataStore.getState();
       if (s.source !== source) return;
+      // a escrita terminou de subir: só o "esperando" muda
+      if (meta.metadataOnly && s.loaded.profile) return setPending('profile', meta.hasPendingWrites);
       const origin = originOf(meta, s.loaded.profile);
       setPending('profile', meta.hasPendingWrites);
       useDataStore.setState({
@@ -126,6 +128,7 @@ export function connectSource(source: DataSource) {
         (docs, meta) => {
           const s = useDataStore.getState();
           if (s.source !== source) return;
+          if (meta.metadataOnly && s.loaded[col]) return setPending(col, meta.hasPendingWrites);
           const origin = originOf(meta, s.loaded[col]);
           const byId: Record<string, unknown> = {};
           for (const d of docs) byId[(d as { id: string }).id] = d;

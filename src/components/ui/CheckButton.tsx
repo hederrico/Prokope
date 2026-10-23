@@ -23,6 +23,8 @@ export type CheckButtonProps = {
   disabled?: boolean;
   /** troca suave, sem mola nem celebração (marcado em outro aparelho) */
   quiet?: boolean;
+  /** vibra ao marcar (nível 1 da escada). false num dia passado: marcar o passado não celebra. Padrão: true */
+  vibrate?: boolean;
   className?: string;
 };
 
@@ -37,6 +39,7 @@ export function CheckButton({
   partial,
   disabled,
   quiet,
+  vibrate = true,
   className,
 }: CheckButtonProps) {
   const reduced = useReduced();
@@ -47,7 +50,7 @@ export function CheckButton({
   const prev = useRef(checked);
   const guarded = useTapGuard((v: boolean) => {
     // nível 1 da escada: vibração bônus ao marcar, dentro do gesto
-    if (v && !quiet) haptic();
+    if (v && !quiet && vibrate) haptic();
     onCheckedChange(v);
   }, 300);
 

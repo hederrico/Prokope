@@ -288,6 +288,25 @@
     display: flex;
     flex-direction: column;
   }
+  /* passo feito de rotas (RouteSteps): o embrulho ocupa a camada, e a tela cheia dentro dele também */
+  .sh-rstep {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .sh-rstep > .sh-full {
+    flex: 1 0 auto;
+  }
+  /* no passo, a barra fica: o título parado, "Cancelar" vira "‹ Tipo" e "Criar" aparece em micro */
+  .sh-rstep .sh-nb-left,
+  .sh-rstep .sh-nb-act {
+    animation: sh-rstep-in var(--dur-micro) var(--ease-out);
+  }
+  @keyframes sh-rstep-in {
+    from {
+      opacity: 0;
+    }
+  }
   .sh-full-foot {
     position: sticky;
     bottom: 0;
@@ -421,6 +440,15 @@
 .sh-toaster.sh-toaster [data-sonner-toast][data-removed='true'][data-swipe-out='false'] {
   --y: translateY(0);
   opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-exit);
+}
+/* um toast novo troca o anterior no lugar: o anterior não sobe na pilha do Sonner nem muda de altura,
+   só some em micro enquanto o novo sobe em base (o seletor mais forte ganha das regras da pilha do Sonner) */
+[data-sonner-toaster].sh-toaster.sh-toaster [data-sonner-toast][data-y-position][data-front='false'] {
+  --y: translateY(0);
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity var(--dur-micro) var(--ease-exit);
 }
 .sh-toaster.sh-toaster [data-sonner-toast]:focus-visible {

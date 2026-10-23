@@ -86,6 +86,8 @@ export class LocalSource implements DataSource {
   private listeners = new Map<LocalCol, Set<Listener>>();
   private channel: BroadcastChannel | null = null;
   private closed = false;
+  /** escritas de cada coleção ainda gravando no aparelho */
+  private inflight = new Map<LocalCol, number>();
 
   private constructor(
     uid: string,
@@ -208,22 +210,34 @@ export class LocalSource implements DataSource {
     if (this.closed) throw new Error('A fonte de dados foi fechada.');
     if (!ops.length) return;
     // memória primeiro (a tela responde na hora), depois o aparelho
-    this.applyInMemory(ops, { hasPendingWrites: true, fromCache: true });
-    if (this.db) {
-      const tx = this.db.transaction(STORE, 'readwrite');
-      const store = tx.objectStore(STORE);
-      const paths = new Set(ops.map((o) => `${o.col}/${o.id}`));
-      for (const path of paths) {
-        const [first, ...rest] = path.split('/');
-        const col = first as LocalCol;
-        const id = rest.join('/');
-        const data = this.docs.get(col)?.get(id);
-        if (data) store.put({ path, col, id, data } satisfies Row);
-        else store.delete(path);
+    const touched = this.applyInMemory(ops, { hasPendingWrites: true, fromCache: true });
+    for (const col of touched) this.inflight.set(col, (this.inflight.get(col) ?? 0) + 1);
+    try {
+      if (this.db) {
+        const tx = this.db.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        const paths = new Set(ops.map((o) => `${o.col}/${o.id}`));
+        for (const path of paths) {
+          const [first, ...rest] = path.split('/');
+          const col = first as LocalCol;
+          const id = rest.join('/');
+          const data = this.docs.get(col)?.get(id);
+          if (data) store.put({ path, col, id, data } satisfies Row);
+          else store.delete(path);
+        }
+        await txDone(tx);
       }
-      await txDone(tx);
+      this.channel?.postMessage({ ops });
+    } finally {
+      // gravado no aparelho: como o Firestore quando o servidor confirma, hasPendingWrites volta a falso
+      // (só os metadados; o store não troca os documentos)
+      for (const col of touched) {
+        const left = Math.max(0, (this.inflight.get(col) ?? 1) - 1);
+        this.inflight.set(col, left);
+        if (left > 0 || this.closed || col === 'invites' || col === 'links' || col === 'hugs') continue;
+        this.emit(col, { hasPendingWrites: false, fromCache: true, metadataOnly: true });
+      }
     }
-    this.channel?.postMessage({ ops });
   }
 
   newId(): string {

@@ -99,10 +99,20 @@ describe('plano base', () => {
     });
   });
 
-  it('do zero: nada criado', () => {
+  it('do zero: nenhum pilar nem hábito, e uma fase sem fim a partir do começo', () => {
     const plan = buildPlan(defaultPlanDraft('empty'), { now: 0, clock: DEFAULT_CLOCK, newId });
     expect(plan.pillars).toHaveLength(0);
     expect(plan.habits).toHaveLength(0);
-    expect(plan.phases).toHaveLength(0);
+    expect(plan.phases).toHaveLength(1);
+    expect(plan.phases[0]).toMatchObject({ number: 1, weeks: null, start: plan.startDay, end: null });
+  });
+
+  it('a caminhada conta pelo pilar extra quando o principal sai do plano', () => {
+    const d = defaultPlanDraft('template');
+    const noFamily = { ...d, pillars: d.pillars.map((p) => (p.key === 'familia' ? { ...p, enabled: false } : p)) };
+    // louça e lixo saem; a caminhada fica em Corpo
+    expect(chosenCount(noFamily)).toBe(5);
+    const onlyMind = { ...d, pillars: d.pillars.map((p) => ({ ...p, enabled: p.key === 'mente' })) };
+    expect(chosenCount(onlyMind)).toBe(3);
   });
 });

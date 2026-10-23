@@ -280,8 +280,9 @@ export function CheckSection() {
   const [a, setA] = useState(false);
   const [b, setB] = useState(true);
   const [quiet, setQuiet] = useState(false);
+  const [past, setPast] = useState(false);
   return (
-    <Section id="check" title="CheckButton" note="Encolhe a 0,9, enche com a mola toque e o ✓ se desenha. Desmarcar volta em micro, sem quique.">
+    <Section id="check" title="CheckButton" note="Encolhe a 0,9, enche com a mola toque e o ✓ se desenha. Desmarcar volta em micro, sem quique. Num dia passado, vibrate={false}: anima, mas não vibra.">
       <div className="gx-pad">
         <Card padded className="gx-row" style={{ justifyContent: 'space-around' }}>
           <Demo label="repouso">
@@ -292,6 +293,9 @@ export function CheckSection() {
           </Demo>
           <Demo label="parcial">
             <CheckButton checked={false} partial onCheckedChange={noop} label="Corrida, parcial" pillar="corpo" />
+          </Demo>
+          <Demo label="dia passado">
+            <CheckButton checked={past} vibrate={false} onCheckedChange={setPast} label="Louça, ontem" pillar="familia" />
           </Demo>
           <Demo label="outro aparelho">
             <CheckButton checked={quiet} quiet onCheckedChange={setQuiet} label="Telas desligadas" pillar="mente" />

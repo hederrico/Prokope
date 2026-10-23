@@ -29,6 +29,12 @@ describe('guardRedirect', () => {
     expect(guardRedirect('/comecar/2', { ...base, needsOnboarding: true })).toBeNull();
   });
 
+  it('apagar interrompido (perfil com deleting) retoma a tela de apagar antes de qualquer outra', () => {
+    expect(guardRedirect('/hoje', { ...base, deleting: true })).toBe('/ajustes/dados/apagar');
+    expect(guardRedirect('/entrar', { ...base, deleting: true })).toBe('/ajustes/dados/apagar');
+    expect(guardRedirect('/ajustes/dados/apagar', { ...base, deleting: true })).toBeNull();
+  });
+
   it('com sessão, a entrada leva ao Hoje (ou ao link que a pessoa abriu antes de entrar)', () => {
     expect(guardRedirect('/entrar', base)).toBe('/hoje');
     expect(guardRedirect('/comecar/3', base)).toBe('/hoje');

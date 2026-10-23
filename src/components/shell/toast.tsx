@@ -1,7 +1,8 @@
 // Toasts (componentes.md › Toast; gestos-e-feedback.md › Toasts; quadro: toast()). Sonner com o conteúdo do quadro:
 // um por vez, 8 px acima da barra de abas (ou da borda segura numa tela sem abas), arrastar para baixo dispensa,
 // anunciado com aria-live="polite" sem roubar o foco. O Desfazer dura 5 s, com o fio esvaziando; o tempo para
-// enquanto o toast tem foco ou o dedo está sobre ele.
+// enquanto o toast tem foco ou o dedo está sobre ele. Um toast novo troca o anterior no lugar (o anterior some em
+// micro, o novo sobe em base: shell.css), e o toast sai quando uma folha abre.
 //
 //   showUndo({ title: 'Caminhada marcada', detail: '3 de 7 na semana', pillar: 'familia', icon: 'check' }, undo)
 //   showToast({ title: 'Não deu para salvar.', detail: 'Tente de novo em instantes.', action: { label: 'Tentar de novo', onClick } , duration: Infinity })
@@ -9,7 +10,7 @@ import { useState } from 'react';
 import { Toaster, toast as sonner } from 'sonner';
 import { Icon, type IconName } from '@/icons';
 import { PALETTE } from '@/styles/palette';
-import { setShellState } from './shellState';
+import { setShellState, useShellState } from './shellState';
 import type { PillarColor } from './types';
 
 export interface ToastAction {
@@ -155,6 +156,14 @@ export function showUndo(input: UndoInput, undo: () => void): string {
 export function dismissToast(id?: string): void {
   const target = id ?? current;
   if (target) sonner.dismiss(target);
+}
+
+// uma folha abrindo tira o toast da tela (ele cobriria o pé da folha); a folha que fecha e mostra o Desfazer
+// depois não conta, porque o toast entra enquanto a folha já está saindo
+if (typeof window !== 'undefined') {
+  useShellState.subscribe((s, prev) => {
+    if (s.sheetOpen && !prev.sheetOpen) dismissToast();
+  });
 }
 
 /** O lugar dos toasts. Vai dentro da coluna do app (usa --sh-tabbar-h da barra de abas). */

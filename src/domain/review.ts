@@ -96,34 +96,44 @@ function lineFor(h: Habit, data: DomainData, days: DayKey[], today: DayKey): Rev
   const of = isFlexibleWeekly(h, data.profile) ? (h.goal.perWeek ?? states.length) : states.length;
   const ratio = of ? Math.min(1, done / of) : 0;
   const unit = nightish(h) ? (of === 1 ? 'noite' : 'noites') : of === 1 ? 'dia' : 'dias';
-  let text: string;
+  // o assunto ("Deitar às 22h") e a quantidade (" aconteceu em 3 de 7 noites"); sem nada feito, a frase não começa
+  // pelo zero ("Futebol: 0 de 1 na semana" soa duro): diz que ficou para a próxima semana
+  let subject = h.name;
+  let amount: string;
   switch (h.type) {
     case 'daysSince':
-      text = done === of ? `${h.name} a semana toda` : `${h.name} em ${done} de ${of} dias`;
+      amount = done === of ? ' a semana toda' : ` em ${done} de ${of} dias`;
       break;
     case 'time': {
       const goal = states[states.length - 1]?.goal.time;
-      text = goal
-        ? `${h.name} às ${formatTime(goal)} aconteceu em ${done} de ${of} ${unit}`
-        : `${h.name} no horário em ${done} de ${of} ${unit}`;
+      if (goal) {
+        subject = `${h.name} às ${formatTime(goal)}`;
+        amount = ` aconteceu em ${done} de ${of} ${unit}`;
+      } else {
+        subject = `${h.name} no horário`;
+        amount = ` em ${done} de ${of} ${unit}`;
+      }
       break;
     }
     case 'counter': {
       const g = states[states.length - 1]?.goal;
       const unitText =
         g?.unit === 'ml' ? `${(g.value ?? 0) / 1000} L`.replace('.', ',') : `${g?.value ?? ''} ${g?.unit ?? ''}`.trim();
-      text = `${h.name} ${g?.unit === 'ml' ? 'chegou a' : 'acima de'} ${unitText} em ${done} ${done === 1 ? 'dia' : 'dias'}`;
+      subject = `${h.name} ${g?.unit === 'ml' ? 'chegou a' : 'acima de'} ${unitText}`;
+      amount = ` em ${done} ${done === 1 ? 'dia' : 'dias'}`;
       break;
     }
     case 'rating':
-      text = `${h.name} com nota em ${done} de ${of} dias`;
+      subject = `${h.name} com nota`;
+      amount = ` em ${done} de ${of} dias`;
       break;
     case 'weekly':
-      text = `${h.name}: ${done} de ${of} na semana`;
+      amount = `: ${done} de ${of} na semana`;
       break;
     default:
-      text = `${h.name} em ${done} de ${of} ${unit}`;
+      amount = ` em ${done} de ${of} ${unit}`;
   }
+  const text = done === 0 ? `${subject} ficou para a próxima semana` : `${subject}${amount}`;
   return { habitId: h.id, text, done, of, ratio };
 }
 

@@ -33,9 +33,15 @@ describe('rootTransition', () => {
       'fadeBase',
     );
   });
+  it('a troca seca pedida pela tela (state.transition: none) não sobe nem desce', () => {
+    const none = { action: 'REPLACE' as const, delta: 0, state: { transition: 'none' } };
+    expect(rootTransition('/corrida/1/1', '/corrida/1/1/feito', none)).toBe('none');
+    expect(rootTransition('/revisao/2026-10-26/3', '/fase/3', none)).toBe('none');
+    expect(rootTransition('/revisao/2026-10-26/3', '/revisao/2026-10-26/fim', none)).toBe('none');
+  });
   it('de uma tela cheia para outra: abre por cima, ou desce ao voltar', () => {
-    expect(rootTransition('/ajustes/habitos/novo/tipo', '/ajustes/habitos/novo/detalhes', push)).toBe('openFull');
-    expect(rootTransition('/ajustes/habitos/novo/detalhes', '/ajustes/habitos/novo/tipo', back)).toBe('closeFull');
+    expect(rootTransition('/ajustes/pilares/novo', '/ajustes/habitos/novo/tipo', push)).toBe('openFull');
+    expect(rootTransition('/ajustes/habitos/novo/tipo', '/ajustes/pilares/novo', back)).toBe('closeFull');
     expect(rootTransition('/entrar', '/comecar/1', push)).toBe('openFull');
   });
 });

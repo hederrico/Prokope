@@ -87,22 +87,33 @@ export async function updatePhase(
   return commit([mergeOp('phases', p.id, patch)]);
 }
 
-/** Nova fase no fim do caminho. */
+/**
+ * Nova fase no fim do caminho. Numa conta em que nenhuma fase começou (plano do zero sem fases), a nova começa
+ * hoje, com os hábitos dela que ainda esperam: sem isso, nenhuma fase viraria a atual.
+ */
 export async function addPhase(input: { name: string; weeks: number | null }): Promise<Undo> {
-  const phases = snapshot().phases;
+  const data = snapshot();
+  const phases = data.phases;
   const number = phases.reduce((m, p) => Math.max(m, p.number), 0) + 1;
+  const startNow = !phases.some((p) => p.start);
+  const start = startNow ? today() : null;
   const p: Phase = {
     id: String(number),
     number,
     name: input.name.trim(),
     weeks: input.weeks,
-    start: null,
-    end: null,
+    start,
+    end: start && input.weeks ? addDays(start, input.weeks * 7 - 1) : null,
     closingConstancy: null,
     closedAt: null,
     celebratedAt: null,
   };
-  return withId(await commit([setOp('phases', p.id, p)]), p.id);
+  const ops: WriteOp[] = [setOp('phases', p.id, p)];
+  if (start) {
+    for (const h of data.habits)
+      if (h.phase === number && !h.archived && !h.startDay) ops.push(mergeOp('habits', h.id, { startDay: start, updatedAt: now() }));
+  }
+  return withId(await commit(ops), p.id);
 }
 
 /** A celebração da fase desbloqueada aconteceu (uma vez por fase). */

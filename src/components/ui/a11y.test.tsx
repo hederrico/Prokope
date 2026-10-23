@@ -42,6 +42,26 @@ describe('CheckButton', () => {
     expect(on).toHaveBeenCalledTimes(1);
     expect(on).toHaveBeenCalledWith(true);
   });
+
+  it('vibra ao marcar, menos com vibrate={false} (dia passado)', async () => {
+    const vibrate = vi.fn(() => true);
+    const had = Object.getOwnPropertyDescriptor(navigator, 'vibrate');
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true, writable: true });
+    try {
+      // a vibração ignora toques a menos de 60 ms um do outro
+      await new Promise((r) => setTimeout(r, 80));
+      const { unmount } = render(<CheckButton checked={false} vibrate={false} label="Louça" onCheckedChange={() => {}} />);
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Louça' }));
+      expect(vibrate).not.toHaveBeenCalled();
+      unmount();
+      render(<CheckButton checked={false} label="Lixo" onCheckedChange={() => {}} />);
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Lixo' }));
+      expect(vibrate).toHaveBeenCalledTimes(1);
+    } finally {
+      if (had) Object.defineProperty(navigator, 'vibrate', had);
+      else delete (navigator as { vibrate?: unknown }).vibrate;
+    }
+  });
 });
 
 describe('HabitRow', () => {
@@ -167,6 +187,16 @@ describe('WeekStrip e WeekCard', () => {
     expect(sel).toHaveBeenCalledWith('2026-10-22');
     expect(screen.queryByRole('button', { name: /Sexta, 23/ })).toBeNull();
     expect(screen.getAllByRole('button')).toHaveLength(4);
+  });
+
+  it('outro dia: o escolhido tem aria-pressed e o de hoje, aria-current="date"', () => {
+    render(<WeekStrip days={days} today="2026-10-22" selected="2026-10-21" onSelect={() => {}} />);
+    const wed = screen.getByRole('button', { name: /^Quarta, 21/ });
+    const thu = screen.getByRole('button', { name: /^Quinta, 22, hoje/ });
+    expect(wed).toHaveAttribute('aria-pressed', 'true');
+    expect(wed).not.toHaveAttribute('aria-current');
+    expect(thu).toHaveAttribute('aria-pressed', 'false');
+    expect(thu).toHaveAttribute('aria-current', 'date');
   });
 
   it('"76% na semana" abre o Progresso', () => {

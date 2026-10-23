@@ -32,6 +32,8 @@ export function rootTransition(prevPath: string, nextPath: string, nav: Nav): Tr
   const nextTabs = rootKey(nextPath) === 'tabs';
   const prevTabs = rootKey(prevPath) === 'tabs';
   const fromEntry = !!prev?.auth || (prev?.kind === 'flow' && prevPath.startsWith('/comecar/'));
+  // a tela pediu a troca seca (Corrida → Treino feito, Revisão → Fase desbloqueada: a tela nova tem a própria entrada)
+  if (forced(nav) === 'none') return 'none';
   // conta sem acesso: troca de opacidade em base, sem deslocamento
   if (next?.path === '/entrar/sem-acesso') return 'fadeBase';
   // entrar no app (do Entrar ou do fim do primeiro acesso): a aba aparece com uma troca suave em micro

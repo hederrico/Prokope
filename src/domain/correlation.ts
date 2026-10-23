@@ -95,13 +95,28 @@ export function topCorrelations(data: DomainData, today: DayKey, metric: Correla
 
 /** O padrão mais perto de ficar pronto (cartão de espera do Progresso). */
 export function nearestCorrelation(data: DomainData, today: DayKey): Correlation | null {
-  let best: Correlation | null = null;
+  return waitingPatterns(data, today)[0] ?? null;
+}
+
+/** Hábitos que podem virar um padrão com o humor (fora limites, números e o próprio check-in). */
+export function canFormPattern(h: Habit): boolean {
+  return !h.archived && !!h.startDay && h.type !== 'budget' && h.type !== 'number' && h.role !== 'checkin';
+}
+
+/**
+ * Os padrões a caminho (correlações que ainda não têm 7 dias com e 7 sem), do mais perto de aparecer ao mais
+ * longe. O primeiro é o cartão do Progresso; os outros, "Mais 2 padrões a caminho".
+ */
+export function waitingPatterns(data: DomainData, today: DayKey): Correlation[] {
+  const out: Correlation[] = [];
   for (const h of data.habits) {
-    if (h.archived || !h.startDay || h.type === 'budget' || h.type === 'number' || h.role === 'checkin') continue;
+    if (!canFormPattern(h)) continue;
     const c = correlation(h, data, today);
-    if (c.ready) continue;
-    const missing = c.missingWith + c.missingWithout;
-    if (!best || missing < best.missingWith + best.missingWithout) best = c;
+    if (!c.ready) out.push(c);
   }
-  return best;
+  // estável: no empate, a ordem dos hábitos
+  return out
+    .map((c, i) => ({ c, i, missing: c.missingWith + c.missingWithout }))
+    .sort((a, b) => a.missing - b.missing || a.i - b.i)
+    .map((x) => x.c);
 }

@@ -9,6 +9,8 @@ export interface SnapshotMeta {
   hasPendingWrites: boolean;
   /** veio do cache do aparelho */
   fromCache: boolean;
+  /** só os metadados mudaram (a escrita local terminou de subir): os documentos são os mesmos da última vez */
+  metadataOnly?: boolean;
 }
 
 /** Coleção mais o documento único do perfil. */

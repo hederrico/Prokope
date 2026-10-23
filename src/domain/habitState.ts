@@ -314,7 +314,10 @@ export function habitDay(habit: Habit, day: DayKey, data: DomainData, today: Day
   }
 
   if (mark?.skipped) return { ...base, state: 'skipped', registered: false, value };
-  if (pauseOn(data, day, habit.id)) return { ...base, state: 'paused', registered, value };
+  // marcar feito (ou parcial) num dia pausado tira aquele dia da pausa, só para este hábito (habito-progresso.md);
+  // o resto (sem marca, horário fora da meta, contadores) continua pausado e fora das contas
+  const markedDone = (mark?.status === 'done' || mark?.status === 'partial') && isDoneLike(state);
+  if (!markedDone && pauseOn(data, day, habit.id)) return { ...base, state: 'paused', registered, value };
   const scheduled = habit.type === 'budget' || habit.type === 'daysSince' || isScheduledOn(habit, day, data);
   // fora da agenda, um registro feito mesmo assim aparece (futebol num sábado), mas não conta
   if (!scheduled)

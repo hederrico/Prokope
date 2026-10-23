@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { DataProvider, useSession } from '@/data/session';
 import { useHabitStats, useJourney, useProgress, useToday, useWeek } from '@/data/hooks';
-import { markHabit } from '@/actions';
+import { deleteAllData, markHabit } from '@/actions';
 import { setFixedNow } from '@/stores/clock';
 import { instantAt, DEFAULT_CLOCK } from '@/domain/day';
 import { LocalSource } from '@/data/localSource';
@@ -63,4 +63,50 @@ it('entra no modo demonstração, mostra a história e atualiza depois de marcar
   // começar de novo: apaga e semeia
   await act(() => result.current.session.resetDemo());
   await waitFor(() => expect(result.current.today.count).toEqual({ done: 3, total: 12 }));
+});
+
+it('testar o primeiro acesso na demonstração: perfil sem plano, e apagar tudo continua apagado ao reabrir', async () => {
+  setFixedNow(instantAt('2026-10-22', '07:42', DEFAULT_CLOCK));
+  const { result, unmount } = renderHook(useAll, { wrapper });
+  await waitFor(() => expect(result.current.session.status).toBe('signedOut'));
+
+  // conta vazia: o app pede o primeiro acesso
+  await act(() => result.current.session.enterDemo({ empty: true }));
+  await waitFor(() => expect(result.current.session.status).toBe('ready'));
+  expect(result.current.session.mode).toBe('demo');
+  expect(result.current.session.needsOnboarding).toBe(true);
+  expect(result.current.session.user?.name).toBe('Henrique');
+  expect(result.current.journey.phases).toHaveLength(0);
+
+  // reabrir o app (a sessão lembra o modo): continua no primeiro acesso, sem a história voltar sozinha
+  unmount();
+  const again = renderHook(useAll, { wrapper });
+  await waitFor(() => expect(again.result.current.session.status).toBe('ready'));
+  expect(again.result.current.session.needsOnboarding).toBe(true);
+  expect(again.result.current.journey.phases).toHaveLength(0);
+
+  // "Explorar com dados de exemplo" numa demonstração sem plano traz a história de volta
+  await act(() => again.result.current.session.signOut());
+  await act(() => again.result.current.session.enterDemo());
+  await waitFor(() => expect(again.result.current.today.count).toEqual({ done: 3, total: 12 }));
+  expect(again.result.current.session.needsOnboarding).toBe(false);
+  again.unmount();
+});
+
+it('apagar todos os dados na demonstração: o primeiro acesso continua depois de recarregar', async () => {
+  setFixedNow(instantAt('2026-10-22', '07:42', DEFAULT_CLOCK));
+  const { result, unmount } = renderHook(useAll, { wrapper });
+  await waitFor(() => expect(result.current.session.status).toBe('signedOut'));
+  await act(() => result.current.session.enterDemo());
+  await waitFor(() => expect(result.current.today.count).toEqual({ done: 3, total: 12 }));
+  await act(async () => {
+    await deleteAllData();
+  });
+  await waitFor(() => expect(result.current.session.needsOnboarding).toBe(true));
+  unmount();
+  const again = renderHook(useAll, { wrapper });
+  await waitFor(() => expect(again.result.current.session.status).toBe('ready'));
+  expect(again.result.current.session.needsOnboarding).toBe(true);
+  expect(again.result.current.journey.phases).toHaveLength(0);
+  again.unmount();
 });

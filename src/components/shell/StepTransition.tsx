@@ -35,20 +35,24 @@ export function StepTransition({
 }) {
   const reduced = usePrefersReducedMotion();
   // direção: o passo anterior volta da esquerda; o seguinte vem da direita
-  const [seen, setSeen] = useState({ step, dir: 1 });
+  const [seen, setSeen] = useState({ step, dir: 1, first: true });
   let dir = seen.dir;
+  let first = seen.first;
   if (seen.step !== step) {
     dir = Number(step) < Number(seen.step) ? -1 : 1;
-    setSeen({ step, dir });
+    first = false;
+    setSeen({ step, dir, first });
   }
+  // o primeiro passo nasce parado pelo initial={false} do próprio passo, e não do AnimatePresence: lá ele passaria
+  // a todas as animações de dentro do passo e bloquearia a entrada do que aparece depois
   return (
-    <AnimatePresence mode="wait" initial={false} custom={dir}>
+    <AnimatePresence mode="wait" custom={dir}>
       <m.div
         key={step}
         className={className}
         custom={dir}
         variants={reduced ? reducedVariants : variants}
-        initial="enter"
+        initial={first ? false : 'enter'}
         animate="center"
         exit="exit"
         onAnimationComplete={(def) => {

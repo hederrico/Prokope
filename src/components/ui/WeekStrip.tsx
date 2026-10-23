@@ -1,6 +1,7 @@
 // WeekStrip: a semana com anéis, um por dia. Quadro: week(vals, hoje, nums, head).
 // Hoje: anel em --accent-ink e número em destaque. Passado: anel parcial ou cheio (sem registro, só o trilho).
 // Pausado: trilho tracejado. Futuro: vazado e não tocável. Escolhido (Hoje · outro dia): fundo --accent-wash e contorno.
+// Leitor de tela (telas/estados.md › Hoje · outro dia): o dia escolhido tem aria-pressed="true"; o de hoje, aria-current="date".
 // O anel de hoje anda em fill, +120 ms depois do toque. Na montagem, os anéis já estão no valor.
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
@@ -96,7 +97,8 @@ export function WeekStrip({ days, today, selected, onSelect, head, foot, bare, c
                 type="button"
                 className="pk-reset in pk-wkd-b"
                 aria-label={weekDayLabel(d, today)}
-                aria-current={selected === d.date ? 'date' : undefined}
+                aria-pressed={selected !== undefined ? selected === d.date : undefined}
+                aria-current={isToday ? 'date' : undefined}
                 onClick={() => onSelect(d.date)}
               >
                 {inner}

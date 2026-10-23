@@ -31,6 +31,10 @@ describe('tabela das telas', () => {
     expect(rootKey('/revisao/2026-W43/1')).toBe(rootKey('/revisao/2026-W43/3'));
     expect(rootKey('/comecar/1')).toBe('/comecar');
     expect(rootKey('/fase/3')).toBe('/fase/3');
+    // Novo hábito: tipo e detalhes são passos de rotas diferentes na mesma camada
+    expect(rootKey('/ajustes/habitos/novo/tipo')).toBe(rootKey('/ajustes/habitos/novo/detalhes'));
+    expect(findScreen('/ajustes/habitos/novo/detalhes')?.def.step).toBe(2);
+    expect(findScreen('/ajustes/habitos/caminhada/editar')?.def.kind).toBe('full');
   });
 });
 
@@ -40,5 +44,7 @@ describe('folhas na URL', () => {
     expect(withoutSheet('?dia=2026-10-21&folha=proteina')).toBe('?dia=2026-10-21');
     expect(withoutSheet('?folha=menu&habito=caminhada')).toBe('');
     expect(withSheet('?folha=menu&habito=a', 'deslize', { habito: 'b' })).toBe('?folha=deslize&habito=b');
+    // o deslize tocado num período sai junto com a folha
+    expect(withoutSheet('?folha=deslize&habito=a&deslize=s1')).toBe('');
   });
 });

@@ -81,5 +81,9 @@ describe('textos', () => {
     expect(greeting(7 * 60 + 42)).toBe('Bom dia');
     expect(greeting(12 * 60 + 41)).toBe('Boa tarde');
     expect(greeting(20 * 60 + 34)).toBe('Boa noite');
+    // domingo às 18h (quadro): ainda tarde; 19h40: noite
+    expect(greeting(18 * 60)).toBe('Boa tarde');
+    expect(greeting(18 * 60 + 59)).toBe('Boa tarde');
+    expect(greeting(19 * 60 + 40)).toBe('Boa noite');
   });
 });

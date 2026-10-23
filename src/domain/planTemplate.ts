@@ -565,13 +565,17 @@ export function laterSummary(pillarKey: string): string {
   return `Depois: ${list}`;
 }
 
-/** Quantos chips de hábito (sem medições) estão ligados: "7 hábitos escolhidos". */
+/**
+ * Quantos chips de hábito (sem medições) estão ligados: "7 hábitos escolhidos". Um hábito com pilar extra
+ * (a caminhada, em Família e Corpo) conta quando qualquer um dos dois pilares fica no plano.
+ */
 export function chosenCount(draft: PlanDraft): number {
+  if (draft.mode !== 'template') return 0;
+  const pillarOn = (key: string) => draft.pillars.find((p) => p.key === key)?.enabled ?? false;
   const chips = new Set<string>();
   for (const h of TEMPLATE_HABITS) {
     if (h.phase !== 1 || h.measurement || !draft.habits.includes(h.key)) continue;
-    const pillarOn = draft.pillars.find((p) => p.key === h.pillar)?.enabled;
-    if (!pillarOn) continue;
+    if (!pillarOn(h.pillar) && !(h.alsoIn ?? []).some(pillarOn)) continue;
     chips.add(h.chip ?? h.key);
   }
   return chips.size;
@@ -703,6 +707,21 @@ export function buildPlan(draft: PlanDraft, opts: BuildPlanOptions): BuiltPlan {
         celebratedAt: null,
       });
     }
+  } else {
+    // do zero: uma fase só, sem fim, a partir do começo do plano. A pessoa dá nome, duração e as próximas
+    // fases em Editar fases (sem ela, a Jornada e a revisão ficam sem fase atual)
+    const first = TEMPLATE_PHASES[0];
+    phases.push({
+      id: '1',
+      number: 1,
+      name: first?.name ?? 'Base',
+      weeks: null,
+      start: startDay,
+      end: null,
+      closingConstancy: null,
+      closedAt: null,
+      celebratedAt: null,
+    });
   }
 
   const schedule = { ...draft.schedule };

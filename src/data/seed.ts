@@ -34,13 +34,16 @@ const STORY = {
     28: '22:40',
   } as Record<number, TimeHM>,
   dishesMisses: [6, 13, 19, 25],
-  lunchMisses: [3, 7],
+  /** sem nota do almoço na segunda e na terça desta semana (o anel da terça fica perto dos 75% do quadro) */
+  lunchMisses: [2, 3, 7],
   dinnerMisses: [1, 2, 6, 9],
   lunchRatings: [4, 3, 4, 5, 3, 4, 3, 4, 4, 3],
-  dinnerRatings: [4, 4, 3, 5, 4, 4, 3, 4, 5, 4],
+  /** o jantar de segunda com 4 (média do jantar na semana perto dos 3,9 do quadro) */
+  dinnerRatings: [4, 4, 4, 5, 4, 4, 3, 4, 5, 4],
   /** proteína dos dias da fase 2 (1 = ontem): seg 84, ter 92, qua 71 na história */
   protein: [71, 92, 84, 78, 88, 95, 82, 76, 90, 85],
-  water: [2000, 2500, 3000, 2500, 3000, 2500, 3200, 2000, 3000, 2500],
+  /** água desta semana como no quadro: seg 3 L, ter 2,5 L, qua 3,2 L (3 L ou mais em 2 dos 3 dias fechados) */
+  water: [3200, 2500, 3000, 2500, 3000, 2500, 3200, 2000, 3000, 2500],
   /** tranqueiras e refeições livres (dias atrás) */
   junk: [2, 6, 9],
   freeMeals: [4, 7],

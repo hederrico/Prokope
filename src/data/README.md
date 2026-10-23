@@ -42,17 +42,18 @@ s.user;              // { name: 'Henrique', email? } | null
 s.needsOnboarding;   // conta sem plano: vá para /comecar/1
 s.firebaseAvailable; // há configuração do Firebase no .env
 s.error;             // 'O login não terminou. Tente de novo.' ou null (tela Entrar)
-await s.enterDemo(); // modo demonstração (semeado com a história na primeira vez)
+await s.enterDemo(); // modo demonstração (semeado com a história na primeira vez, ou de novo se ficou sem plano)
+await s.enterDemo({ empty: true }); // conta vazia na demonstração: a guarda leva ao primeiro acesso (/comecar/1)
 await s.signIn();    // Google por redirecionamento; sem Firebase, rejeita com FIREBASE_UNAVAILABLE
 await s.signOut();
 await s.resetDemo(); // apaga a demonstração e semeia de novo
 ```
 
 - `status === 'denied'`: a conta não está na lista (`/entrar/sem-acesso`); o e-mail vem em `s.user.email`.
-- Depois de `deleteAllData()`, o perfil some e `needsOnboarding` vira `true`.
-- `useDataStatus()` → `{ status: 'idle' | 'loading' | 'ready', pendingWrites, error }`: use `status !== 'ready'` para o esqueleto do Hoje (espere 300 ms antes de mostrar).
+- Depois de `deleteAllData()`, o perfil some e `needsOnboarding` vira `true`. Na demonstração, a sessão grava um perfil novo sem plano (como no primeiro login), e recarregar continua no primeiro acesso, sem semear a história de novo.
+- `useDataStatus()` → `{ status: 'idle' | 'loading' | 'ready', pendingWrites, error }`: use `status !== 'ready'` para o esqueleto do Hoje (espere 300 ms antes de mostrar). `pendingWrites` volta a `false` quando a escrita termina de gravar (no aparelho, na demonstração; no servidor, no Firebase), por um aviso só de metadados (`SnapshotMeta.metadataOnly`), que não troca os documentos nem a origem da mudança.
 - `useConnection()` → `{ online, pending }`: o aviso "Sem internet" do Hoje e "registros esperando internet" em Dados e conta.
-- `onWriteError(cb)` e `WRITE_ERROR_MESSAGE`: a casca mostra o toast "Não deu para salvar. Tente de novo em instantes." quando o servidor recusa uma escrita.
+- `onWriteError((error, retry?) => ...)` e `WRITE_ERROR_MESSAGE`: a casca (`src/app/WriteErrorToast.tsx`) mostra o toast "Não deu para salvar. Tente de novo em instantes." quando o servidor recusa uma escrita; "Tentar de novo" chama `retry`, que grava o mesmo lote.
 
 ## Hora do app e capturas
 
@@ -197,6 +198,7 @@ p.constancy; // 0,76 (num período de fase concluída, a de fechamento)
 p.pillars;   // [{ pillar, ratio }] do maior para o menor
 p.insights;  // [{ habitId, text, correlation }] (só correlações prontas e a favor)
 p.waiting;   // o padrão mais perto de aparecer (PatternWaitCard), quando ainda não há insight
+p.waitingMore; // quantos outros padrões estão a caminho ("Mais 2 padrões a caminho")
 p.previous;  // "Semana passada ›": { kind: 'week', key: '2026-10-12', ratio: 0.74 } ou a fase anterior
 p.mood;      // tema humor: { days: [{ day, mood, energy, future }], avgMood, avgEnergy, insights }
 p.measures;  // tema medidas: { weight: WeightTrend, lastWeight, waist: Measurement[], numbers: [{ habit, days, avg }] }
@@ -382,7 +384,7 @@ Os tipos estão em `src/types/model.ts`: `Profile`, `Pillar`, `Habit`, `Mark`, `
 ## As regras, em uma linha cada
 
 - **Conta do dia:** contam marcar, horário, nota, lista, dias sem (feitos enquanto não há deslize) e vezes por semana com dia fixo; ficam fora contadores, limites e medidas; saem pausados, fora da agenda e "não conta hoje"; parcial conta como feito.
-- **Constância:** pontos / dias que contavam (feito 1, parcial 0,5), com contadores na meta; pausas fora; **hoje entra só com o que já foi feito**.
+- **Constância:** pontos / dias que contavam (feito 1, parcial 0,5), com contadores na meta; pausas fora; **hoje entra só com o que já foi feito**. Se só os "dias sem" de hoje contam (primeiro dia da semana ou da fase, nada feito ainda), a constância é `null`, e não 100%.
 - **Força:** média que pesa mais os dias recentes (meia-vida de 13 dias agendados, como no Loop), sem começar do zero; pede 7 dias.
 - **Dias sem:** atual desde o último deslize (contando hoje), recorde e total; o dia do deslize sai do total; na pausa a contagem fica parada.
 - **Limites:** de segunda a domingo; "dias" conta dias distintos.
@@ -391,7 +393,9 @@ Os tipos estão em `src/types/model.ts`: `Profile`, `Pillar`, `Habit`, `Mark`, `
 - **Hoje:** a Noite abre às 18h; o check-in sobe no horário do check-in (20h30); o dia fecha quando todo hábito que conta e se marca no dia está feito (o deitar fica para a manhã).
 - **Convite gentil:** o hábito mais firme que ficou sem registro ontem, no máximo um, fora pausa, primeiro dia e deitar.
 - **Revisão:** abre no dia e na hora escolhidos e fica até 2 dias depois; depois, vira "pendente" na Jornada.
-- **Fases:** datas das futuras são previsões; sugestão de avançar com a constância da fase ≥ limite (70%).
+- **Fases:** datas das futuras são previsões; sugestão de avançar com a constância da fase ≥ limite (70%). "Do zero" nasce com a fase 1, sem fim; numa conta em que nenhuma fase começou, `addPhase` começa a nova hoje.
+- **Pausa:** marcar feito (ou parcial) num dia pausado tira aquele dia da pausa, só para aquele hábito (conta na constância e na força).
+- **Revisão:** sem nada feito, a linha não começa pelo zero: "Futebol ficou para a próxima semana".
 
 ## Ícones, textos e outros ajudantes
 

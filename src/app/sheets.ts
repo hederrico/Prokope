@@ -14,7 +14,8 @@ export const SHEETS: Record<string, SheetDef> = {
   acordar: { args: [], load: () => import('@/screens/sheets/WakeSheet') },
   nota: { args: ['refeicao'], load: () => import('@/screens/sheets/MealRatingSheet') },
   checkin: { args: ['humor'], load: () => import('@/screens/sheets/CheckinSheet') },
-  deslize: { args: ['habito'], load: () => import('@/screens/sheets/SlipSheet') },
+  // deslize: o período tocado no detalhe do hábito abre a folha do deslize que o limita
+  deslize: { args: ['habito', 'deslize'], load: () => import('@/screens/sheets/SlipSheet') },
   peso: { args: [], load: () => import('@/screens/sheets/WeightSheet') },
   menu: { args: ['habito'], load: () => import('@/screens/today/HabitMenuSheet') },
   corrigir: { args: ['habito', 'dia'], load: () => import('@/screens/habit/FixDaySheet') },

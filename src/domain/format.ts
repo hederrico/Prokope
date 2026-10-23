@@ -149,7 +149,8 @@ export function formatRelativeDay(day: DayKey, today: DayKey): string {
 export function greeting(minutesOfDay: number): string {
   const m = minutesOfDay % 1440;
   if (m >= 4 * 60 && m < 12 * 60) return 'Bom dia';
-  if (m >= 12 * 60 && m < 18 * 60) return 'Boa tarde';
+  // o quadro: domingo às 18h ainda é "Boa tarde"; às 19h40 já é "Boa noite"
+  if (m >= 12 * 60 && m < 19 * 60) return 'Boa tarde';
   return 'Boa noite';
 }
 

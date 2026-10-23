@@ -659,6 +659,16 @@
     cursor: pointer;
     transition: background-color var(--dur-micro) var(--ease-out);
   }
+  /* área de toque de 44 px de altura sem mudar o desenho (51 × 31) */
+  .pk-sw::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, var(--hit, 44px));
+    height: max(100%, var(--hit, 44px));
+    transform: translate(-50%, -50%);
+  }
   .pk-sw[data-checked] {
     background: var(--success-fill);
   }
@@ -1392,6 +1402,19 @@
       background-color var(--dur-micro) var(--ease-out),
       border-color var(--dur-micro) var(--ease-out),
       color var(--dur-micro) var(--ease-out);
+  }
+  /* área de toque de 44 px de largura (o botão estreita para uns 42 px no iPhone; o vão de 6 px absorve) */
+  .pk-day {
+    position: relative;
+  }
+  .pk-day::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, var(--hit, 44px));
+    height: max(100%, var(--hit, 44px));
+    transform: translate(-50%, -50%);
   }
   .pk-day > svg {
     font-size: 13px;

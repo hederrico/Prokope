@@ -6,7 +6,11 @@ import { correlation } from '@/domain/correlation';
 import { dayCount, habitStrength, habitTotals, pillarConstancies, weekConstancy, weekProgress } from '@/domain/stats';
 import { counterView, journeyView, progressView, todayView } from '@/domain/views';
 import { weightTrend } from '@/domain/weight';
-import { storyAt } from './helpers';
+import { buildDomainData } from '@/domain/context';
+import { instantAt, DEFAULT_CLOCK } from '@/domain/day';
+import { phaseTimeline } from '@/domain/phases';
+import { buildDemoOps } from '@/data/seed';
+import { opsToRaw, storyAt, testId } from './helpers';
 
 const THU = '2026-10-22';
 
@@ -66,6 +70,27 @@ describe('a história, na quinta', () => {
     expect(pcs.map((p) => p[0])).toEqual(['Família', 'Mente', 'Corpo', 'Alimentação']);
     expect(pcs[0][1]).toBe(88);
     expect(pcs[1][1]).toBe(82);
+  });
+
+  it('Progresso às 18h15: 76% no total, Família 88%, Mente 82%; Corpo e Alimentação pela fórmula', () => {
+    const { data } = storyAt(THU, '18:15');
+    expect(Math.round(weekConstancy(data, THU, THU).ratio! * 100)).toBe(76);
+    const pcs = Object.fromEntries(
+      pillarConstancies(data, '2026-10-19', '2026-10-25', THU).map((p) => [
+        data.pillarById.get(p.pillarId)!.name,
+        Math.round(p.ratio! * 100),
+      ]),
+    );
+    // O quadro diz Corpo 71% e Alimentação 64%, números que a fórmula não alcança na quinta: o Corpo tem só a
+    // caminhada (3 de 4 dias; 71% pede 5 de 7, a semana inteira) e o futebol, que fica para as 18h50; a
+    // Alimentação tem 17 dias que contam (5 hábitos × 3 dias fechados + 2 de hoje), e 11 de 17 dá 65%.
+    expect(pcs).toEqual({ Família: 88, Mente: 82, Corpo: 75, Alimentação: 65 });
+    // água como no quadro: 3 L, 2,5 L e 3,2 L (3 L ou mais em 2 dos 3 dias fechados)
+    const water = data.habits.find((h) => h.role === 'water')!;
+    const byDay = ['2026-10-19', '2026-10-20', '2026-10-21'].map((d) =>
+      (data.entriesByHabit.get(water.id) ?? []).filter((e) => e.day === d).reduce((n, e) => n + e.amount, 0),
+    );
+    expect(byDay).toEqual([3000, 2500, 3200]);
   });
 
   it('peso perto de 84 kg, descendo 1,1 kg em 3 semanas; cintura semanal', () => {
@@ -188,5 +213,27 @@ describe('a história, na quinta', () => {
       expect(v.phase?.number).toBe(2);
       expect(daysSince(byName(data, 'Zero refrigerante'), data, day).current).toBe(12);
     }
+  });
+});
+
+describe('primeiro dia da fase 3 (segunda, 2 nov)', () => {
+  it('a semana e a fase ficam sem número até algo ser feito (os dias sem sozinhos não dão 100%)', () => {
+    const now = instantAt(THU, '21:00', DEFAULT_CLOCK);
+    const raw = opsToRaw(buildDemoOps(now, testId)) as unknown as {
+      phases: Record<string, Record<string, unknown>>;
+      habits: Record<string, { phase: number; startDay: string | null }>;
+    };
+    const NOV2 = '2026-11-02';
+    raw.phases['2'] = { ...raw.phases['2'], end: '2026-11-01', closedAt: now, closingConstancy: 0.8 };
+    raw.phases['3'] = { ...raw.phases['3'], start: NOV2, end: '2026-11-22' };
+    for (const h of Object.values(raw.habits)) if (h.phase === 3) h.startDay = NOV2;
+    const data = buildDomainData(raw as unknown as Parameters<typeof buildDomainData>[0]);
+    expect(weekConstancy(data, NOV2, NOV2).ratio).toBeNull();
+    const phase3 = phaseTimeline(data, NOV2).find((p) => p.number === 3)!;
+    expect(phase3.status).toBe('current');
+    expect(phase3.constancy).toBeNull();
+    expect(phase3.weekBars[0].ratio).toBeNull();
+    // o dia conta os dias sem como feitos (2 de 12), como no Hoje
+    expect(dayCount(data, NOV2, NOV2).done).toBe(2);
   });
 });

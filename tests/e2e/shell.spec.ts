@@ -6,16 +6,7 @@ import AxeBuilder from '@axe-core/playwright';
 // reduzido. Para não depender do conteúdo das telas (que cada agente troca), a navegação usa o gancho de teste
 // window.__pkShell (só existe com navigator.webdriver) e os papéis da casca (tab, dialog, botões do NavBar).
 
-interface ShellHook {
-  navigate: (to: string, opts?: { state?: unknown; replace?: boolean }) => Promise<void>;
-  showUndo: (input: { title: string; detail?: string; pillar?: string; icon?: string }, undo: () => void) => string;
-}
-declare global {
-  interface Window {
-    __pkShell: ShellHook;
-    __undone?: boolean;
-  }
-}
+// (window.__pkShell está declarado em tests/e2e/global.d.ts)
 
 async function enterDemo(page: Page) {
   // ?gestos=1 liga o arrasto da borda fora do app instalado
@@ -179,6 +170,106 @@ test.describe('casca', () => {
     await expect(page.locator('.sh-toast')).toHaveCount(0);
   });
 
+  test('um toast novo troca o anterior no lugar, e uma folha abrindo tira o toast', async ({ page }) => {
+    await enterDemo(page);
+    await settle(page);
+    await page.evaluate(() => window.__pkShell.showUndo({ title: 'Ovo · 6 g', pillar: 'alim', icon: 'egg' }, () => {}));
+    const first = page.locator('[data-sonner-toast]').filter({ hasText: 'Ovo' });
+    await expect(first).toBeVisible();
+    await settle(page);
+    const before = (await first.boundingBox())!;
+    // o anterior não sobe na pilha: some no mesmo lugar enquanto o novo entra
+    const path = await page.evaluate(async () => {
+      window.__pkShell.showUndo({ title: 'Caminhada marcada', pillar: 'familia', icon: 'check' }, () => {});
+      const ys: number[] = [];
+      for (let i = 0; i < 8; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        const old = [...document.querySelectorAll('[data-sonner-toast]')].find((el) => el.textContent?.includes('Ovo'));
+        if (old) ys.push(old.getBoundingClientRect().y);
+      }
+      return ys;
+    });
+    for (const y of path) expect(Math.abs(y - before.y)).toBeLessThanOrEqual(1);
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(1);
+    await expect(page.locator('.sh-toast')).toContainText('Caminhada marcada');
+
+    await go(page, '/hoje?folha=agua', { sheetBase: '' });
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
+  });
+
+  test('link direto numa tela empurrada: o arrasto da borda mostra a tela de cima e volta', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/ajustes/pilares?gestos=1');
+    await expect(page.locator('[data-screen="/ajustes/pilares"]')).toBeVisible();
+    await expect(page.locator('.sh-edge')).toHaveCount(1);
+    await settle(page);
+    await page.mouse.move(6, 420);
+    await page.mouse.down();
+    for (let x = 6; x <= 150; x += 10) {
+      await page.mouse.move(x, 421);
+      await page.waitForTimeout(16);
+    }
+    // a tela de cima (Ajustes) aparece por baixo durante o arrasto
+    await expect(page.locator('[data-screen="/ajustes"]')).toBeVisible();
+    for (let x = 150; x <= 280; x += 10) {
+      await page.mouse.move(x, 421);
+      await page.waitForTimeout(16);
+    }
+    await page.mouse.up();
+    await expect(page).toHaveURL(/\/ajustes$/);
+    await settle(page);
+    await expect(page.locator('[data-level="tab"]')).toHaveCount(1);
+  });
+
+  test('Novo hábito: tipo → detalhes é um passo na mesma camada, com a barra parada', async ({ page }) => {
+    await enterDemo(page);
+    await page.getByRole('tab', { name: 'Ajustes' }).click();
+    await settle(page);
+    await go(page, '/ajustes/habitos/novo/tipo');
+    await settle(page);
+    const layer = page.locator('[data-screen="/ajustes/habitos/novo"]');
+    await expect(layer).toBeVisible();
+    const title = layer.locator('.sh-nb-title');
+    const x0 = (await title.boundingBox())!.x;
+    await layer.getByRole('button', { name: /^Contador/ }).click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/novo\/detalhes\?tipo=counter/);
+    // o título fica parado enquanto o corpo troca
+    for (let i = 0; i < 5; i++) {
+      expect(Math.abs((await title.boundingBox())!.x - x0)).toBeLessThanOrEqual(1);
+      await page.waitForTimeout(60);
+    }
+    await expect(page.locator('.sh-layer')).toHaveCount(1);
+    await expect(layer.getByRole('button', { name: 'Voltar para Tipo' })).toBeVisible();
+    await layer.getByRole('button', { name: 'Voltar para Tipo' }).click();
+    await expect(page).toHaveURL(/\/ajustes\/habitos\/novo\/tipo/);
+    await expect(layer.getByRole('button', { name: 'Cancelar' })).toBeVisible();
+  });
+
+  test('o app reaberto no meio de "Apagar todos os dados" retoma o apagar', async ({ page }) => {
+    await enterDemo(page);
+    await settle(page);
+    await page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const r = indexedDB.open('prokope-local-demo', 1);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+      const tx = db.transaction('docs', 'readwrite');
+      const store = tx.objectStore('docs');
+      const row = await new Promise<{ data: Record<string, unknown> }>((resolve) => {
+        const r = store.get('profile/profile');
+        r.onsuccess = () => resolve(r.result);
+      });
+      row.data.deleting = true;
+      store.put(row);
+      await new Promise((r) => (tx.oncomplete = r));
+      db.close();
+    });
+    await page.goto('/progresso');
+    await expect(page).toHaveURL(/\/comecar\/1$/, { timeout: 10_000 });
+  });
+
   test('o Desfazer some sozinho depois de 5 s', async ({ page }) => {
     await enterDemo(page);
     await page.evaluate(() => window.__pkShell.showUndo({ title: 'Caminhada marcada' }, () => {}));
@@ -217,12 +308,17 @@ test.describe('casca', () => {
       );
       await expect(page.locator('.sh-toast')).toBeVisible();
     });
+  });
 
-    test('o interruptor "Animações" desligado reduz pelo app', async ({ page }) => {
-      await page.addInitScript(() => localStorage.setItem('pk-motion', 'off'));
-      await enterDemo(page);
-      await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
-    });
+  // a preferência do perfil é a fonte (a cópia local só adianta a primeira pintura): o teste desliga pela tela
+  test('o interruptor "Animações" desligado reduz pelo app', async ({ page }) => {
+    await enterDemo(page);
+    await page.getByRole('tab', { name: 'Ajustes' }).click();
+    await settle(page);
+    await go(page, '/ajustes/aparencia');
+    await settle(page);
+    await page.getByRole('switch', { name: /Animações/ }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
   });
 
   for (const colorScheme of ['light', 'dark'] as const) {

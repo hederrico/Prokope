@@ -6,7 +6,7 @@ import { addDays, daysBetween, instantAt, DEFAULT_CLOCK } from '@/domain/day';
 import { goalOn, habitDay } from '@/domain/habitState';
 import { phaseSuggestion, phaseTimeline } from '@/domain/phases';
 import { pillarExitPlan } from '@/domain/pillars';
-import { reviewWindow } from '@/domain/review';
+import { reviewSummary, reviewWindow } from '@/domain/review';
 import { nextSession, RUN_PLAN, runElapsed, runPosition } from '@/domain/runPlan';
 import { constancy, dayCount, ema, habitStrength, weekProgress } from '@/domain/stats';
 import { gentleNudge, isDayClosed, todayItems, todayLayout, todayMode } from '@/domain/today';
@@ -40,6 +40,16 @@ describe('estado do hábito num dia', () => {
     expect(habitDay(walk, '2026-10-21', d, TODAY).state).toBe('notDone');
     expect(habitDay(walk, '2026-10-18', d, TODAY).state).toBe('skipped');
     expect(habitDay(walk, '2026-10-11', d, TODAY).state).toBe('paused');
+    // marcar feito num dia pausado tira aquele dia da pausa, só para este hábito
+    const lifted = data({
+      habits: [walk, trash],
+      marks: [mark('walk', '2026-10-11'), mark('walk', '2026-10-12', { status: 'logged' })],
+      pauses: [pause('2026-10-10', '2026-10-12')],
+    });
+    expect(habitDay(walk, '2026-10-11', lifted, TODAY).state).toBe('done');
+    expect(habitDay(walk, '2026-10-12', lifted, TODAY).state).toBe('paused');
+    expect(habitDay(trash, '2026-10-12', lifted, TODAY).state).toBe('paused');
+    expect(constancy(lifted, '2026-10-10', '2026-10-12', TODAY, { habitId: 'walk' })).toMatchObject({ points: 1, slots: 1 });
     expect(habitDay(trash, '2026-10-21', d, TODAY).state).toBe('offSchedule'); // quarta
     expect(habitDay(trash, '2026-10-22', d, TODAY).state).toBe('notDone'); // quinta, dia de coleta
     expect(habitDay(walk, '2026-10-23', d, TODAY).state).toBe('future');
@@ -361,5 +371,22 @@ describe('pilares', () => {
 
   it('dias fora da conta não pesam na semana (addDays de apoio)', () => {
     expect(addDays(TODAY, 1)).toBe('2026-10-23');
+  });
+});
+
+describe('revisão: a frase do "olhar com carinho"', () => {
+  it('mostra o que foi feito e, sem nada feito, não começa pelo zero', () => {
+    // semana de 12 a 18 out, revista no domingo
+    const week = '2026-10-12';
+    const sunday = '2026-10-18';
+    const football = habit({ id: 'fut', name: 'Futebol', type: 'weekly', goal: { perWeek: 1 }, schedule: { days: [3], moment: 'day' } });
+    const walk = habit({ id: 'walk', name: 'Caminhada', type: 'check' });
+    const marks = daysBetween(week, sunday).slice(0, 6).map((d) => mark('walk', d));
+    const s = reviewSummary(data({ habits: [football, walk], marks }), week, sunday);
+    expect(s.gentle?.habitId).toBe('fut');
+    expect(s.gentle?.text).toBe('Futebol ficou para a próxima semana');
+    // com algo feito, a quantidade de sempre
+    const s2 = reviewSummary(data({ habits: [football, walk], marks: [...marks, mark('fut', '2026-10-15')] }), week, sunday);
+    expect(s2.highlights.find((l) => l.habitId === 'fut')?.text).toBe('Futebol: 1 de 1 na semana');
   });
 });

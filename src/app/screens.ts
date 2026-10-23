@@ -23,6 +23,9 @@ export interface ScreenDef {
   auth?: boolean;
   /** pode abrir sem sessão */
   open?: boolean;
+  /** fluxo feito de rotas diferentes (kind 'flow'): a ordem do passo, para a casca fazer a passagem de passo
+   *  entre elas (RouteSteps). Fluxos de uma rota só (/comecar/:passo) trocam o passo por dentro (StepTransition). */
+  step?: number;
   load: () => Promise<{ default: ComponentType }>;
 }
 
@@ -167,13 +170,15 @@ export const SCREENS: ScreenDef[] = [
     title: 'Hábitos',
     load: () => import('@/screens/settings/HabitsScreen'),
   },
+  // Novo hábito: tipo e detalhes são passos da mesma camada (o passo desliza, a barra fica)
   {
     path: '/ajustes/habitos/novo/tipo',
-    kind: 'full',
+    kind: 'flow',
+    step: 1,
     title: 'Novo hábito',
     load: () => import('@/screens/settings/NewHabitTypeScreen'),
   },
-  { path: '/ajustes/habitos/novo/detalhes', kind: 'full', title: 'Novo hábito', load: habitForm },
+  { path: '/ajustes/habitos/novo/detalhes', kind: 'flow', step: 2, title: 'Novo hábito', load: habitForm },
   { path: '/ajustes/habitos/:id', kind: 'push', tab: 'ajustes', title: 'Hábito', load: habit },
   { path: '/ajustes/habitos/:id/editar', kind: 'full', title: 'Editar hábito', load: habitForm },
   {

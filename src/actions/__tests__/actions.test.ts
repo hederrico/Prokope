@@ -72,12 +72,15 @@ afterEach(() => {
 describe('LocalSource', () => {
   it('guarda no aparelho, sobrevive a reabrir e avisa as mudanças', async () => {
     const a = await LocalSource.open('persist');
-    const seen: number[] = [];
-    a.listen('pillars', (docs, meta) => seen.push(docs.length + (meta.hasPendingWrites ? 100 : 0)));
+    const seen: string[] = [];
+    a.listen('pillars', (docs, meta) =>
+      seen.push(`${docs.length}${meta.hasPendingWrites ? ' esperando' : ''}${meta.metadataOnly ? ' (metadados)' : ''}`),
+    );
     await new Promise((r) => setTimeout(r, 0));
     await a.write([{ op: 'set', col: 'pillars', id: 'p1', data: { name: 'Mente' } }]);
     await a.write([{ op: 'merge', col: 'pillars', id: 'p1', data: { order: 2 } }]);
-    expect(seen).toEqual([0, 101, 101]);
+    // cada escrita: a mudança na hora (esperando) e, gravada no aparelho, só os metadados (não espera mais)
+    expect(seen).toEqual(['0', '1 esperando', '1 (metadados)', '1 esperando', '1 (metadados)']);
     await a.close();
     const b = await LocalSource.open('persist');
     expect(b.get('pillars', 'p1')).toEqual({ id: 'p1', name: 'Mente', order: 2 });
@@ -92,10 +95,18 @@ describe('registros', () => {
     await openStory('07:42');
     const walk = habitBy('Caminhada com o cachorro');
     expect(marks()[markId(THU, walk.id)]).toBeUndefined();
+    const pending: boolean[] = [];
+    const stop = useDataStore.subscribe((s, prev) => {
+      if (s.pendingWrites !== prev.pendingWrites) pending.push(s.pendingWrites);
+    });
     const undo = await markHabit(walk.id, THU);
+    stop();
     expect(marks()[markId(THU, walk.id)]?.status).toBe('done');
-    // a mudança veio deste aparelho: pode celebrar
+    // a mudança veio deste aparelho: pode celebrar (o fim da gravação não muda a origem)
     expect(useDataStore.getState().origins.marks).toBe('local');
+    // esperando enquanto grava no aparelho; gravado, volta a falso (como o Firestore com internet)
+    expect(pending).toEqual([true, false]);
+    expect(useDataStore.getState().pendingWrites).toBe(false);
     await undo();
     expect(marks()[markId(THU, walk.id)]).toBeUndefined();
     await toggleHabit(walk.id, THU);

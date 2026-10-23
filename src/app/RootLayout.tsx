@@ -4,9 +4,11 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, type FeatureBundle } from 'motion/react';
 import { useLocation, useNavigate, useNavigationType, useOutlet } from 'react-router';
 import { useSession } from '@/data/session';
+import { useProfile } from '@/data/hooks';
 import { SheetHost } from '@/components/shell/SheetHost';
 import { AppToaster } from '@/components/shell/toast';
-import { FrozenLocation, ScreenLayer, TransitionContext, type TransitionInfo } from '@/components/shell/ScreenLayer';
+import { ScreenLayer, TransitionContext, type TransitionInfo } from '@/components/shell/ScreenLayer';
+import { RouteSteps } from '@/components/shell/RouteSteps';
 import { setShellState, useShellState } from '@/components/shell/shellState';
 import { rootTransition } from '@/components/shell/transitions';
 import { usePreferences } from './preferences';
@@ -16,6 +18,7 @@ import { lastNavigation, pathOf } from './history';
 import { installDismissedRecently, isIOSSafariBrowser } from './platform';
 import { findScreen, rootKey } from './screens';
 import { Splash } from './Splash';
+import { WriteErrorToast } from './WriteErrorToast';
 
 // para onde a pessoa queria ir antes de entrar (um link direto)
 let pendingDestination: string | null = null;
@@ -23,6 +26,8 @@ let pendingDestination: string | null = null;
 export function RootLayout() {
   useApplyPreferences();
   const session = useSession();
+  // o app fechou no meio de "Apagar todos os dados": a guarda leva de volta para a tela de apagar, que retoma
+  const deleting = useProfile()?.deleting === true;
   const location = useLocation();
   const navigationType = useNavigationType();
   const navigate = useNavigate();
@@ -49,6 +54,7 @@ export function RootLayout() {
     needsOnboarding: session.needsOnboarding,
     suggestInstall: isIOSSafariBrowser() && !installDismissedRecently(),
     pending: pendingDestination,
+    deleting,
   });
   // a tela atual pode continuar na tela enquanto a guarda leva adiante (entrar, terminar o primeiro acesso);
   // uma tela que pede sessão não renderiza sem ela: fica a abertura até a guarda chegar
@@ -94,11 +100,13 @@ export function RootLayout() {
               <Splash />
             ) : (
               <TransitionContext.Provider value={info}>
-                <AnimatePresence initial={false}>
+                {/* sem initial={false}: ele passaria a todas as animações de dentro das telas e bloquearia a entrada
+                    do que aparece depois; a primeira camada já nasce parada pelo enter 'none' */}
+                <AnimatePresence>
                   <ScreenLayer key={key} id={key} level="root" enter={info.type} scrollable={key !== 'tabs'}>
-                    <FrozenLocation location={location} navigationType={navigationType}>
+                    <RouteSteps location={location} navigationType={navigationType}>
                       {outlet}
-                    </FrozenLocation>
+                    </RouteSteps>
                   </ScreenLayer>
                 </AnimatePresence>
               </TransitionContext.Provider>
@@ -107,6 +115,7 @@ export function RootLayout() {
           <SheetHost />
           <div id="sh-overlays" className="sh-sheets" />
           <AppToaster />
+          <WriteErrorToast />
         </div>
       </MotionConfig>
     </LazyMotion>

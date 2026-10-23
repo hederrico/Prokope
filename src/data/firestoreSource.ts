@@ -67,12 +67,20 @@ export class FirestoreSource implements DataSource {
     cb: (profile: Profile | null, meta: SnapshotMeta) => void,
     onError?: (e: unknown) => void,
   ): Unsubscribe {
+    // com os metadados: o "esperando internet" volta a falso quando o servidor confirma a escrita
+    let last: string | undefined;
     return onSnapshot(
       this.ref('profile', PROFILE_ID),
+      { includeMetadataChanges: true },
       (snap) => {
-        cb(snap.exists() ? (snap.data() as Profile) : null, {
+        const data = snap.exists() ? (snap.data() as Profile) : null;
+        const json = JSON.stringify(data);
+        const metadataOnly = last !== undefined && json === last;
+        last = json;
+        cb(data, {
           hasPendingWrites: snap.metadata.hasPendingWrites,
           fromCache: snap.metadata.fromCache,
+          metadataOnly,
         });
       },
       (e) => onError?.(e),
@@ -84,11 +92,16 @@ export class FirestoreSource implements DataSource {
     cb: (docs: UserCollections[C][], meta: SnapshotMeta) => void,
     onError?: (e: unknown) => void,
   ): Unsubscribe {
+    let first = true;
     return onSnapshot(
       collection(this.db, 'users', this.uid, col),
+      { includeMetadataChanges: true },
       (snap) => {
+        // sem documento mudado: só os metadados (a escrita subiu, o cache virou servidor)
+        const metadataOnly = !first && snap.docChanges().length === 0;
+        first = false;
         const docs = snap.docs.map((d) => ({ ...d.data(), id: d.id }) as unknown as UserCollections[C]);
-        cb(docs, { hasPendingWrites: snap.metadata.hasPendingWrites, fromCache: snap.metadata.fromCache });
+        cb(docs, { hasPendingWrites: snap.metadata.hasPendingWrites, fromCache: snap.metadata.fromCache, metadataOnly });
       },
       (e) => onError?.(e),
     );
@@ -98,7 +111,8 @@ export class FirestoreSource implements DataSource {
   async write(ops: WriteOp[]): Promise<void> {
     for (let i = 0; i < ops.length; i += BATCH) {
       const batch = writeBatch(this.db);
-      for (const o of ops.slice(i, i + BATCH)) {
+      const slice = ops.slice(i, i + BATCH);
+      for (const o of slice) {
         const ref = this.ref(o.col, o.id);
         if (o.op === 'delete') batch.delete(ref);
         else if (o.op === 'set') batch.set(ref, stripUndefined(o.data));
@@ -107,7 +121,7 @@ export class FirestoreSource implements DataSource {
       this.inFlight++;
       batch
         .commit()
-        .catch((e) => reportWriteError(e))
+        .catch((e) => reportWriteError(e, () => void this.write(slice)))
         .finally(() => {
           this.inFlight = Math.max(0, this.inFlight - 1);
         });

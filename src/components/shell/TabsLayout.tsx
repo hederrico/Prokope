@@ -7,15 +7,18 @@
 // anotações do que já foi mostrado (para o Voltar ter o nome certo e o arrasto mostrar a tela de baixo), e não estado
 // que deva causar outra renderização. O app não usa o React Compiler.
 /* eslint-disable react-hooks/refs */
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AnimatePresence, animate } from 'motion/react';
 import {
+  matchRoutes,
+  NavigationType,
+  UNSAFE_DataRouterContext,
+  UNSAFE_RouteContext,
   useLocation,
   useNavigate,
   useNavigationType,
   useOutlet,
   type Location,
-  type NavigationType,
 } from 'react-router';
 import { lastNavigation } from '@/app/history';
 import { findScreen, tabOf, tabRoot, type TabId } from '@/app/screens';
@@ -127,8 +130,52 @@ export function TabsLayout() {
   // ---------- voltar pelo arrasto da borda esquerda ----------
   const def = findScreen(key)?.def;
   const back = def?.kind === 'push' ? backTargetFor(key) : null;
-  const backKey = back?.path.split('?')[0];
-  const canSwipe = !!back && !!backKey && cache.current.has(backKey) && edgeSwipeEnabled();
+  const backPath = back?.path;
+  const backKey = backPath?.split('?')[0];
+  const swipeOn = edgeSwipeEnabled();
+  // num link direto, a tela de cima nunca foi mostrada nesta sessão: o desenho dela é preparado agora (o arquivo
+  // carrega e a tela renderiza com o lugar dela), para o arrasto mostrar a tela de baixo como numa pilha aberta
+  const dataRouter = useContext(UNSAFE_DataRouterContext);
+  const [, setPrepared] = useState(0);
+  useEffect(() => {
+    if (!swipeOn || !backPath || !backKey || cache.current.has(backKey) || !dataRouter) return;
+    const target = findScreen(backKey);
+    if (!target || (target.def.kind !== 'tab' && target.def.kind !== 'push')) return;
+    let alive = true;
+    target.def
+      .load()
+      .then((mod) => {
+        if (!alive || cache.current.has(backKey)) return;
+        const matches = matchRoutes(dataRouter.router.routes, backKey);
+        if (!matches?.length) return;
+        const Screen = mod.default;
+        const search = backPath.includes('?') ? backPath.slice(backPath.indexOf('?')) : '';
+        const location: Location = {
+          pathname: backKey,
+          search,
+          hash: '',
+          state: null,
+          key: `preparado-${backKey}`,
+        };
+        cache.current.set(backKey, {
+          element: (
+            <UNSAFE_RouteContext.Provider value={{ outlet: null, matches, isDataRoute: true }}>
+              <Screen />
+            </UNSAFE_RouteContext.Provider>
+          ),
+          location,
+          navigationType: NavigationType.Pop,
+        });
+        setPrepared((n) => n + 1);
+      })
+      .catch(() => {
+        /* sem o arquivo (sem internet): o arrasto fica desligado nesta tela */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [swipeOn, backPath, backKey, dataRouter]);
+  const canSwipe = !!back && !!backKey && cache.current.has(backKey) && swipeOn;
   const edgeRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const swipe = useRef({ key, backKey, goBack });
@@ -203,7 +250,9 @@ export function TabsLayout() {
     <LayerRegistryContext.Provider value={registry}>
       <TransitionContext.Provider value={info}>
         <div ref={contentRef} className="sh-tabs-content">
-          <AnimatePresence initial={false}>
+          {/* sem initial={false}, que bloquearia a entrada de tudo o que aparece depois dentro das telas;
+              a camada da primeira tela já nasce parada pelo enter 'none' */}
+          <AnimatePresence>
             {showPreview && (
               <ScreenLayer key={showPreview.key} id={showPreview.key} level="tab" enter="preview">
                 <FrozenLocation location={showPreview.location} navigationType={showPreview.navigationType}>

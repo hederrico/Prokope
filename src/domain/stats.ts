@@ -77,6 +77,8 @@ export function constancy(
 ): Constancy {
   let pts = 0;
   let slots = 0;
+  // "dias sem" de hoje contam sozinhos (sem deslize, feito): não bastam para dar uma constância ao período
+  let passive = 0;
   const end = to > today ? today : to;
   const habits = data.habits.filter(
     (h) =>
@@ -118,11 +120,14 @@ export function constancy(
         if (opts.today === 'none') continue;
         // hoje: só o que já foi feito; o contador conta quando bate a meta
         if (h.type === 'counter' ? hd.state !== 'done' : !isDoneLike(hd.state)) continue;
+        if (h.type === 'daysSince') passive++;
       }
       pts += points(hd.state);
       slots += 1;
     }
   }
+  // primeiro dia de uma semana ou fase, sem nada feito ainda: sem número (e não 100%)
+  if (slots === passive) return { ratio: null, points: 0, slots: 0 };
   return { ratio: slots ? pts / slots : null, points: pts, slots };
 }
 

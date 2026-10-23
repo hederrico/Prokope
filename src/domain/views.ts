@@ -18,7 +18,7 @@ import type { DomainData } from './context';
 import { markId } from './context';
 import { addDays, daysBetween, diffDays, instantAt, logicalDay, monthDays, parseDay, weekDays, weekStart } from './day';
 import { budgetWeek, type BudgetWeek } from './budget';
-import { correlation, nearestCorrelation, topCorrelations, type Correlation } from './correlation';
+import { correlation, topCorrelations, waitingPatterns, type Correlation } from './correlation';
 import { daysSince, type DaysSince } from './daysSince';
 import {
   formatDayHeader,
@@ -471,6 +471,8 @@ export interface ProgressView {
   insights: Insight[];
   /** o padrão mais perto de aparecer (com menos de 7 e 7) */
   waiting: Correlation | null;
+  /** quantos outros padrões estão a caminho, além do `waiting` ("Mais 2 padrões a caminho") */
+  waitingMore: number;
   /** "Semana passada ›" (ou a fase anterior) */
   previous: { kind: 'week' | 'phase'; key: DayKey | number; ratio: number | null } | null;
   mood: {
@@ -642,6 +644,7 @@ export function progressView(
     correlation: cor,
     text: insightText(cor, data.habitById.get(cor.habitId)!),
   }));
+  const waiting = insights.length ? [] : waitingPatterns(data, today);
   let previous: ProgressView['previous'] = null;
   if (range.period === 'week') {
     const pw = addDays(range.from, -7);
@@ -662,7 +665,8 @@ export function progressView(
     constancy: closedPhase?.closingConstancy ?? c.ratio,
     pillars,
     insights,
-    waiting: insights.length ? null : nearestCorrelation(data, today),
+    waiting: waiting[0] ?? null,
+    waitingMore: Math.max(0, waiting.length - 1),
     previous,
     mood: null,
     measures: null,

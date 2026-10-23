@@ -9,7 +9,12 @@ export interface GuardInput {
   suggestInstall: boolean;
   /** para onde a pessoa queria ir antes de entrar (um link direto) */
   pending?: string | null;
+  /** o perfil ficou com `deleting` (o app fechou no meio de "Apagar todos os dados"): a tela de apagar retoma */
+  deleting?: boolean;
 }
+
+/** A tela que apaga todos os dados (e retoma o apagar interrompido). */
+export const DELETE_DATA_PATH = '/ajustes/dados/apagar';
 
 const AUTH = new Set(['/instalar', '/entrar', '/entrar/sem-acesso']);
 
@@ -29,6 +34,8 @@ export function guardRedirect(pathname: string, s: GuardInput): string | null {
     case 'denied':
       return pathname === '/entrar/sem-acesso' ? null : '/entrar/sem-acesso';
     case 'ready':
+      // apagar interrompido: retoma antes de mostrar qualquer outra tela (ajustes-rotina-conta.md › Apagar)
+      if (s.deleting) return pathname === DELETE_DATA_PATH ? null : DELETE_DATA_PATH;
       if (s.needsOnboarding) return isOnboarding ? null : '/comecar/1';
       if (isAuth || isOnboarding) return s.pending && !AUTH.has(s.pending.split('?')[0]) ? s.pending : '/hoje';
       return null;
