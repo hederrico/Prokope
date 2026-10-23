@@ -1,0 +1,560 @@
+/* Folhas de registro (docs/interacao/telas/registros.md). Visual de docs/telas/f-registros.js (classes xb-*),
+   traduzido com o prefixo rg-. O resto vem do design system (pk-*) e da casca (sh-*). */
+
+@layer components {
+  /* corpo da folha: os blocos com 16 px entre si, como os filhos da .sheet do quadro */
+  .rg-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-block: 2px 4px;
+  }
+  .rg-stack > p {
+    margin: 0;
+  }
+  .rg-ttl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rg-sheet .pk-gl.in {
+    margin: 0;
+  }
+  /* o NumberFlow tem uma folga vertical para a máscara dos algarismos; aqui ela não ocupa espaço na linha */
+  .rg-sheet number-flow-react {
+    margin-block: -0.27em;
+  }
+  /* as notas de rodapé dentro da folha (.xb-sheet .foot) */
+  .rg-foot {
+    margin: 0;
+    padding: 0 4px;
+    font: 400 13px/18px var(--font-ui);
+    color: var(--text-3);
+  }
+  .rg-foot.c {
+    text-align: center;
+    text-wrap: balance;
+  }
+  .rg-foot > svg {
+    display: inline-block;
+    font-size: 15px;
+    vertical-align: -3px;
+    margin-right: 4px;
+  }
+
+  /* ---------- lista do dia (proteína e água) ---------- */
+  .rg-list {
+    border-radius: 16px;
+    background: var(--sunken);
+    overflow: hidden;
+  }
+  .rg-row + .rg-row {
+    border-top: 1px solid var(--border);
+  }
+  .rg-row {
+    overflow: hidden;
+  }
+  .rg-swipe {
+    position: relative;
+    overflow: hidden;
+  }
+  .rg-it {
+    position: relative;
+    display: grid;
+    grid-template-columns: 42px 28px minmax(0, 1fr) auto 32px;
+    gap: 10px;
+    align-items: center;
+    min-height: 52px;
+    padding: 6px 10px 6px 14px;
+    background: var(--sunken);
+    touch-action: pan-y;
+  }
+  .rg-it time {
+    font: 500 13px/1 var(--font-ui);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .rg-it b {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 500 16px/20px var(--font-ui);
+  }
+  .rg-it .v {
+    font: 600 15px/1 var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .rg-flash {
+    position: absolute;
+    inset: 0;
+    background: var(--wash);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .rg-it > :not(.rg-flash) {
+    position: relative;
+  }
+  .rg-xs {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .rg-min {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--text-2);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+  /* "Apagar", atrás da linha (deslizar para a esquerda) */
+  .rg-del {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 72px;
+    display: grid;
+    place-items: center;
+    background: var(--warning-ink);
+    color: var(--surface);
+    font: 600 14px/1 var(--font-ui);
+  }
+  .rg-del:focus-visible {
+    outline-offset: -3px;
+  }
+  /* "Whey removido · Desfazer", com o fio de 5 s */
+  .rg-strip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 52px;
+    padding: 6px 6px 6px 14px;
+    font: 400 15px/20px var(--font-ui);
+    color: var(--text-2);
+  }
+  .rg-strip button {
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 10px;
+    color: var(--accent-ink);
+    font: 600 15px/1 var(--font-ui);
+  }
+  .rg-fio {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 6px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .rg-fio > i {
+    display: block;
+    height: 100%;
+    background: var(--text-3);
+    transform-origin: left;
+    animation: rg-fio 5s linear forwards;
+  }
+  .rg-empty {
+    margin: 0;
+    padding: 16px 14px;
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
+
+  /* ---------- proteína ---------- */
+  .rg-sum {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .rg-big {
+    font: 600 44px/44px var(--font-ui);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .rg-sum .rg-big small {
+    margin-left: 3px;
+    font: 600 24px/1 var(--font-ui);
+    letter-spacing: 0;
+  }
+  .rg-sum .of {
+    margin-left: 8px;
+    font: 500 17px/1 var(--font-ui);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .rg-sum .pk-vpill {
+    flex: none;
+    margin-bottom: 2px;
+    cursor: default;
+  }
+  .rg-sum .pk-vpill > svg {
+    font-size: 14px;
+  }
+  .rg-qa {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .rg-qa .pk-q {
+    min-height: 72px;
+    border-radius: 16px;
+  }
+  .rg-qa .pk-q > svg {
+    margin-bottom: 2px;
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .rg-qa .pk-q.more > svg {
+    color: var(--text-2);
+  }
+  .rg-other {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rg-other-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  /* ---------- água ---------- */
+  .rg-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 0 4px;
+  }
+  .rg-ring .rc {
+    gap: 2px;
+  }
+  .rg-ring .rc > svg {
+    margin-bottom: 4px;
+    font-size: 24px;
+    color: var(--ink);
+  }
+  .rg-ring .rc b {
+    font: 600 38px/40px var(--font-ui);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .rg-ring .rc .cap {
+    font-variant-numeric: tabular-nums;
+  }
+  .rg-ring .pk-ringsvg circle + circle {
+    transition: stroke var(--dur-micro) var(--ease-out);
+  }
+  .rg-seal {
+    overflow: hidden;
+  }
+  .rg-seal > div {
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+  }
+  .rg-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .rg-two .pk-q {
+    min-height: 76px;
+    border-radius: 20px;
+    gap: 3px;
+  }
+  .rg-two .pk-q b {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 20px/24px var(--font-ui);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .rg-two .pk-q b > svg {
+    font-size: 18px;
+  }
+  .rg-two .pk-q small {
+    font: var(--t-caption);
+    color: var(--text-2);
+  }
+
+  /* ---------- linhas com valor à direita (deitar e acordar, tempo de tela) ---------- */
+  .rg-lg {
+    margin: 0;
+  }
+  .rg-li {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 52px;
+    padding: 10px 14px;
+  }
+  .rg-li b {
+    display: block;
+    font: 500 16px/20px var(--font-ui);
+  }
+  .rg-li small {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 4px;
+    margin-top: 2px;
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
+  .rg-ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--success-ink);
+    font-weight: 600;
+  }
+  .rg-ok svg {
+    display: block;
+    font-size: 13px;
+  }
+  .rg-diff {
+    color: var(--text-2);
+  }
+
+  /* ---------- nota ---------- */
+  .rg-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .rg-opts .pk-opt {
+    min-height: 50px;
+    padding: 8px 14px 8px 8px;
+    width: 100%;
+  }
+  .rg-o {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font: 500 16px/20px var(--font-ui);
+    color: var(--text);
+    transition: color var(--dur-micro) var(--ease-out);
+  }
+  .rg-o .n {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    font: 600 15px/1 var(--font-ui);
+    color: var(--text-2);
+    transition:
+      background-color var(--dur-micro) var(--ease-out),
+      border-color var(--dur-micro) var(--ease-out),
+      color var(--dur-micro) var(--ease-out);
+  }
+  .pk-opt[data-checked] .rg-o {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .pk-opt[data-checked] .rg-o .n {
+    background: var(--fill);
+    border-color: var(--mark);
+    color: var(--on);
+  }
+  .rg-chips .pk-chip {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  .rg-grp {
+    display: flex;
+    flex-direction: column;
+  }
+  .rg-grp .pk-gl.in > span {
+    color: var(--text-3);
+  }
+
+  /* ---------- check-in ---------- */
+  .rg-gf {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .rg-good {
+    gap: 10px;
+    scroll-margin-block: 16px;
+  }
+  .rg-good:focus-within {
+    background: var(--surface);
+  }
+  .rg-n {
+    width: 22px;
+    height: 22px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    font: 600 12px/1 var(--font-ui);
+    transition:
+      background-color var(--dur-micro) var(--ease-out),
+      color var(--dur-micro) var(--ease-out),
+      box-shadow var(--dur-micro) var(--ease-out);
+  }
+  .rg-good:focus-within .rg-n.ph {
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    box-shadow: none;
+  }
+  .rg-n.ph {
+    background: transparent;
+    color: var(--text-3);
+    box-shadow: inset 0 0 0 1.5px var(--border-strong);
+  }
+  /* campo de minutos com a cara do TimeValue: mostra "1h 48min" fora do foco */
+  .rg-mins {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border-radius: 9px;
+    background: var(--sunken);
+    color: var(--text);
+    font: 500 16px/22px var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: text;
+    scroll-margin-block: 16px;
+  }
+  .rg-mins:focus-within {
+    outline: 2.5px solid var(--accent-mark);
+    outline-offset: 2px;
+  }
+  .rg-auto {
+    display: inline-grid;
+    align-items: center;
+  }
+  .rg-auto::after {
+    content: attr(data-value) ' ';
+    grid-area: 1 / 1;
+    visibility: hidden;
+    white-space: pre;
+    font: inherit;
+    letter-spacing: inherit;
+  }
+  .rg-auto > input {
+    grid-area: 1 / 1;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: inherit;
+    outline: none;
+  }
+  .rg-auto > input::placeholder {
+    color: var(--text-3);
+    opacity: 1;
+  }
+  .rg-mins .rg-auto {
+    min-height: 34px;
+    padding: 6px 11px;
+    text-align: right;
+  }
+
+  /* ---------- deslize ---------- */
+  .rg-stats {
+    border-radius: 18px;
+    background: var(--sunken);
+  }
+  .rg-stats .v {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .rg-stats .was {
+    color: var(--text-3);
+    font-weight: 500;
+  }
+  .rg-stats .v > svg {
+    flex: none;
+    font-size: 16px;
+    color: var(--text-3);
+  }
+  .rg-stats .k > svg {
+    color: var(--text-3);
+  }
+
+  /* ---------- peso ---------- */
+  .rg-wbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 92px;
+    padding: 0 16px;
+    border-radius: 20px;
+    background: var(--sunken);
+    box-shadow: inset 0 0 0 0 var(--accent-mark);
+    cursor: text;
+    transition: box-shadow var(--dur-micro) var(--ease-out);
+  }
+  .rg-wbox:focus-within {
+    box-shadow: inset 0 0 0 2px var(--accent-mark);
+  }
+  .rg-wbox .rg-big {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+    font-size: 52px;
+    line-height: 56px;
+  }
+  .rg-wbox .rg-auto {
+    text-align: right;
+    caret-color: var(--accent-mark);
+  }
+  .rg-wbox .rg-auto > input {
+    min-width: 1ch;
+  }
+  .rg-wbox small {
+    margin-left: 6px;
+    font: 600 22px/1 var(--font-ui);
+    letter-spacing: 0;
+    color: var(--text-3);
+  }
+}
+
+@keyframes rg-fio {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-fio > i {
+    animation-timing-function: steps(5, end);
+  }
+}

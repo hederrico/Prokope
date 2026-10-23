@@ -1,0 +1,613 @@
+/* Hoje: o que é só desta tela (quadro f-hoje.js, prefixo .xh-, e os estados do Hoje em f-estados.js, .xs-).
+   As peças do design system vêm de src/components/ui (pk-*). Durações e curvas só pelos tokens. */
+
+.td-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.td-pad {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.td-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.td-days {
+  position: relative;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.td-day {
+  position: relative;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.td-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 24px;
+}
+.td-body-fill {
+  flex: 1 0 auto;
+}
+.td-spacer {
+  flex: 1 1 auto;
+  min-height: 24px;
+}
+.td-t16 {
+  display: block;
+  font: 600 16px/20px var(--font-ui);
+}
+
+/* ---------- cascata da primeira abertura (fadeUp, 30 ms entre blocos, no máximo 6) ---------- */
+@keyframes td-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes td-fade {
+  from {
+    opacity: 0;
+  }
+}
+.td-cascade :is(.td-c0, .td-c1, .td-c2, .td-c3, .td-c4, .td-c5) {
+  animation: td-up var(--dur-base) var(--ease-out) both;
+}
+.td-cascade .td-c1 {
+  animation-delay: 30ms;
+}
+.td-cascade .td-c2 {
+  animation-delay: 60ms;
+}
+.td-cascade .td-c3 {
+  animation-delay: 90ms;
+}
+.td-cascade .td-c4 {
+  animation-delay: 120ms;
+}
+.td-cascade .td-c5 {
+  animation-delay: 150ms;
+}
+/* depois do esqueleto: o conteúdo entra no mesmo lugar, com opacidade em base e sem cascata */
+.td-fadein .td-days {
+  animation: td-fade var(--dur-base) var(--ease-out) both;
+}
+
+/* ---------- linhas ---------- */
+.td-sub {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.td-sub.td-accent {
+  color: var(--accent-ink);
+}
+.td-skip {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: none;
+  border: 2px dotted var(--border-strong);
+  transition: border-color var(--dur-micro) var(--ease-out);
+}
+/* o convite gentil fica dentro da linha: sem divisória acima */
+.pk-lst > .td-nudge-li {
+  border-top: 0;
+  overflow: hidden;
+}
+.td-nudge-li .pk-nudge > span {
+  display: block;
+}
+
+/* ---------- semana ---------- */
+.td-wkc .pk-wkbare > .pk-wk {
+  padding: 4px 6px 12px;
+}
+.td-wk-swipe {
+  touch-action: pan-y;
+  overflow: hidden;
+}
+.td-wk-cap {
+  font: var(--t-caption);
+  color: var(--text-2);
+}
+.td-tweak {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  margin-top: -4px;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--border);
+  font: 500 13px/17px var(--font-ui);
+  color: var(--text-2);
+  text-align: left;
+  cursor: pointer;
+}
+.td-tweak > svg {
+  flex: none;
+  font-size: 16px;
+  color: var(--accent-ink);
+}
+
+/* ---------- convite da revisão (domingo) ---------- */
+.td-rev {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--accent-wash);
+  box-shadow: none;
+}
+.td-rev-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.td-rev-h .eyebrow {
+  margin-bottom: 2px;
+}
+.td-rev-bub,
+.td-ci-bub,
+.td-past-bub,
+.td-hug-bub {
+  background: var(--surface);
+  color: var(--accent-ink);
+}
+.td-rev .pk-wkbare > .pk-wk {
+  padding: 2px 0;
+}
+.td-rev-lead {
+  margin: 0;
+  font: 400 15px/20px var(--font-ui);
+  color: var(--text);
+}
+
+/* ---------- contadores ---------- */
+.td-counter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.td-counter-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.td-counter-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: -6px 0;
+  cursor: pointer;
+}
+.td-counter-name b {
+  font: 600 16px/20px var(--font-ui);
+}
+.td-counter-t {
+  font: var(--t-sub);
+  white-space: nowrap;
+}
+.td-counter-t b {
+  font-weight: 600;
+}
+.td-water .pk-ringbox .rc {
+  color: var(--ink);
+  font-size: 18px;
+}
+.td-water-t {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.td-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--success-ink);
+}
+.td-ok > svg {
+  font-size: 13px;
+}
+
+/* metas da noite: proteína e água à vista, sem botões */
+.td-goals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+.td-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.td-goal + .td-goal {
+  border-left: 1px solid var(--border);
+}
+.td-goal b {
+  display: block;
+  font: 600 16px/20px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.td-goal small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.td-goal small.ok {
+  color: var(--success-ink);
+}
+.td-goal small > svg {
+  font-size: 13px;
+}
+
+/* ---------- check-in da noite ---------- */
+.td-ci {
+  background: var(--accent-wash);
+  box-shadow: none;
+}
+.td-ci-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.td-ci-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.td-ci-h b,
+.td-ci-t b {
+  display: block;
+  font: 600 16px/20px var(--font-ui);
+}
+.td-ci-sub {
+  display: block;
+  font: 400 15px/20px var(--font-ui);
+  color: var(--text-2);
+}
+.td-ci-sum {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.td-ci-faces {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+  font: 500 14px/18px var(--font-ui);
+  color: var(--text-2);
+}
+.td-ci-faces > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.td-ci-faces svg {
+  width: 22px;
+  height: 22px;
+}
+.td-ci-cv {
+  color: var(--text-3);
+  font-size: 16px;
+}
+
+/* ---------- outro dia ---------- */
+.td-past-wrap {
+  padding-top: calc(var(--safe-top) + 6px);
+  padding-bottom: 12px;
+}
+.td-past {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--accent-wash);
+}
+.td-past h1 {
+  margin: 0;
+}
+.td-past h1:focus {
+  outline: none;
+}
+.td-past b {
+  display: block;
+  font: 600 16px/21px var(--font-ui);
+  color: var(--text);
+}
+.td-past small {
+  display: block;
+  margin-top: 1px;
+  font: 500 13px/17px var(--font-ui);
+  color: var(--accent-ink);
+}
+.td-back {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sh-tabbar-h, 0px) + 12px);
+  z-index: 8;
+  translate: -50% 0;
+}
+.td-back .pk-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  font-size: 16px;
+  box-shadow: var(--shadow-2);
+}
+
+/* ---------- sem internet ---------- */
+.td-off-wrap {
+  overflow: hidden;
+}
+.td-off-pad {
+  padding-bottom: 12px;
+}
+.td-off {
+  position: relative;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: var(--sunken);
+  font: 500 13px/17px var(--font-ui);
+  color: var(--text-2);
+}
+.td-off-in {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.td-off-in > svg {
+  flex: none;
+  font-size: 17px;
+}
+.td-off b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ---------- A dois ---------- */
+.td-hug {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--accent-wash);
+  font: 500 15px/20px var(--font-ui);
+}
+.td-hug b {
+  font-weight: 600;
+}
+.td-peer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.td-peer-av {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--text-2);
+  font: 600 16px/1 var(--font-ui);
+}
+.td-peer-t {
+  flex: 1;
+  min-width: 0;
+}
+.td-peer-t b {
+  display: block;
+  font: 600 15px/20px var(--font-ui);
+}
+.td-peer-t small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+.td-hugbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font: 600 14px/1 var(--font-ui);
+}
+.td-hugbtn > svg {
+  font-size: 18px;
+}
+
+/* ---------- pausa ---------- */
+.td-pause-wrap {
+  padding-top: 12px;
+}
+.td-pause {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 20px 10px;
+  text-align: center;
+}
+.td-pause .ttl2 {
+  margin: 4px 0 0;
+}
+.td-pause p {
+  max-width: 296px;
+  margin: 0;
+  font: 400 15px/21px var(--font-ui);
+  color: var(--text-2);
+}
+.td-pause-bub {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+.td-pause-fold {
+  padding-bottom: 16px;
+}
+
+/* ---------- corrida minimizada ---------- */
+.td-run {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: calc(var(--safe-top) + 8px) 16px 8px;
+  background: var(--fill);
+  color: var(--on, var(--ink));
+  font: 600 15px/20px var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+.td-run-t {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.td-run-clock {
+  font: 600 17px/1 var(--font-ui);
+}
+.td-run-i {
+  font: 500 13px/1 var(--font-ui);
+  opacity: 0.8;
+}
+
+/* ---------- carregando ---------- */
+.td-skel-rg {
+  border-radius: 50%;
+  background: var(--sunken);
+}
+.td-skel-rg b {
+  color: var(--text-3) !important;
+  font-weight: 500 !important;
+}
+.td-skel-wk .pk-wkh {
+  min-height: 44px;
+}
+.td-skel-gl {
+  padding: 26px 20px 12px;
+}
+.td-slow {
+  margin: 20px 0 0;
+  text-align: center;
+}
+
+/* ---------- dia fechado ---------- */
+.td-closed-root {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.td-closed {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 460px;
+  padding: calc(var(--safe-top) + 24px) 32px 16px;
+  text-align: center;
+}
+.td-closed-ring .rc {
+  gap: 2px;
+}
+.td-closed-n {
+  font: 400 60px/1 var(--font-display);
+  font-variation-settings: var(--display-vs);
+}
+.td-closed-h {
+  margin: 22px 0 0;
+}
+.td-closed-h:focus {
+  outline: none;
+}
+.td-closed-p {
+  max-width: 300px;
+  margin: 0;
+  font: 400 15px/21px var(--font-ui);
+  color: var(--text-2);
+}
+.td-closed-day {
+  overflow: hidden;
+}
+.td-closed-tm {
+  padding-bottom: 20px;
+}
+
+/* ---------- menu do hábito ---------- */
+.td-mh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.td-mh b {
+  display: block;
+  font: 500 22px/26px var(--font-display);
+  font-variation-settings: var(--display-vs);
+}
+.td-mh small {
+  display: block;
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.td-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.td-menu .pk-lg {
+  background: var(--surface);
+}
+.td-menu .pk-li {
+  min-height: 56px;
+}
