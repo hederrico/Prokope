@@ -532,6 +532,29 @@ O ícone do Phosphor, ou a `Salsicha` para o cachorro. Quadro: `ico()`.
 type IconProps = { name: IconName | 'salsicha'; weight?: 'regular' | 'duotone' | 'fill' | 'bold'; size?: number };
 ```
 
+## ZenoHost (o palco do Zeno)
+
+O Zeno por cima da tela, desenhado em three.js ([../mascote/README.md](../mascote/README.md) › No app). Não é um componente de tela: fica uma vez só no `RootLayout`, e as telas e o tutorial falam com ele por `useZeno()`.
+
+- **Camada:** dentro do `.sh-app`, com z-index 70. Fica acima das folhas (40) e do véu do tutorial (60), e abaixo do balão (80) e dos toasts. O véu e o balão precisam morar no mesmo `.sh-app` para essa ordem valer.
+- **Tamanho:** o canvas tem só o tamanho do Zeno (cerca de 240 × 270 pontos no iPhone) e anda com ele pela tela, por `transform`. Nunca cobre a tela inteira. A densidade do desenho é a da tela, no máximo 2.
+- **Toque:** o palco não pega toque (`pointer-events: none`). Só o corpo dele pega, numa área que acompanha a cabeça e o casco. Tocar nele dá um "oi"; tocar na tela faz ele olhar para o ponto, e o toque segue para o app normalmente.
+- **Lugares:** `'bottom'` (os pés acima da barra de abas e da área segura), `'top'` (a cabeça abaixo do cabeçalho da tela) e `{ awayFrom: alvo }` (o lado oposto ao alvo, sem cobrir o alvo). Quando a barra de abas aparece ou some, ele desliza até o lugar novo.
+- **Balão:** o texto não é dele. Quem conduz põe o balão perto de `anchor()`, o retângulo da cabeça na tela, e segue o `onMove()`. A âncora não acompanha a respiração nem o olhar, para o balão não tremer.
+- **Estados:** fora de cena (nada desenhado; o canvas some e, depois de 30 s, a GPU é solta), entrando, à toa (30 quadros por segundo), em ação (60), dormindo (30, com a bolha) e indisponível ("Mostrar o Zeno" desligado ou sem WebGL: nada aparece).
+- **Animações:** as do laboratório, com as molas `calma`, `toque` e `festa`. Reduzido: poses trocadas por opacidade em 150 ms, sem respiração, piscada, pulo nem coisinhas à toa ([movimento.md](movimento.md) › A exceção do Zeno).
+- **Acessibilidade:** o desenho fica escondido do leitor de tela (`aria-hidden`), e a área de toque não recebe foco. Tudo o que ele "diz" é texto de verdade no balão, com `aria-live`.
+- **Tema:** o corpo tem cores fixas; as placas do casco seguem as cores dos pilares ativos (`usePillars`), no papel `fill` do tema, e trocam em 240 ms. No escuro, a luz baixa um pouco.
+
+```ts
+const zeno = useZeno();
+if (zeno.available) {
+  await zeno.enter({ place: { awayFrom: '[data-tour="pp-mark"]' }, wave: true });
+  await zeno.pointAt('[data-tour="pp-mark"]');
+  zeno.talk('Toque no círculo para marcar.');
+}
+```
+
 ## Estilos de texto
 
 Sem componente, só classes: `.eyebrow` (sobretítulo em caixa alta), `.lead` (texto de apoio de 16 px), `.foot` (nota de rodapé de lista, 13 px), `.cap`, `.micro`, `.sub`, `.lt`, `.ttl2`, `.ttl3`, `.disp`, `.disp-num`. No app, viram utilitários do Tailwind no `@theme`.

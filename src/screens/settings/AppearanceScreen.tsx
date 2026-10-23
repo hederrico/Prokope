@@ -1,18 +1,20 @@
 // Aparência: o tema troca ao vivo, sem salvar (as cores passam em base); Animações só reduz (com o Reduzir Movimento
 // do iPhone, o interruptor fica desligado e travado, com o aviso de onde mudar); o som toca uma vez ao ligar; o jeito
-// de ver o Hoje (o mesmo do botão no topo do Hoje, hoje.md › Os três jeitos de ver o dia); e a Privacidade do peso
-// (ajustes-rotina-conta.md › Aparência).
+// de ver o Hoje (o mesmo do botão no topo do Hoje, hoje.md › Os três jeitos de ver o dia); "Mostrar o Zeno"; e a
+// Privacidade do peso (ajustes-rotina-conta.md › Aparência).
 import { useRef, useState } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { NavBar } from '@/components/shell';
 import { ListGroup, ListItem, SectionLabel } from '@/components/ui';
 import { todayViewOf, usePrefs } from '@/data';
-import { setMotion, setSound, setTheme, setTodayView, setWeightTrendOnly } from '@/actions';
+import { setMotion, setSound, setTheme, setTodayView, setWeightTrendOnly, setZenoShown } from '@/actions';
+import { zenoShown } from '@/domain/tutorial';
 import { Icon } from '@/icons';
 import { fadeUp, tween } from '@/motion/tokens';
 import { useSystemReducedMotion } from '@/motion/reducedMotion';
 import { playSoftTick, unlockAudio } from '@/motion/sound';
 import { TodayViewOptions } from '@/screens/today/TodayViewPicker';
+import { webglSupported } from '@/zeno';
 import { Foot } from './parts';
 import { useSynced } from './hooks';
 import { ThemePicker } from './ThemePreview';
@@ -106,6 +108,23 @@ export default function AppearanceScreen() {
           </li>
         </ul>
       </div>
+
+      <SectionLabel>Zeno</SectionLabel>
+      <div className="st-pad">
+        <ListGroup>
+          <ListItem
+            icon="hand-waving"
+            title="Mostrar o Zeno"
+            subtitle="A tartaruga que apresenta o app e aparece em alguns momentos."
+            toggle={{ checked: zenoShown(prefs), onCheckedChange: (on) => void setZenoShown(on) }}
+          />
+        </ListGroup>
+      </div>
+      <Foot>
+        {webglSupported()
+          ? 'Sem ele, o tutorial segue igual, só com o texto.'
+          : 'Este aparelho não desenha o Zeno. O tutorial segue igual, só com o texto.'}
+      </Foot>
 
       <SectionLabel>Privacidade</SectionLabel>
       <div className="st-pad">

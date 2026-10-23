@@ -1,5 +1,5 @@
 // A raiz do app: movimento (LazyMotion e MotionConfig), aparência, guarda da sessão, a camada de cima
-// (as abas ou uma tela cheia, com a passagem certa), as folhas do ?folha= e os toasts.
+// (as abas ou uma tela cheia, com a passagem certa), as folhas do ?folha=, o palco do Zeno e os toasts.
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, type FeatureBundle } from 'motion/react';
 import { useLocation, useNavigate, useNavigationType, useOutlet } from 'react-router';
@@ -20,6 +20,7 @@ import { findScreen, rootKey } from './screens';
 import { Splash } from './Splash';
 import { rememberPillars, splashAgain, splashDone } from './splashBridge';
 import { WriteErrorToast } from './WriteErrorToast';
+import { ZenoHost } from '@/zeno';
 
 // para onde a pessoa queria ir antes de entrar (um link direto)
 let pendingDestination: string | null = null;
@@ -128,6 +129,7 @@ export function RootLayout() {
           </div>
           <SheetHost />
           <div id="sh-overlays" className="sh-sheets" />
+          <ZenoHost />
           <AppToaster />
           <WriteErrorToast />
           {session.status === 'ready' && <SplashMemory />}

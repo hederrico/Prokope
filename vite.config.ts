@@ -102,6 +102,9 @@ export default defineConfig({
           groups: [
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
             { name: 'icons', test: /node_modules[\\/]@phosphor-icons[\\/]/ },
+            // o Zeno (o three.js e o desenho dele) não tem grupo: um grupo puxa as dependências junto, e o pedaço
+            // principal passaria a importar o three. Ele fica no zeno3d-*.js, que só o import() de src/zeno/index.ts
+            // carrega, e entra no pacote offline (o globPatterns pega todo .js; fica abaixo do limite de 2 MiB do Workbox)
           ],
         },
       },

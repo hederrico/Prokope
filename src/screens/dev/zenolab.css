@@ -1,0 +1,68 @@
+/* O Zeno no app (/dev/zeno): só em desenvolvimento e no build dos testes. Usa a casca da galeria (gallery.css). */
+.zx {
+  padding-bottom: calc(var(--safe-bottom) + 220px);
+}
+.zx-stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 14px;
+  margin: 0;
+  font: 500 13px/18px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.zx-stat dt {
+  color: var(--text-2);
+}
+.zx-stat dd {
+  margin: 0;
+}
+/* os alvos ficam espalhados: um em cada canto e um no meio */
+.zx-field {
+  position: relative;
+  height: 240px;
+  border-radius: var(--r-card, 20px);
+  background: var(--sunken);
+}
+.zx-alvo {
+  position: absolute;
+  min-width: 88px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--raised);
+  box-shadow:
+    var(--shadow-1),
+    inset 0 0 0 1px var(--border);
+  color: var(--text);
+  font: 600 15px/1 var(--font-ui);
+  touch-action: manipulation;
+}
+.zx-alvo:focus-visible {
+  outline: 2.5px solid var(--accent-mark);
+  outline-offset: 2px;
+}
+.zx-a1 {
+  left: 12px;
+  top: 12px;
+}
+.zx-a2 {
+  right: 12px;
+  top: 12px;
+}
+.zx-a3 {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+}
+.zx-a4 {
+  right: 12px;
+  bottom: 12px;
+}
+.zx-anchor {
+  position: fixed;
+  z-index: 75;
+  pointer-events: none;
+  border: 1.5px dashed var(--accent-mark);
+  border-radius: 12px;
+}

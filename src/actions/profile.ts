@@ -1,4 +1,4 @@
-// Preferências e rotina do perfil: tema, animações, som, privacidade do peso, horários, revisão,
+// Preferências e rotina do perfil: tema, animações, som, o Zeno, privacidade do peso, horários, revisão,
 // coleta do lixo, tolerância do fim de semana.
 import { setPreferences } from '@/app/preferences';
 import type { Profile, ScheduleKey, ThemePref, TimeHM, TodayViewPref, Weekday } from '@/types';
@@ -34,6 +34,8 @@ export const setRunSound = (on: boolean) => setPref('runSound', on);
 export const setWeightTrendOnly = (on: boolean) => setPref('weightTrendOnly', on);
 /** Jeito de ver o Hoje (o botão no topo do Hoje e Ajustes › Aparência); vale para a pessoa, em todos os aparelhos. */
 export const setTodayView = (view: TodayViewPref) => setPref('todayView', view);
+/** "Mostrar o Zeno" (Ajustes › Aparência). Desligado, o tutorial segue só com o balão; leia com zenoShown. */
+export const setZenoShown = (on: boolean) => setPref('zeno', on);
 
 /**
  * Muda um horário a partir de hoje. Os dias que passaram guardam a meta da época (scheduleLog),
