@@ -1,0 +1,689 @@
+/* Entrada e primeiro acesso (docs/telas/f-entrada.js, prefixo .xa-, e os quadros Instalar e Conta sem acesso de
+   f-estados.js, prefixo .xs-). Aqui o prefixo é ob-, para não cruzar com pk- (componentes) e sh- (casca).
+   Durações e curvas só pelos tokens (--dur-*, --ease-*). */
+
+@layer components {
+  /* ---------- entrar ---------- */
+  .ob-hero {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 32px 0;
+    text-align: center;
+  }
+  .ob-art {
+    position: relative;
+    width: 264px;
+    height: min(260px, 40dvh);
+    margin-bottom: min(32px, 4dvh);
+  }
+  .ob-art::before {
+    content: '';
+    position: absolute;
+    inset: -40px -64px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in oklch, var(--accent-wash) 90%, transparent), transparent);
+  }
+  .ob-art svg {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .ob-trail {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 5 8;
+  }
+  .ob-walked {
+    fill: none;
+    stroke: var(--accent-mark);
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .ob-pt {
+    fill: var(--fill);
+    stroke: var(--mark);
+    stroke-width: 2;
+  }
+  .ob-start {
+    fill: var(--accent-mark);
+  }
+  .ob-end {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 2;
+  }
+  .ob-halo {
+    fill: color-mix(in oklch, var(--accent-fill) 55%, transparent);
+  }
+  .ob-here {
+    fill: var(--accent-ink);
+    stroke: var(--bg);
+    stroke-width: 2;
+  }
+  /* telas baixas (letra grande no iPhone pequeno): a ilustração some */
+  @media (max-height: 600px) {
+    .ob-art {
+      display: none;
+    }
+  }
+  .ob-brand {
+    margin: 0;
+    font: 430 58px/1 var(--font-display);
+    font-variation-settings: var(--display-vs);
+    letter-spacing: -0.025em;
+  }
+  .ob-greek {
+    margin: 10px 0 0;
+    font: italic 400 22px/28px var(--font-display);
+    color: var(--accent-ink);
+    letter-spacing: 0.02em;
+  }
+  .ob-tagline {
+    margin: 22px 0 0;
+    font: 500 18px/24px var(--font-ui);
+    color: var(--text);
+  }
+  .ob-what {
+    margin: 6px 0 0;
+    font: 400 16px/22px var(--font-ui);
+    color: var(--text-2);
+  }
+  .ob-signin-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 8px;
+  }
+  .ob-legal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 0;
+    font: 400 13px/18px var(--font-ui);
+    color: var(--text-2);
+    text-align: center;
+  }
+  .ob-legal > svg {
+    flex: none;
+    font-size: 15px;
+  }
+  /* aviso gentil acima do botão (login cancelado, Google ainda desligado): nunca vermelho */
+  .ob-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 2px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: var(--sunken);
+    font: 400 14px/19px var(--font-ui);
+    color: var(--text-2);
+    text-align: left;
+  }
+  .ob-notice > svg {
+    flex: none;
+    margin-top: 1px;
+    font-size: 17px;
+    color: var(--accent-ink);
+  }
+  .ob-g {
+    width: 19px;
+    height: 19px;
+    flex: none;
+  }
+
+  /* ---------- tela cheia com centro (conta sem acesso) ---------- */
+  .ob-center {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 28px;
+    text-align: center;
+  }
+  .ob-center h1 {
+    margin: 6px 0 0;
+    text-wrap: balance;
+  }
+  .ob-center p {
+    margin: 0;
+    font: 400 16px/23px var(--font-ui);
+    color: var(--text-2);
+    text-wrap: pretty;
+  }
+  /* a mão fica num ladrilho claro com sombra, como no quadro */
+  .ob-hand {
+    box-shadow: var(--shadow-1);
+  }
+  .ob-who {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    margin: 2px 0 4px;
+    padding: 6px 14px 6px 6px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow:
+      var(--shadow-1),
+      inset 0 0 0 1px var(--border);
+    font: 500 15px/20px var(--font-ui);
+    color: var(--text);
+    overflow-wrap: anywhere;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .ob-ini {
+    width: 28px;
+    height: 28px;
+    flex: none;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--sunken);
+    color: var(--text-2);
+    font: 600 13px/1 var(--font-ui);
+  }
+  .ob-denied-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 8px;
+  }
+  .ob-denied-foot .ob-legal {
+    margin-top: 6px;
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
+  .ob-denied-foot .ob-legal > svg {
+    font-size: 14px;
+  }
+  .ob-copy svg {
+    font-size: 19px;
+  }
+  .ob-copy > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ---------- instalar no iPhone ---------- */
+  .ob-inst {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 16px 0;
+  }
+  .ob-inst-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 4px;
+  }
+  .ob-inst-brand b {
+    display: block;
+    font: 480 22px/26px var(--font-display);
+    font-variation-settings: var(--display-vs);
+  }
+  .ob-inst-brand small {
+    display: block;
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
+  .ob-inst h1 {
+    margin: 0;
+    padding: 4px 4px 0;
+  }
+  .ob-inst .lead {
+    margin: 0;
+    padding: 0 4px;
+  }
+  .ob-app {
+    width: 56px;
+    height: 56px;
+    flex: none;
+    border-radius: 14px;
+    background: var(--accent-wash);
+    display: grid;
+    place-items: center;
+    box-shadow:
+      var(--shadow-1),
+      inset 0 0 0 1px color-mix(in oklch, var(--accent-mark) 25%, transparent);
+  }
+  .ob-app.sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+  .ob-app svg {
+    display: block;
+    overflow: visible;
+  }
+  .ob-mt {
+    fill: none;
+    stroke: var(--accent-mark);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-dasharray: 1.4 3.4;
+  }
+  .ob-md {
+    fill: none;
+    stroke: var(--accent-ink);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+  }
+  .ob-mc {
+    fill: var(--accent-ink);
+  }
+  .ob-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .ob-steps > li + li {
+    border-top: 1px solid var(--border);
+  }
+  .ob-step {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) 32px;
+    gap: 12px;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px 14px;
+  }
+  .ob-step b {
+    display: block;
+    font: 500 16px/20px var(--font-ui);
+  }
+  .ob-step small {
+    display: block;
+    margin-top: 2px;
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
+  .ob-step small svg {
+    display: inline;
+    font-size: 13px;
+    vertical-align: -2px;
+  }
+  .ob-n {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    font: 700 14px/1 var(--font-ui);
+  }
+  .ob-ios {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: var(--sunken);
+    color: var(--accent-ink);
+    font-size: 19px;
+  }
+  .ob-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ---------- primeiro acesso ---------- */
+  .ob-head {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 20px 4px;
+  }
+  .ob-head h1,
+  .ob-head p {
+    margin: 0;
+  }
+  .ob-head h1:focus {
+    outline: none;
+  }
+  .ob-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 16px 8px;
+  }
+  .ob-opts.pk-opts {
+    gap: 12px;
+  }
+  .ob-opt.pk-opt {
+    align-items: start;
+    width: 100%;
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .ob-opt > span:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .ob-opt .pk-radio {
+    margin-top: 9px;
+  }
+  .ob-oh {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+  }
+  .ob-oh b {
+    display: block;
+    margin-bottom: 3px;
+    font: 600 17px/22px var(--font-ui);
+  }
+  .ob-od {
+    display: block;
+    font: 400 15px/21px var(--font-ui);
+    color: var(--text-2);
+  }
+  .ob-pd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ob-pd .pk-tag {
+    background: var(--surface);
+  }
+  /* nota e legendas no estilo .foot do quadro (sem o utilitário, que ganharia da camada components) */
+  .ob-note,
+  .ob-cap {
+    margin: 0;
+    font: 400 13px/18px var(--font-ui);
+    color: var(--text-3);
+  }
+  .ob-note {
+    padding: 4px 8px 0;
+  }
+  .ob-note > svg {
+    display: inline;
+    font-size: 15px;
+    vertical-align: -2px;
+    margin-right: 4px;
+  }
+  .ob-cap {
+    padding: 0 12px;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .ob-pils-foot {
+    margin: 0;
+    padding: 0 6px;
+    font: 400 13px/18px var(--font-ui);
+    color: var(--text-3);
+  }
+  .ob-cta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ob-link {
+    position: relative;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--accent-ink);
+    cursor: pointer;
+  }
+
+  /* passo 2: pilares */
+  .ob-pils {
+    overflow: hidden;
+  }
+  .ob-pils-list > * + * {
+    border-top: 1px solid var(--border);
+  }
+  .ob-pil-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px 8px;
+  }
+  .ob-pil-open {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .ob-pil-open .pk-bub {
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      color var(--dur-base) var(--ease-out);
+  }
+  .ob-pil-open:focus-visible {
+    outline-offset: 2px;
+  }
+  .ob-pil-off .pk-ht b {
+    color: var(--text-2);
+  }
+  .ob-pc {
+    overflow: hidden;
+  }
+  .ob-pc-in {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px 14px;
+  }
+  .ob-pc-in .cap {
+    margin: 0;
+  }
+  .ob-pil-off .ob-pil-row {
+    padding-bottom: 11px;
+  }
+
+  /* passo 3: rotina */
+  .ob-row {
+    cursor: pointer;
+  }
+  .ob-row .pk-tval {
+    transition:
+      background-color var(--dur-micro) var(--ease-out),
+      box-shadow var(--dur-micro) var(--ease-out),
+      color var(--dur-micro) var(--ease-out);
+  }
+  /* o valor tocado ganha o contorno da primária enquanto a roda está aberta */
+  .ob-row .pk-tval:focus-within {
+    outline: none;
+    background: var(--accent-wash);
+    box-shadow: inset 0 0 0 1.5px var(--accent-mark);
+    color: var(--accent-ink);
+  }
+  .ob-review {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 11px;
+    border-radius: 9px;
+    background: var(--sunken);
+    color: var(--text);
+    font: 500 16px/22px var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-micro) var(--ease-out),
+      box-shadow var(--dur-micro) var(--ease-out),
+      color var(--dur-micro) var(--ease-out);
+  }
+  .ob-review:focus-within {
+    background: var(--accent-wash);
+    box-shadow: inset 0 0 0 1.5px var(--accent-mark);
+    color: var(--accent-ink);
+  }
+  .ob-review > span {
+    position: relative;
+  }
+  .ob-review select,
+  .ob-review input {
+    position: absolute;
+    inset: -6px 0;
+    width: 100%;
+    min-height: 44px;
+    opacity: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  /* o dia ocupa a metade esquerda do valor (alvo de 44 px) */
+  .ob-review select {
+    inset: -6px -4px -6px -11px;
+    width: auto;
+  }
+  .ob-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 14px 14px;
+  }
+  .ob-col .pk-li {
+    padding: 0;
+    min-height: 0;
+  }
+
+  /* formulário do pilar (folha local) */
+  .ob-pf {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 8px;
+  }
+  .ob-pf-prev {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+  }
+  .ob-pf-prev .pk-bub {
+    background: var(--surface);
+  }
+  .ob-pf-prev b {
+    display: block;
+    font: 500 26px/32px var(--font-display);
+    font-variation-settings: var(--display-vs);
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  .ob-pf-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 0 4px 6px;
+    font: var(--t-sub);
+    color: var(--text);
+  }
+  .ob-pf-label span {
+    font: var(--t-caption);
+    color: var(--text-3);
+  }
+  .ob-colors {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px 0;
+    justify-items: center;
+    padding: 2px 0;
+  }
+  .ob-color {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--fill);
+    box-shadow: inset 0 0 0 1.5px var(--mark);
+    display: grid;
+    place-items: center;
+    color: var(--on);
+    font-size: 17px;
+    cursor: pointer;
+    transition: box-shadow var(--dur-micro) var(--ease-out);
+  }
+  .ob-color[aria-checked='true'] {
+    box-shadow:
+      inset 0 0 0 1.5px var(--mark),
+      0 0 0 2.5px var(--bg),
+      0 0 0 4.5px var(--text);
+  }
+  .ob-icons {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+    border-radius: 16px;
+    background: var(--sunken);
+  }
+  .ob-icons-l {
+    grid-column: 1 / -1;
+    padding: 6px 6px 2px;
+    font: 600 11px/14px var(--font-ui);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .ob-ic {
+    height: 44px;
+    border: 0;
+    padding: 0;
+    border-radius: 12px;
+    background: transparent;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-micro) var(--ease-out),
+      color var(--dur-micro) var(--ease-out);
+  }
+  .ob-ic[aria-checked='true'] {
+    background: var(--fill);
+    color: var(--on);
+    box-shadow: inset 0 0 0 1.5px var(--mark);
+  }
+}

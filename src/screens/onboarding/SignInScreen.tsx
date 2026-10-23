@@ -1,86 +1,103 @@
-// Provisório da casca (B1): o agente D3 troca este arquivo pela tela de verdade (docs/interacao/telas/entrada.md).
+// Entrar (docs/interacao/telas/entrada.md › Entrar; quadro: entrada › Entrar).
+// A ilustração do caminho, "Prokopē" com "προκοπή", a frase, "Entrar com Google" e o caminho da demonstração
+// ("Explorar com dados de exemplo"). Sem Firebase configurado, o botão do Google explica com calma que o login
+// ainda não está ligado. A tela pinta pronta; só a ilustração anima, uma vez.
 import { useState } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { FullScreen } from '@/components/shell';
-import { useSession } from '@/data/session';
+import { Button } from '@/components/ui';
+import { SIGN_IN_FAILED, useSession } from '@/data';
+import { Icon } from '@/icons';
+import { fadeUp, tween } from '@/motion/tokens';
+import { GoogleG } from './brand';
+import { SignInArt } from './SignInArt';
+import './onboarding.css';
+
+const GOOGLE_OFF = 'O login com Google ainda não está ligado nesta versão. Explore com os dados de exemplo.';
+const DEMO_FAILED = 'A demonstração não abriu agora. Tente de novo.';
 
 export default function SignInScreen() {
   const session = useSession();
-  const [error, setError] = useState<string | null>(null);
-  const button = {
-    minHeight: 52,
-    width: '100%',
-    borderRadius: 999,
-    border: 0,
-    font: '600 17px/1.2 var(--font-ui)',
-  } as const;
+  const [opening, setOpening] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const message = notice ?? session.error;
+  // a volta do Google: o botão fica desabilitado, sem girador
+  const returning = session.status === 'loading' && session.mode === 'firebase';
+  const label = returning ? 'Entrando…' : opening ? 'Abrindo o Google…' : 'Entrar com Google';
+
+  async function google() {
+    if (!session.firebaseAvailable) {
+      setNotice(GOOGLE_OFF);
+      return;
+    }
+    setNotice(null);
+    setOpening(true);
+    try {
+      await session.signIn();
+    } catch {
+      setOpening(false);
+      setNotice(SIGN_IN_FAILED);
+    }
+  }
+
+  async function demo() {
+    setNotice(null);
+    try {
+      await session.enterDemo();
+    } catch {
+      setNotice(DEMO_FAILED);
+    }
+  }
+
   return (
     <FullScreen
       footer={
-        <div style={{ display: 'grid', gap: 10 }}>
-          {error && (
-            <p className="cap" role="status" style={{ margin: 0, textAlign: 'center' }}>
-              {error}
-            </p>
-          )}
-          {session.firebaseAvailable && (
-            <button
-              type="button"
-              style={{
-                ...button,
-                background: 'var(--surface)',
-                color: 'var(--text)',
-                boxShadow: 'inset 0 0 0 1px var(--border-strong)',
-              }}
-              onClick={() =>
-                session
-                  .signIn()
-                  .catch((e: unknown) =>
-                    setError(e instanceof Error ? e.message : 'O login não terminou. Tente de novo.'),
-                  )
-              }
-            >
-              Entrar com Google
-            </button>
-          )}
-          <button
-            type="button"
-            style={{ ...button, background: 'var(--btn-bg)', color: 'var(--btn-fg)' }}
-            onClick={() => void session.enterDemo()}
+        <div className="ob-signin-foot">
+          <AnimatePresence initial={false}>
+            {message && (
+              <m.p key={message} className="ob-notice" role="status" {...fadeUp}>
+                <Icon name="info" weight="regular" />
+                {message}
+              </m.p>
+            )}
+          </AnimatePresence>
+          <Button variant="secondary" wide disabled={opening || returning} onClick={() => void google()}>
+            <GoogleG />
+            <AnimatePresence initial={false} mode="wait">
+              <m.span
+                key={label}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: tween.micro }}
+                exit={{ opacity: 0, transition: tween.exit }}
+              >
+                {label}
+              </m.span>
+            </AnimatePresence>
+          </Button>
+          <Button
+            variant="ghost"
+            wide
+            aria-label="Explorar com dados de exemplo, modo demonstração"
+            onClick={() => void demo()}
           >
-            Usar o modo demonstração
-          </button>
+            Explorar com dados de exemplo
+          </Button>
+          <p className="ob-legal">
+            <Icon name="lock-simple" weight="regular" />
+            Seus registros ficam na sua conta. Ninguém mais vê.
+          </p>
         </div>
       }
     >
-      <div style={{ flex: 1, display: 'grid', placeItems: 'center', textAlign: 'center', padding: '48px 32px' }}>
-        <div>
-          <h1
-            className="t-hero"
-            style={{ margin: 0, fontSize: 58, lineHeight: 1, fontWeight: 430, letterSpacing: '-0.025em' }}
-          >
-            Prokopē
-          </h1>
-          <p
-            lang="el"
-            className="font-display"
-            style={{
-              margin: '10px 0 0',
-              fontSize: 22,
-              lineHeight: '28px',
-              fontStyle: 'italic',
-              color: 'var(--accent-ink)',
-            }}
-          >
-            προκοπή
-          </p>
-          <p style={{ margin: '22px 0 0', font: '500 18px/24px var(--font-ui)' }}>Um pouco de progresso, todo dia.</p>
-          <p className="lead" style={{ margin: '6px 0 0' }}>
-            Poucos hábitos por vez, no seu ritmo.
-          </p>
-          <p className="cap" style={{ margin: '24px 0 0' }}>
-            Tela provisória da casca. A tela de verdade vem do agente D3.
-          </p>
-        </div>
+      <div className="ob-hero">
+        <SignInArt />
+        <h1 className="ob-brand">Prokopē</h1>
+        <p className="ob-greek" lang="el">
+          προκοπή
+        </p>
+        <p className="ob-tagline">Um pouco de progresso, todo dia.</p>
+        <p className="ob-what">Poucos hábitos por vez, no seu ritmo.</p>
       </div>
     </FullScreen>
   );
