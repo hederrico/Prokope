@@ -1,0 +1,631 @@
+/* Jornada: caminho das fases, Editar fases, Plano de corrida, revisão passada e as folhas da área
+   (quadro: docs/telas/f-jornada.js, classes .xd-*). Prefixo jr-. */
+
+.jr-pad {
+  padding-inline: 16px;
+}
+.jr-hdact {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: 600 16px/20px var(--font-ui);
+  cursor: pointer;
+}
+.jr-hdact svg {
+  font-size: 17px;
+}
+.jr-lede {
+  margin: -8px 0 12px;
+  padding-inline: 16px;
+  font: var(--t-sub);
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* ---------- caminho das fases ---------- */
+.jr-tl {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 6px 16px 0;
+  list-style: none;
+}
+.jr-ph {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  column-gap: 14px;
+  padding-bottom: 22px;
+}
+.jr-ph:last-child {
+  padding-bottom: 2px;
+}
+.jr-ph::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 40px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent-mark);
+}
+.jr-ph.dash::before {
+  width: 0;
+  border-radius: 0;
+  background: none;
+  border-left: 2px dashed var(--border-strong);
+}
+.jr-ph:last-child::before {
+  display: none;
+}
+.jr-node {
+  position: relative;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 600 14px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.jr-node.done {
+  background: var(--accent-fill);
+  color: var(--accent-on);
+  font-size: 17px;
+}
+.jr-node.now {
+  background: var(--bg);
+}
+.jr-node.now b {
+  font: 600 14px/1 var(--font-ui);
+  color: var(--accent-ink);
+}
+.jr-node.next {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2px var(--border-strong);
+  color: var(--text-3);
+}
+.jr-pt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  padding: 6px 0 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.jr-pt > span:first-child {
+  min-width: 0;
+}
+.jr-pt b {
+  display: block;
+  font: 600 16px/20px var(--font-ui);
+}
+.jr-pt .cap {
+  display: block;
+}
+.jr-pt.next b {
+  color: var(--text-2);
+}
+.jr-pt .jr-date {
+  display: block;
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--text-2);
+}
+.jr-pt > svg,
+.jr-pv svg {
+  flex: none;
+  font-size: 16px;
+  color: var(--text-3);
+}
+.jr-pv {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 15px/1 var(--font-ui);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.jr-pv svg {
+  font-size: 14px;
+}
+.jr-now {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--accent-wash);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.jr-now .cap {
+  display: block;
+  color: var(--text-2);
+}
+.jr-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.jr-t {
+  display: block;
+  font: 600 16px/20px var(--font-ui);
+}
+.jr-wks {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+  gap: 5px;
+}
+.jr-wks > span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font: var(--t-micro);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.jr-wks i {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--accent-fill) 40%, var(--surface));
+}
+.jr-wks i > em {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 99px;
+  background: var(--accent-mark);
+}
+.jr-wks i.paused {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--accent-fill) 50%, var(--surface)) 0 3px,
+    transparent 3px 6px
+  );
+}
+.jr-hc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.jr-hc .pk-chip {
+  min-height: 0;
+  border-color: transparent;
+  padding: 5px 10px 5px 8px;
+  font-size: 13px;
+  line-height: 17px;
+}
+.jr-hc .pk-chip > svg {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* cartão do plano de corrida */
+.jr-runcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+.jr-runcard .jr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.jr-runcard .jr-row > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.jr-runcard .jr-row .cap {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--text-2);
+}
+.jr-runcard > .cap {
+  margin: 0;
+  color: var(--text-2);
+}
+.jr-caret {
+  flex: none;
+  font-size: 16px;
+  color: var(--text-3);
+}
+.jr-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+}
+.jr-spark i {
+  flex: 1;
+  border-radius: 3px;
+  background: var(--fill);
+}
+.jr-spark i.on {
+  background: var(--mark);
+}
+
+.jr-list-foot {
+  margin: 0;
+}
+.jr-fazer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-ink);
+  font: 600 15px/1 var(--font-ui);
+}
+.jr-fazer svg {
+  font-size: 16px;
+}
+
+/* ---------- Editar fases ---------- */
+.jr-title {
+  margin: 0;
+}
+.jr-title:focus {
+  outline: none;
+}
+.jr-intro .lead {
+  margin: 6px 0 0;
+}
+.jr-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.jr-fc {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-margin-top: 56px;
+}
+.jr-fc .pk-chip {
+  background: var(--sunken);
+  border-color: transparent;
+}
+.jr-fc .pk-chip > svg {
+  color: var(--ink);
+}
+.jr-frow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font: 400 15px/20px var(--font-ui);
+  color: var(--text-2);
+}
+.jr-sheet .jr-frow {
+  padding-top: 14px;
+}
+.jr-few {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 14px/18px var(--font-ui);
+  color: var(--text-2);
+}
+.jr-ics {
+  display: inline-flex;
+}
+.jr-ics .pk-bub {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  font-size: 15px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.jr-ics .pk-bub + .pk-bub {
+  margin-left: -7px;
+}
+.jr-ics .more {
+  background: var(--sunken);
+  color: var(--text-2);
+  font: 600 11px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.jr-valbtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--sunken);
+  color: var(--text);
+  font: 500 16px/22px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.jr-empty-chips {
+  margin: 0;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+
+/* ---------- Plano de corrida ---------- */
+.jr-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 6px;
+}
+.jr-hero .pk-bub.lg {
+  margin-bottom: 4px;
+}
+.jr-hero p {
+  margin: 0;
+  font-weight: 400;
+}
+.jr-brk {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.jr-brk span {
+  min-width: 0;
+  padding-top: 5px;
+  border-top: 1.5px solid var(--border-strong);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: var(--t-micro);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.jr-leg {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 16px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+.jr-lr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 400 15px/20px var(--font-ui);
+}
+.jr-lr.tot {
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+}
+.jr-lr > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.jr-lr .num {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.jr-lr.tot .num {
+  color: var(--text);
+}
+.jr-sw {
+  width: 14px;
+  height: 18px;
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.jr-sw i {
+  width: 10px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--fill);
+}
+.jr-sw i.t {
+  height: 18px;
+  background: var(--mark);
+}
+.jr-sw i.c {
+  background: color-mix(in oklch, var(--fill) 55%, var(--track));
+}
+.jr-weeks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jr-weeks > li + li {
+  border-top: 1px solid var(--border);
+}
+.jr-wr {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 60px 42px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.jr-weeks > li:first-child .jr-wr {
+  border-radius: 20px 20px 0 0;
+}
+.jr-weeks > li:last-child .jr-wr {
+  border-radius: 0 0 20px 20px;
+}
+.jr-wr:active {
+  background-image: linear-gradient(oklch(0% 0 0 / 0.04), oklch(0% 0 0 / 0.04));
+}
+.jr-wr[aria-current='true'] {
+  background: color-mix(in oklch, var(--wash) 60%, transparent);
+}
+.jr-wn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+  font: 600 13px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.jr-wr.on .jr-wn {
+  background: var(--fill);
+  color: var(--on);
+}
+.jr-wr b {
+  display: block;
+  font: 600 15px/20px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.jr-wr small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--ink);
+}
+.jr-wr .cap {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.jr-startbar {
+  position: sticky;
+  bottom: var(--sh-tabbar-h, 0px);
+  z-index: 2;
+  padding: 12px 16px 12px;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+
+/* ---------- revisão passada ---------- */
+.jr-pr-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.jr-pr-head .sub {
+  margin: 0;
+  color: var(--text-2);
+  font-weight: 400;
+}
+.jr-pr-ring {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+.jr-pr-ring .disp {
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.jr-pr-ring p {
+  margin: 0;
+  font: 400 15px/21px var(--font-ui);
+  color: var(--text-2);
+}
+.jr-pr-text {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.jr-pr-text p {
+  margin: 0;
+  font: 400 16px/23px var(--font-ui);
+  color: var(--text);
+}
+.jr-pr-text .cap {
+  display: block;
+  margin-top: 6px;
+}
+
+/* ---------- folhas ---------- */
+.jr-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.jr-sheet-p {
+  margin: 0;
+  font: 400 16px/23px var(--font-ui);
+  color: var(--text-2);
+}
+.jr-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 4px;
+}
+.jr-stepper output {
+  font: 600 28px/32px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.jr-stepper output small {
+  margin-left: 6px;
+  font: 500 15px/1 var(--font-ui);
+  color: var(--text-3);
+}
+.jr-stepbtn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sunken);
+  color: var(--text);
+  font-size: 22px;
+  cursor: pointer;
+}
+.jr-stepbtn:disabled {
+  color: var(--text-3);
+  cursor: default;
+}
+.jr-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

@@ -1,0 +1,475 @@
+/* Corrida: a fileira de blocos, a tela do treino em andamento e o Treino feito (quadro: f-jornada.js, .xd-*).
+   A cor vem do pilar do hábito Corrida (data-pillar ou .hued no topo da tela): --wash, --fill, --mark, --ink. */
+
+/* ---------- fileira de blocos ---------- */
+.rn-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 44px;
+}
+.rn-strip > i {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--fill);
+}
+.rn-strip > i.t {
+  height: 44px;
+  background: var(--mark);
+}
+.rn-strip > i.c {
+  background: color-mix(in oklch, var(--fill) 55%, var(--track));
+}
+.rn-strip > i.fut {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--fill) 85%, var(--text-3));
+}
+.rn-strip .rn-cur {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px var(--wash),
+    0 0 0 3.5px var(--text);
+  pointer-events: none;
+}
+
+/* ---------- treino em andamento ---------- */
+.rn-full {
+  --rn-bg: var(--wash);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--safe-top);
+  background: var(--rn-bg);
+  color: var(--text);
+  transition:
+    background-color var(--dur-fill) var(--ease-in-out),
+    color var(--dur-fill) var(--ease-in-out);
+}
+.rn-full.trot {
+  --rn-bg: var(--ink);
+  color: var(--surface);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .rn-full.trot {
+    --rn-bg: oklch(38% 0.07 var(--h, 60));
+    color: var(--ink);
+  }
+}
+:root[data-theme='dark'] .rn-full.trot {
+  --rn-bg: oklch(38% 0.07 var(--h, 60));
+  color: var(--ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rn-full {
+    transition-duration: 150ms;
+  }
+}
+:root[data-motion='off'] .rn-full {
+  transition-duration: 150ms;
+}
+
+.rn {
+  --rn-ring: min(248px, 31dvh);
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: max(24px, calc(var(--safe-bottom) + 8px));
+}
+.rn-top {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 12px 0;
+  text-align: center;
+}
+.rn-top h1 {
+  margin: 0;
+  font: 600 17px/22px var(--font-ui);
+}
+.rn-top h1:focus {
+  outline: none;
+}
+.rn-awake {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 2px;
+  font: var(--t-caption);
+  opacity: 0.8;
+  color: inherit;
+}
+.rn-awake svg {
+  font-size: 14px;
+}
+button.rn-awake {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.rn-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: inherit;
+  background: color-mix(in oklch, currentColor 14%, transparent);
+  cursor: pointer;
+}
+.rn-full.walk .rn-btn {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+.rn-back {
+  margin: 4px 16px 0;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text);
+}
+.rn-back .pk-bub {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  font-size: 20px;
+}
+.rn-back b {
+  display: block;
+  font: 600 15px/20px var(--font-ui);
+}
+.rn-back small {
+  display: block;
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--text-2);
+}
+
+.rn-c {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+.rn-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font: 700 44px/1 var(--font-ui);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.rn-state.long {
+  font-size: 38px;
+}
+.rn-state svg {
+  font-size: 42px;
+  flex: none;
+}
+.rn-full.walk .rn-state {
+  color: var(--ink);
+}
+.rn-ring {
+  position: relative;
+  width: var(--rn-ring);
+  height: var(--rn-ring);
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+.rn-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+.rn-ring .trk {
+  stroke: color-mix(in oklch, currentColor 22%, transparent);
+}
+.rn-ring .arc {
+  stroke: currentColor;
+}
+.rn-full.walk .rn-ring .trk {
+  stroke: color-mix(in oklch, var(--fill) 45%, var(--wash));
+}
+.rn-full.walk .rn-ring .arc {
+  stroke: var(--mark);
+}
+.rn-ring .rc {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rn-clock {
+  font: 600 calc(var(--rn-ring) * 0.371) / 1 var(--font-ui);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.rn-left {
+  margin-top: 4px;
+  font: 500 16px/20px var(--font-ui);
+  opacity: 0.8;
+}
+.rn-full.walk .rn-left {
+  color: var(--text-2);
+  opacity: 1;
+}
+.rn-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px 0 14px;
+  border-radius: 999px;
+  background: color-mix(in oklch, currentColor 14%, transparent);
+  font: 500 17px/22px var(--font-ui);
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+.rn-next.soon {
+  background: color-mix(in oklch, currentColor 24%, transparent);
+}
+.rn-next svg {
+  font-size: 21px;
+}
+.rn-next b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.rn-full.walk .rn-next {
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text);
+}
+.rn-full.walk .rn-next.soon {
+  background: color-mix(in oklch, var(--fill) 24%, var(--surface));
+}
+.rn-full.walk .rn-next svg {
+  color: var(--ink);
+}
+.rn-b {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 16px 26px;
+}
+.rn-b p {
+  margin: 0;
+  font: 500 15px/20px var(--font-ui);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+.rn-full.walk .rn-b p {
+  color: var(--text-2);
+  opacity: 1;
+}
+.rn-full.trot .rn-strip > i {
+  background: currentColor;
+  opacity: 0.5;
+}
+.rn-full.trot .rn-strip > i.fut {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  opacity: 0.45;
+}
+.rn-full.trot .rn-strip > i.cur {
+  opacity: 1;
+}
+.rn-full.trot .rn-strip .rn-cur {
+  inset: -4px;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.rn-ctl {
+  display: flex;
+  justify-content: center;
+  gap: 56px;
+}
+.rn-cb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font: 600 14px/18px var(--font-ui);
+  transition: font-weight var(--dur-micro) var(--ease-out);
+}
+.rn-cb > span {
+  min-height: 18px;
+}
+.rn-cb .hint {
+  font-weight: 500;
+}
+.rn-cb .hint.on {
+  font-weight: 750;
+}
+.rn-full.walk .rn-cb {
+  color: var(--text-2);
+}
+.rn-rb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.rn-rb.p {
+  background: var(--ink);
+  color: var(--surface);
+}
+.rn-rb.s {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.rn-full.trot .rn-rb.p {
+  background: currentColor;
+}
+.rn-full.trot .rn-rb.p svg {
+  color: var(--rn-bg);
+}
+.rn-full.trot .rn-rb.s {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+/* o anel do toque longo, em volta do botão de encerrar */
+.rn-hold {
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.rn-hold circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.rn-full.trot .rn-hold circle {
+  stroke: currentColor;
+}
+.rn-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.rn-sr:focus-visible {
+  width: auto;
+  height: auto;
+  clip-path: none;
+}
+
+/* ---------- Treino feito ---------- */
+.rn-done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 24px 0;
+  text-align: center;
+}
+.rn-done .rc svg.ck {
+  font-size: 34px;
+  color: var(--ink);
+}
+.rn-done .rc b {
+  margin-top: 4px;
+  font: 600 28px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.rn-done h1 {
+  margin: 22px 0 0;
+}
+.rn-done h1:focus {
+  outline: none;
+}
+.rn-done .sub {
+  margin: 0;
+  font-weight: 400;
+}
+.rn-done .pk-stats {
+  width: 100%;
+  margin-top: 26px;
+  text-align: left;
+}
+.rn-dstrip {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 16px;
+}
+.rn-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* folhas da corrida */
+.rn-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rn-sheet-p {
+  margin: 0;
+  font: 400 16px/23px var(--font-ui);
+  color: var(--text-2);
+}
+.rn-sheet-steps {
+  margin: 0;
+  padding: 0 0 0 20px;
+  font: 400 16px/24px var(--font-ui);
+  color: var(--text);
+}
+.rn-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
