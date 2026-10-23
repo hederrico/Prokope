@@ -125,3 +125,7 @@ export { pillarUsingColor, duplicatePillarName, firstFreeColor, pillarExitPlan }
 export { CORRELATION_NEEDED } from '@/domain/correlation';
 export { WEIGHT_NEEDED } from '@/domain/weight';
 export { markId, measurementId } from '@/domain/context';
+export { CHAPTERS, chapterInfo, tutorialOf, zenoShown } from '@/domain/tutorial';
+export type { ChapterInfo } from '@/domain/tutorial';
+export { useExample } from './example';
+export type { ExampleMode } from './example';

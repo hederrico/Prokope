@@ -20,6 +20,7 @@ Como o Prokopē se comporta: como as telas se ligam, o que se mexe, o que cada t
    - [ajustes-plano.md](telas/ajustes-plano.md): pilares e hábitos
    - [ajustes-rotina-conta.md](telas/ajustes-rotina-conta.md): horários, lembretes, aparência, pausa, a dois e conta
    - [estados.md](telas/estados.md): desfazer, outro dia, primeiro dia, offline e os outros estados
+   - [tutorial.md](telas/tutorial.md): o Zeno no primeiro acesso, os capítulos do tutorial, os Primeiros passos e o modo exemplo
 
 ## Para sentir antes de construir
 

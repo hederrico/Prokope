@@ -1,0 +1,1571 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prokopē · Laboratório do Zeno</title>
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    try { t = t || localStorage.getItem('pk-zeno-theme'); } catch (e) {}
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="stylesheet" href="../telas/base.css">
+<link rel="stylesheet" href="../interacao/laboratorio/lab.css">
+<style>
+/* Laboratório do Zeno: o mascote em 3D sobre um pedaço do Hoje.
+   A página usa os tokens e os componentes de ../telas/base.css e o topo do laboratório de movimento. */
+:root { --zl-k: 1; }
+.zl-wrap { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; max-width: 1160px; margin: 0 auto; padding: 28px 24px 120px; align-items: start; }
+.zl-col { position: sticky; top: 76px; }
+
+/* o palco é um .phone do quadro; o Zeno é desenhado num canvas por cima, que não pega toque */
+.phone.zl-phone { width: 390px; height: clamp(600px, calc(100vh - 112px), 820px); border-radius: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.zl-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+.zl-snap { z-index: 21; opacity: 0; }
+.zl-load { position: absolute; left: 0; right: 0; bottom: 120px; z-index: 22; text-align: center; font: var(--t-caption); color: var(--text-3); }
+.zl-r5 { justify-content: space-between; }
+.zl-r5 span { width: 44px; height: 44px; font-size: 15px; cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.phone .chk { cursor: pointer; padding: 0; background: transparent; transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.phone .chk.on { background: var(--fill); }
+.zl-alvo { box-shadow: 0 0 0 3px var(--accent-mark) !important; }
+.chk, .card, .zl-r5 span { transition-property: background-color, border-color, color, box-shadow; }
+
+/* balão: texto de verdade, lido pelo VoiceOver. O canto pequeno aponta para o Zeno */
+.zl-bubble { position: absolute; left: 0; top: 0; z-index: 23; pointer-events: none; transform: translate(var(--bx, 0px), calc(var(--by, 0px) - 100%)); }
+.zl-bi {
+  max-width: 214px; padding: 10px 14px; border-radius: 18px 18px 18px 6px;
+  background: var(--raised); color: var(--text); box-shadow: var(--shadow-2), inset 0 0 0 1px var(--border);
+  font: 500 15px/20px var(--font-ui); text-wrap: pretty;
+  opacity: 0; translate: 0 var(--rise);
+  transition: opacity calc(var(--dur-base) * var(--zl-k)) var(--ease-out), translate calc(var(--dur-base) * var(--zl-k)) var(--ease-out);
+}
+.zl-bubble.on .zl-bi { opacity: 1; translate: 0 0; }
+:root[data-zl-reduced] .zl-bi { translate: none; transition: opacity calc(150ms * var(--zl-k)) linear; }
+/* notinha de quando ele cantarola */
+.zl-note { position: absolute; z-index: 22; pointer-events: none; font: 600 18px/1 var(--font-ui); color: var(--accent-ink); animation: zl-note calc(1400ms * var(--zl-k)) var(--ease-out) forwards; }
+@keyframes zl-note { from { opacity: 0; transform: translate(0, 0) rotate(-8deg); } 20% { opacity: 1; } to { opacity: 0; transform: translate(14px, -32px) rotate(10deg); } }
+
+/* coluna de controles */
+.zl-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.zl-card { display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 24px; background: var(--cv-panel); border: 1px solid var(--cv-line); }
+.zl-card h1 { margin: 0; font: 450 44px/1 var(--font-display); font-variation-settings: var(--display-vs); letter-spacing: -.02em; }
+.zl-card h2 { margin: 0; font: 500 24px/30px var(--font-display); font-variation-settings: var(--display-vs); }
+.zl-card p { margin: 0; font: 400 15px/22px var(--font-ui); color: var(--cv-text2); }
+.zl-head { display: flex; flex-direction: column; gap: 8px; }
+.zl-scenes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.zl-sc { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 62px; padding: 10px 12px; border: 0; border-radius: 14px; background: var(--cv-bg); color: var(--cv-text); text-align: left; cursor: pointer; font: 600 14.5px/18px var(--font-ui); -webkit-tap-highlight-color: transparent; transition: transform 100ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+.zl-sc small { font: 400 12.5px/16px var(--font-ui); color: var(--cv-text2); }
+.zl-sc[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent-mark); }
+.zl-sc:active { transform: scale(.97); }
+.zl-sc:focus-visible, .zl-pil select:focus-visible, .lab-b:focus-visible { outline: 2px solid var(--accent-mark); outline-offset: 2px; }
+.zl-hint { display: flex; gap: 8px; align-items: flex-start; font: 400 13.5px/20px var(--font-ui); color: var(--cv-text2); }
+.zl-hint i { flex: none; margin-top: 2px; font-size: 16px; }
+.zl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.zl-lbl { font: 600 11px/14px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--cv-text2); }
+.zl-pils { display: flex; flex-direction: column; gap: 6px; }
+.zl-pil { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; font: 500 15px/20px var(--font-ui); }
+.zl-sw { width: 22px; height: 22px; border-radius: 7px; background: var(--fill); }
+.zl-pil select { font: 500 14px/1 var(--font-ui); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--cv-line); background: var(--cv-bg); color: var(--cv-text); }
+.zl-stat { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 16px; margin: 0; font: 500 14px/20px var(--font-ui); font-variant-numeric: tabular-nums; }
+.zl-stat dt { color: var(--cv-text2); }
+.zl-stat dd { margin: 0; }
+.zl-dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--border-strong); vertical-align: 1px; }
+.zl-dot.on { background: var(--success-ink); }
+.zl-rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; font: 400 14.5px/21px var(--font-ui); color: var(--cv-text2); }
+.zl-rules b { color: var(--cv-text); font-weight: 600; }
+
+/* no celular, as cenas viram uma fileira presa no topo, e o palco ocupa o resto da tela */
+.zl-strip { display: none; }
+@media (max-width: 880px) {
+  .lab-top { position: static; }
+  .zl-wrap { grid-template-columns: minmax(0, 1fr); padding: 0 12px 80px; gap: 14px; }
+  .zl-col { position: static; }
+  .zl-strip {
+    position: sticky; top: 0; z-index: 30; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+    margin: 0 -12px 8px; padding: 8px 12px; background: color-mix(in oklch, var(--cv-bg) 92%, transparent);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  .zl-strip::-webkit-scrollbar { display: none; }
+  .zl-strip .zl-sc { flex: none; min-height: 40px; padding: 0 14px; justify-content: center; border-radius: 999px; background: var(--cv-panel); box-shadow: inset 0 0 0 1px var(--cv-line); white-space: nowrap; font-size: 14px; }
+  .zl-strip .zl-sc small { display: none; }
+  .zl-strip .zl-sc[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent-mark); }
+  .phone.zl-phone { width: 100%; height: max(560px, calc(100svh - 72px)); border-radius: 32px; }
+  .zl-card { padding: 16px; border-radius: 22px; }
+  .zl-card h1 { font-size: 34px; }
+  .zl-side .zl-scenes { display: none; }
+}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body class="lab">
+<header class="lab-top">
+  <div class="lab-brand"><b>Prokopē</b><span>Laboratório do Zeno</span></div>
+  <div class="lab-tools">
+    <div class="lab-tool"><span>Velocidade</span>
+      <div class="cv-seg" role="group" aria-label="Velocidade"><button type="button" data-speed="1">1×</button><button type="button" data-speed="0.5">0,5×</button><button type="button" data-speed="0.25">0,25×</button></div>
+    </div>
+    <div class="lab-tool"><span>Movimento</span>
+      <div class="cv-seg" role="group" aria-label="Movimento"><button type="button" data-motion="system">Sistema</button><button type="button" data-motion="reduced">Reduzido</button><button type="button" data-motion="full">Completo</button></div>
+    </div>
+    <div class="lab-tool"><span>Tema</span>
+      <div class="cv-seg" role="group" aria-label="Tema"><button type="button" data-theme-btn="system">Sistema</button><button type="button" data-theme-btn="light">Claro</button><button type="button" data-theme-btn="dark">Escuro</button></div>
+    </div>
+  </div>
+</header>
+
+<div class="zl-wrap">
+  <div class="zl-col">
+    <div class="zl-strip" id="strip" role="group" aria-label="Cenas"></div>
+    <div class="phone zl-phone" id="stage">
+      <div class="sb"><span class="num" id="clock">20:41</span><span class="island"></span><span class="sbi"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-high"></i></span></div>
+      <div class="scr">
+        <div class="hd"><div class="hd-row"><span class="date">sexta, 23 de outubro</span><span class="avatar"><i class="ph ph-user"></i></span></div><h1 class="lt">Hoje</h1></div>
+        <div class="gl">Noite <span>agora</span></div>
+        <div class="pad"><div class="card p stack" id="ci" data-pillar="accent">
+          <div class="between"><b class="sub">Check-in</b><span class="cap">Como foi hoje?</span></div>
+          <div class="r5 zl-r5" id="r5">
+            <span role="button" tabindex="0" aria-label="Humor 1">1</span><span role="button" tabindex="0" aria-label="Humor 2">2</span><span role="button" tabindex="0" aria-label="Humor 3">3</span><span role="button" tabindex="0" aria-label="Humor 4">4</span><span role="button" tabindex="0" aria-label="Humor 5">5</span>
+          </div>
+        </div></div>
+        <div class="gl">Manhã <span>0 de 2</span></div>
+        <div class="pad"><div class="card lst">
+          <div class="hr" data-pillar="familia" id="row-walk"><span class="bub"><i class="pk-icon pk-salsicha pk-duo"></i></span><span class="ht"><b>Caminhada com o cachorro</b><small>3 de 7 na semana</small></span><button type="button" class="chk" id="chk" aria-label="Marcar a caminhada" aria-pressed="false"><i class="ph-bold ph-check"></i></button></div>
+          <div class="hr" data-pillar="alim"><span class="bub"><i class="ph-duotone ph-drop"></i></span><span class="ht"><b>Água</b><small>Meta de 3 L</small></span><span class="vpill num">1,5 L</span></div>
+        </div></div>
+      </div>
+      <div class="tb" id="tabbar"><span class="on"><i class="ph-fill ph-sun-horizon"></i>Hoje</span><span><i class="ph ph-chart-line-up"></i>Progresso</span><span><i class="ph ph-path"></i>Jornada</span><span><i class="ph ph-gear-six"></i>Ajustes</span></div>
+      <div class="hi"></div>
+      <canvas class="zl-gl" id="zc" aria-hidden="true"></canvas>
+      <canvas class="zl-gl zl-snap" id="zsnap" aria-hidden="true"></canvas>
+      <div class="zl-bubble" id="bubble" role="status" hidden><div class="zl-bi" id="btext"></div></div>
+      <div class="zl-load" id="zload">Carregando o Zeno…</div>
+    </div>
+  </div>
+
+  <div class="zl-side">
+    <section class="zl-card" aria-labelledby="t-zeno">
+      <div class="zl-head">
+        <h1 id="t-zeno">Zeno</h1>
+        <p>O mascote do Prokopē, em 3D feito em código. Cada botão é um momento em que ele entra em cena. Entre um momento e outro, ele fica à toa: olha em volta, cantarola, ajeita o cachecol. Deixe a página quieta por um minuto para ele sentar e cochilar.</p>
+      </div>
+      <div class="zl-scenes" id="scenes"></div>
+      <p class="zl-hint"><i class="ph ph-hand-tap"></i><span>Toque na tela para ele olhar; toque nele para um oi. O ✓ e as notas do check-in também respondem.</span></p>
+    </section>
+
+    <section class="zl-card" aria-labelledby="t-look">
+      <h2 id="t-look">Aparência</h2>
+      <div class="zl-row"><span class="zl-lbl">Estilo</span>
+        <div class="cv-seg" role="group" aria-label="Estilo"><button type="button" data-style="argila">Argila, sem contorno</button><button type="button" data-style="papel">Papel, com contorno</button></div>
+      </div>
+      <div class="zl-row"><span class="zl-lbl">Pilares no casco</span></div>
+      <div class="zl-pils" id="pils"></div>
+      <div class="zl-row">
+        <button type="button" class="lab-b s" id="pil-add"><i class="ph ph-plus"></i>Pilar</button>
+        <button type="button" class="lab-b s" id="pil-del"><i class="ph ph-minus"></i>Pilar</button>
+      </div>
+    </section>
+
+    <section class="zl-card" aria-labelledby="t-bat">
+      <h2 id="t-bat">Bateria</h2>
+      <dl class="zl-stat">
+        <dt>Agora</dt><dd id="st-state">…</dd>
+        <dt>Quadros</dt><dd id="st-fps">…</dd>
+        <dt>Triângulos</dt><dd id="st-tri">…</dd>
+        <dt>Pixels</dt><dd id="st-px">…</dd>
+        <dt>Pronto em</dt><dd id="st-load">…</dd>
+      </dl>
+      <p>Nas ações, ele desenha a 60 quadros por segundo. À toa ou dormindo, a 30, que basta para respirar, piscar e olhar em volta. Fora de cena, com o app no fundo ou com movimento reduzido, o desenho para e não gasta nada.</p>
+    </section>
+
+    <section class="zl-card" aria-labelledby="t-rules">
+      <h2 id="t-rules">O que o Zeno nunca faz</h2>
+      <ul class="zl-rules">
+        <li><b>Não cobra.</b> Ele é companheiro de caminho, não treinador.</li>
+        <li><b>Não fica triste com os seus números.</b> A nota 1 e a nota 5 do check-in recebem o mesmo obrigado.</li>
+        <li><b>Não aparece no deslize.</b> O momento é seu.</li>
+        <li><b>Não exagera na festa.</b> Um aceno no dia fechado; a dancinha é só da fase nova.</li>
+        <li><b>Não encara.</b> À toa, ele faz coisinhas calmas e olha em volta. Se ninguém toca em nada por um tempo, ele senta e cochila.</li>
+        <li><b>Não aparece do nada.</b> Ele só entra em momentos previstos.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+  // sem internet o three.js não chega; o aviso troca o "Carregando"
+  setTimeout(function () { if (!window.Zeno) document.getElementById('zload').textContent = 'Não deu para carregar o three.js. O laboratório precisa de internet.'; }, 15000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
+const easeInOut = (u) => (u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
+const easeOut = (u) => 1 - (1 - u) ** 2;
+const easeIn = (u) => u * u;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+/* ---------- preferências da página ---------- */
+const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+const mqDark = matchMedia('(prefers-color-scheme: dark)');
+let speed = 1;
+let motion = store.get('pk-zeno-motion') || 'system';
+let theme = document.documentElement.getAttribute('data-theme') || 'system';
+let style = store.get('pk-zeno-style') || 'argila';
+const reduced = () => motion === 'reduced' || (motion === 'system' && mqReduce.matches);
+const dark = () => theme === 'dark' || (theme === 'system' && mqDark.matches);
+
+/* ---------- cores: OKLCH como no design system ---------- */
+function oklchLinear([L, C, h]) {
+  const r = h * Math.PI / 180, a = C * Math.cos(r), b = C * Math.sin(r);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+  ].map((v) => clamp(v, 0, 1));
+}
+const toSrgb = (v) => (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
+const cssColor = (c) => { const [r, g, b] = oklchLinear(c).map((v) => Math.round(toSrgb(v) * 255)); return `rgb(${r}, ${g}, ${b})`; };
+const setColor = (color, c) => { const [r, g, b] = oklchLinear(c); return color.setRGB(r, g, b, THREE.LinearSRGBColorSpace); };
+
+/* a cara do Zeno não muda com o tema nem com os pilares; só as placas do casco mudam */
+const Z = {
+  pele: [0.83, 0.08, 128], focinho: [0.90, 0.055, 112],
+  barriga: [0.93, 0.045, 88], linhaBarriga: [0.85, 0.05, 80],
+  casco: [0.70, 0.065, 62], margem: [0.84, 0.055, 74],
+  tinta: [0.27, 0.02, 60], boca: [0.40, 0.07, 25], branco: [0.995, 0, 0], bochecha: [0.81, 0.085, 10], bolha: [0.88, 0.06, 220],
+  cachecol: [0.66, 0.09, 230], cachecolListra: [0.94, 0.03, 85],
+  touca: [0.80, 0.07, 285], toucaBorda: [0.95, 0.02, 85],
+  capa: [0.64, 0.085, 150], papel: [0.965, 0.015, 85],
+};
+/* paleta fechada de 12 cores dos pilares (design-system.md) */
+const PALETA = [
+  { id: 'coral', nome: 'Coral', h: 25 }, { id: 'damasco', nome: 'Damasco', h: 60 }, { id: 'mel', nome: 'Mel', h: 90 },
+  { id: 'oliva', nome: 'Oliva', h: 120 }, { id: 'salvia', nome: 'Sálvia', h: 150 }, { id: 'menta', nome: 'Menta', h: 175 },
+  { id: 'agua', nome: 'Água', h: 205 }, { id: 'ceu', nome: 'Céu', h: 235 }, { id: 'indigo', nome: 'Índigo', h: 262 },
+  { id: 'lavanda', nome: 'Lavanda', h: 285 }, { id: 'ameixa', nome: 'Ameixa', h: 320 }, { id: 'rosa', nome: 'Rosa', h: 355 },
+];
+const hueOf = (id) => PALETA.find((p) => p.id === id).h;
+function fillOf(h, d) {
+  if (d) return [h === 150 ? 0.82 : h === 60 ? 0.73 : 0.78, 0.08, h];
+  return [h === 150 ? 0.905 : h === 60 ? 0.815 : 0.85, 0.075, h];
+}
+let pilares = [
+  { nome: 'Mente', cor: 'lavanda' }, { nome: 'Alimentação', cor: 'salvia' },
+  { nome: 'Corpo', cor: 'damasco' }, { nome: 'Família', cor: 'rosa' },
+];
+const EXTRAS = [{ nome: 'Trabalho', cor: 'ceu' }, { nome: 'Lazer', cor: 'mel' }];
+
+/* ---------- palco ---------- */
+const stage = $('#stage'), canvas = $('#zc'), snapCanvas = $('#zsnap');
+const bubble = $('#bubble'), btext = $('#btext'), tabbar = $('#tabbar');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const scene = new THREE.Scene();
+const FOV = 20;
+const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 100);
+const amb = new THREE.AmbientLight(0xffffff, 1);
+const key = new THREE.DirectionalLight(0xffffff, 1);
+key.position.set(-3, 6, 6);
+const back = new THREE.DirectionalLight(0xffffff, 0);
+back.position.set(4, 1.5, -3);
+scene.add(amb, key, back);
+const effect = new OutlineEffect(renderer, { defaultThickness: 0.0042, defaultColor: oklchLinear(Z.tinta), defaultAlpha: 1, defaultKeepAlive: true });
+
+/* toon de 3 tons: sombra, meio e luz */
+const grad = new THREE.DataTexture(new Uint8Array([0, 150, 255]), 3, 1, THREE.RedFormat);
+grad.minFilter = grad.magFilter = THREE.NearestFilter;
+grad.generateMipmaps = false;
+grad.needsUpdate = true;
+
+function applyLights() {
+  const d = dark() ? 0.86 : 1;
+  if (style === 'papel') { amb.intensity = 0.66 * Math.PI * d; key.intensity = 0.34 * Math.PI * d; back.intensity = 0; }
+  else { amb.intensity = 0.52 * Math.PI * d; key.intensity = 0.56 * Math.PI * d; back.intensity = 0.14 * Math.PI * d; }
+}
+
+/* ---------- materiais: um registro para trocar o estilo sem refazer o boneco ---------- */
+const paints = [];
+function makeMat(e) {
+  let m;
+  if (e.shadow) m = new THREE.MeshBasicMaterial({ map: e.map, transparent: true, depthWrite: false, opacity: 0.2 });
+  else if (e.glass) m = new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.45, depthWrite: false });
+  else if (e.flat) m = new THREE.MeshBasicMaterial({ map: e.map });
+  else if (style === 'papel') m = new THREE.MeshToonMaterial({ map: e.map, gradientMap: grad });
+  else m = new THREE.MeshLambertMaterial({ map: e.map });
+  if (e.map && !e.shadow) m.color.setRGB(1, 1, 1); else setColor(m.color, Z[e.color]);
+  m.userData.outlineParameters = { thickness: 0.0042, color: oklchLinear(Z.tinta), alpha: 1, keepAlive: true, visible: e.outline };
+  return m;
+}
+function paint(mesh, color, o = {}) {
+  const e = { mesh, color, map: o.map || null, flat: !!o.flat, shadow: !!o.shadow, glass: !!o.glass, outline: o.outline !== false && !o.flat && !o.shadow && !o.glass };
+  paints.push(e);
+  mesh.material = makeMat(e);
+  return mesh;
+}
+function restyle() {
+  for (const e of paints) { e.mesh.material.dispose(); e.mesh.material = makeMat(e); }
+  applyLights();
+}
+
+/* ---------- texturas desenhadas em canvas ---------- */
+function rr(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const canvasTex = (c) => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+
+/* casco: as placas do topo alternam as cores dos pilares; a fileira de baixo é a margem, sempre igual.
+   Na esfera, x do canvas é a volta (o meio é as costas) e y vai do topo (0°) ao fundo (180°). */
+const SHELL_ROWS = [
+  { t0: 5, t1: 45, n: 5, u0: 0.11, u1: 0.89, off: 0 },
+  { t0: 47, t1: 88, n: 6, u0: 0.1, u1: 0.9, off: 2 },
+  { t0: 90, t1: 116, n: 10, u0: 0.08, u1: 0.92, margem: true },
+];
+const shellCv = mkCanvas(1024, 512), shellPrev = mkCanvas(1024, 512), shellNext = mkCanvas(1024, 512);
+const shellTex = canvasTex(shellCv);
+function paintShell(cv) {
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, d = dark(), gap = 9;
+  const cols = pilares.map((p) => fillOf(hueOf(p.cor), d));
+  g.globalAlpha = 1;
+  g.fillStyle = cssColor(Z.casco); g.fillRect(0, 0, W, H);
+  for (const row of SHELL_ROWS) {
+    const y0 = row.t0 / 180 * H, y1 = row.t1 / 180 * H, w = (row.u1 - row.u0) * W / row.n;
+    for (let i = 0; i < row.n; i++) {
+      const x = row.u0 * W + i * w, c = row.margem ? Z.margem : cols[(i + row.off) % cols.length];
+      rr(g, x + gap / 2, y0 + gap / 2, w - gap, y1 - y0 - gap, 20);
+      g.fillStyle = cssColor(c); g.fill();
+      if (!row.margem) {
+        rr(g, x + gap / 2 + 15, y0 + gap / 2 + 13, w - gap - 30, y1 - y0 - gap - 26, 12);
+        g.lineWidth = 5; g.strokeStyle = cssColor([c[0] - 0.07, c[1] + 0.015, c[2]]); g.stroke();
+      }
+    }
+  }
+}
+paintShell(shellCv);
+
+function bellyTex() {
+  const c = mkCanvas(512, 256), g = c.getContext('2d');
+  g.fillStyle = cssColor(Z.barriga); g.fillRect(0, 0, 512, 256);
+  g.strokeStyle = cssColor(Z.linhaBarriga); g.lineWidth = 4; g.lineCap = 'round';
+  const y = (t) => t / 180 * 256, x = (u) => u * 512;
+  for (const t of [64, 90, 116, 140]) { g.beginPath(); g.moveTo(x(0.175), y(t)); g.lineTo(x(0.325), y(t)); g.stroke(); }
+  g.beginPath(); g.moveTo(x(0.25), y(44)); g.lineTo(x(0.25), y(156)); g.stroke();
+  return canvasTex(c);
+}
+function stripeTex() {
+  const c = mkCanvas(64, 8), g = c.getContext('2d');
+  g.fillStyle = cssColor(Z.cachecol); g.fillRect(0, 0, 64, 8);
+  g.fillStyle = cssColor(Z.cachecolListra); g.fillRect(40, 0, 24, 8);
+  const t = canvasTex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 1);
+  return t;
+}
+function shadowTex() {
+  const c = mkCanvas(128, 128), g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.55, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
+/* ---------- o boneco ---------- */
+const SPH = new THREE.SphereGeometry(1, 40, 28);
+const SPH_HI = new THREE.SphereGeometry(1, 64, 40);
+const SPH_LO = new THREE.SphereGeometry(1, 18, 12);
+const ARC = new THREE.TorusGeometry(1, 0.27, 8, 22, Math.PI);
+function mesh(geo, parent, color, pos = [0, 0, 0], scale = null, o = {}) {
+  const m = new THREE.Mesh(geo);
+  m.position.set(...pos);
+  if (scale) m.scale.set(...scale);
+  parent.add(m);
+  return paint(m, color, o);
+}
+const group = (parent, pos = [0, 0, 0]) => { const g = new THREE.Group(); g.position.set(...pos); parent.add(g); return g; };
+const L = 1, R = -1; // lado do Zeno: esquerdo em +x, direito em −x
+
+const zeno = group(scene);                  // raiz: posição, giro e achatamento
+// virar de costas no chão: gira em torno do centro do casco e assenta o casco no chão, bem em cima da raiz
+const SHELL_C = new THREE.Vector3(0, 0.78, -0.10);
+const flipG = group(zeno, SHELL_C.toArray());
+const flipIn = group(flipG, SHELL_C.clone().negate().toArray());
+const hips = group(flipIn, [0, 0.40, 0]);   // quadril: desce quando ele se recolhe ou senta
+const body = group(hips);                   // inclinação do corpo
+const torso = group(body);                  // respiração
+
+mesh(SPH, torso, 'barriga', [0, 0.34, 0.08], [0.39, 0.45, 0.31], { map: bellyTex() });
+const shell = mesh(SPH_HI, torso, 'casco', [0, 0.38, -0.10], [0.40, 0.55, 0.52], { map: shellTex });
+shell.rotation.y = Math.PI / 2; // a emenda da textura fica na frente, escondida pela barriga
+const tailMesh = mesh(new THREE.ConeGeometry(0.07, 0.17, 14), torso, 'pele', [0, 0.06, -0.38], null, { outline: false });
+tailMesh.rotation.x = -2.2;
+
+const legs = {};
+for (const s of [L, R]) {
+  const pv = group(hips, [s * 0.2, 0, 0.06]);
+  mesh(new THREE.CapsuleGeometry(0.11, 0.12, 6, 16), pv, 'pele', [0, -0.15, 0]);
+  mesh(SPH, pv, 'pele', [0, -0.31, 0.05], [0.13, 0.075, 0.17]);
+  legs[s] = pv;
+}
+
+const arms = {};
+for (const s of [L, R]) {
+  const sh = group(body, [s * 0.36, 0.62, 0.12]); sh.rotation.order = 'XZY';
+  mesh(SPH_LO, sh, 'pele', [0, 0, 0], [0.088, 0.088, 0.088], { outline: false });
+  mesh(new THREE.CapsuleGeometry(0.075, 0.12, 6, 14), sh, 'pele', [0, -0.11, 0]);
+  const el = group(sh, [0, -0.21, 0]); el.rotation.order = 'XZY';
+  mesh(new THREE.CapsuleGeometry(0.07, 0.09, 6, 14), el, 'pele', [0, -0.09, 0]);
+  mesh(SPH_LO, el, 'pele', [0, -0.2, 0], [0.085, 0.09, 0.08]);
+  const finger = group(el, [0, -0.255, 0.01]);
+  mesh(new THREE.CapsuleGeometry(0.03, 0.05, 4, 10), finger, 'pele', [0, -0.035, 0]);
+  arms[s] = { sh, el, finger };
+}
+
+const neckPivot = group(body, [0, 0.80, 0.04]); neckPivot.rotation.order = 'YXZ';
+const neckMesh = mesh(new THREE.CapsuleGeometry(0.13, 0.16, 6, 16), neckPivot, 'pele', [0, 0.14, 0.02], null, { outline: false });
+const head = group(neckPivot, [0, 0.28, 0.04]);
+mesh(SPH, head, 'pele', [0, 0, 0], [0.39, 0.34, 0.36]);
+mesh(SPH, head, 'focinho', [0, -0.09, 0.2], [0.24, 0.165, 0.18]);
+for (const s of [L, R]) {
+  mesh(SPH_LO, head, 'tinta', [s * 0.04, -0.025, 0.362], [0.011, 0.009, 0.006], { flat: true });
+  const ck = mesh(SPH_LO, head, 'bochecha', [s * 0.235, -0.075, 0.272], [0.062, 0.04, 0.02], { flat: true });
+  ck.rotation.y = s * 0.7;
+}
+const eyes = {};
+for (const s of [L, R]) {
+  const g = group(head, [s * 0.135, 0.05, 0.322]); g.rotation.set(-0.1, s * 0.38, 0);
+  const lid = group(g);
+  mesh(SPH_LO, lid, 'tinta', [0, 0, 0], [0.053, 0.074, 0.028], { flat: true });
+  mesh(SPH_LO, lid, 'branco', [-0.017, 0.028, 0.022], [0.016, 0.016, 0.01], { flat: true });
+  const happy = mesh(ARC, g, 'tinta', [0, -0.02, 0.012], [0.046, 0.046, 0.046], { flat: true });
+  const sleep = mesh(ARC, g, 'tinta', [0, 0.012, 0.012], [0.046, 0.046, 0.046], { flat: true });
+  sleep.rotation.z = Math.PI;
+  happy.visible = sleep.visible = false;
+  eyes[s] = { g, lid, happy, sleep };
+}
+const mouthG = group(head, [0, -0.118, 0.37]); mouthG.rotation.x = -0.2;
+const smile = mesh(ARC, mouthG, 'tinta', [0, 0.02, 0.004], [0.05, 0.05, 0.05], { flat: true });
+smile.rotation.z = Math.PI;
+const mouthOpen = mesh(SPH_LO, mouthG, 'boca', [0, -0.004, 0], [0.045, 0.03, 0.02], { flat: true });
+
+/* bolha de dormir, como nos animes: sai da narina do lado da câmera, enche ao soltar o ar e murcha ao puxar */
+const snot = group(head, [-0.04, -0.03, 0.362]);
+const snotBall = mesh(SPH, snot, 'bolha', [0, 0, 0], null, { glass: true });
+snotBall.renderOrder = 2;
+mesh(SPH_LO, snotBall, 'branco', [-0.38, 0.42, 0.8], [0.2, 0.2, 0.1], { flat: true });
+snot.visible = false;
+const SNOT_DIR = new THREE.Vector3(-0.45, -0.2, 0.87).normalize();
+
+/* touca de dormir: a ponta é mole e balança */
+const cap = group(head, [0, 0.2, -0.02]); cap.rotation.set(-0.25, 0, 0.16);
+mesh(new THREE.CylinderGeometry(0.15, 0.3, 0.22, 24, 1, true), cap, 'touca', [0, 0.11, 0]);
+const band = mesh(new THREE.TorusGeometry(0.29, 0.055, 10, 32), cap, 'toucaBorda', [0, 0.0, 0]);
+band.rotation.x = Math.PI / 2;
+const capTip = group(cap, [0, 0.21, 0]);
+mesh(new THREE.ConeGeometry(0.15, 0.32, 20), capTip, 'touca', [0, 0.15, 0]);
+mesh(SPH_LO, capTip, 'toucaBorda', [0, 0.32, 0], [0.07, 0.07, 0.07]);
+
+/* livrinho aberto, com as páginas viradas para ele */
+const book = group(body, [0, 0.50, 0.50]); book.rotation.x = 0.6;
+for (const s of [L, R]) {
+  const half = group(book); half.rotation.y = s * 0.38;
+  mesh(new RoundedBoxGeometry(0.17, 0.22, 0.018, 2, 0.008), half, 'capa', [s * 0.085, 0, 0]);
+  mesh(new THREE.BoxGeometry(0.155, 0.2, 0.02), half, 'papel', [s * 0.08, 0, -0.012]);
+}
+
+/* cachecol: anel listrado e duas pontas que balançam */
+const scarf = group(body, [0, 0.79, 0.03]);
+const ring = mesh(new THREE.TorusGeometry(0.245, 0.075, 12, 40), scarf, 'cachecol', [0, 0, 0], [1.08, 1, 1], { map: stripeTex() });
+ring.rotation.x = Math.PI / 2;
+const tail1 = group(scarf, [-0.14, -0.03, 0.25]);
+mesh(new RoundedBoxGeometry(0.13, 0.19, 0.045, 3, 0.02), tail1, 'cachecol', [0, -0.085, 0]);
+const tail2 = group(tail1, [0, -0.17, 0]);
+mesh(new RoundedBoxGeometry(0.13, 0.16, 0.045, 3, 0.02), tail2, 'cachecol', [0, -0.07, 0]);
+for (const x of [-0.04, 0, 0.04]) mesh(new THREE.CapsuleGeometry(0.013, 0.02, 3, 8), tail2, 'cachecolListra', [x, -0.162, 0], null, { outline: false });
+
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.24));
+paint(shadow, 'tinta', { shadow: true, map: shadowTex() });
+shadow.renderOrder = -1;
+scene.add(shadow);
+
+let triangles = 0;
+zeno.traverse((o) => { if (o.isMesh) triangles += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+
+/* ---------- molas: os mesmos parâmetros do Motion (visualDuration e bounce) ---------- */
+const PRESET = {};
+for (const [n, [vd, b]] of Object.entries({
+  calma: [0.35, 0], toque: [0.25, 0.25], festa: [0.6, 0.35], lento: [0.9, 0], leve: [0.5, 0.12], rapido: [0.15, 0.08], olho: [0.11, 0],
+})) { const w = (2 * Math.PI) / (vd * 1.2), z = clamp(1 - b, 0.05, 1); PRESET[n] = { k: w * w, c: 2 * z * w }; }
+
+const FACE = 0.68;   // corpo de três quartos, para o casco aparecer; o rosto vira para quem vê
+const NEAR = R;      // o braço do lado da câmera
+const REST = {
+  rootYaw: FACE, bodyLean: 0, bodyTilt: 0, bodyTwist: 0, headYaw: 0, headPitch: 0, headRoll: 0, neck: 0,
+  aR: -0.2, gR: -0.30, exR: -0.35, ezR: 0, fR: 0,
+  aL: -0.2, gL: 0.30, exL: -0.35, ezL: 0, fL: 0,
+  legR: 0, legL: 0, limbs: 1, hipsY: 0, squash: 0, eyeOpen: 1, mouth: 0, cap: 0, book: 0, gazeX: 0, gazeY: 0,
+  sit: 0, flip: 0,
+};
+const P = {}, PL = [];
+function def(name, v) { const p = { v, t: v, vel: 0, k: PRESET.calma.k, c: PRESET.calma.c, tw: null }; P[name] = p; PL.push(p); }
+for (const [n, v] of Object.entries(REST)) def(n, v);
+for (const n of ['rootX', 'rootY', 'walk', 'lookYaw', 'lookPitch', 'eyeX', 'eyeY']) def(n, 0);
+
+let simTime = 0;       // segundos de cena (a velocidade da página entra aqui)
+let idleNext = 3;      // quando ele faz a próxima coisinha à toa
+let lastUser = 0;      // último toque ou cena pedida pela pessoa (o tédio conta daqui)
+let nextGaze = 0;      // quando ele muda o olhar enquanto está à toa
+let present = true;    // em cena
+let sleeping = null;   // 'pausa' | 'noite'
+let ready = false;
+
+function set(vals, preset = 'calma') {
+  const pr = PRESET[preset], snap = reduced();
+  if (snap) crossfade();
+  for (const [n, val] of Object.entries(vals)) {
+    const p = P[n]; p.tw = null; p.t = val; p.k = pr.k; p.c = pr.c;
+    if (snap) { p.v = val; p.vel = 0; }
+  }
+  wake();
+}
+function snapAll(vals) {
+  for (const [n, val] of Object.entries(vals)) { const p = P[n]; p.v = p.t = val; p.vel = 0; p.tw = null; }
+  for (const d of dangles) d.reset();
+}
+function tween(name, fn, ms) {
+  const p = P[name];
+  p.t = fn(1);
+  if (reduced()) { crossfade(); p.v = p.t; p.vel = 0; p.tw = null; wake(); return; }
+  p.tw = { fn, t0: simTime, dur: ms / 1000 };
+  wake();
+}
+function stepParams(dt) {
+  const n = Math.max(1, Math.ceil(dt * 240)), h = dt / n;
+  for (const p of PL) {
+    if (p.tw) {
+      const u = clamp((simTime - p.tw.t0) / p.tw.dur, 0, 1);
+      p.v = p.tw.fn(u); p.vel = 0;
+      if (u >= 1) { p.v = p.t; p.tw = null; }
+      continue;
+    }
+    if (p.v === p.t && p.vel === 0) continue;
+    for (let i = 0; i < n; i++) { p.vel += (-p.k * (p.v - p.t) - p.c * p.vel) * h; p.v += p.vel * h; }
+    if (Math.abs(p.v - p.t) < 1e-4 && Math.abs(p.vel) < 1e-3) { p.v = p.t; p.vel = 0; }
+  }
+}
+const settled = () => PL.every((p) => !p.tw && p.v === p.t && p.vel === 0);
+
+/* ---------- pontas que balançam: um pêndulo amortecido puxado pela aceleração ---------- */
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _e = new THREE.Euler();
+const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3();
+class Dangle {
+  constructor(obj, o) { Object.assign(this, { obj, maxBack: 9 }, o); this.reset(); }
+  reset() { this.ax = this.az = this.vx = this.vz = 0; this.p = null; this.vel = new THREE.Vector3(); this.acc = new THREE.Vector3(); }
+  step(dt, yaw, still, fix = 0) {
+    const p = this.obj.getWorldPosition(_v);
+    if (!this.p) this.p = p.clone();
+    if (dt > 0) {
+      const vel = _v2.copy(p).sub(this.p).divideScalar(dt);
+      const acc = _v3.copy(vel).sub(this.vel).divideScalar(dt);
+      if (acc.length() > 60) acc.setLength(60);
+      this.acc.lerp(acc, 0.5); this.vel.copy(vel); this.p.copy(p);
+    }
+    if (still) { this.ax = this.az = this.vx = this.vz = 0; }
+    else if (dt > 0) {
+      const a = _v2.copy(this.acc), sg = this.world ? 1 : -1;
+      if (this.world) a.applyAxisAngle(Y_AXIS, -yaw);
+      else { this.obj.parent.getWorldQuaternion(_q).invert(); a.applyQuaternion(_q); }
+      const n = Math.max(1, Math.ceil(dt * 240)), h = dt / n;
+      for (let i = 0; i < n; i++) {
+        this.vx += (-this.k * this.ax - this.c * this.vx + sg * this.gain * a.z) * h;
+        this.vz += (-this.k * this.az - this.c * this.vz - sg * this.gain * a.x) * h;
+        this.ax += this.vx * h; this.az += this.vz * h;
+      }
+      this.ax = clamp(this.ax, -1.2, this.maxBack); this.az = clamp(this.az, -1.2, 1.2);
+      if (Math.abs(this.ax) + Math.abs(this.az) + Math.abs(this.vx) + Math.abs(this.vz) < 1e-4) this.ax = this.az = this.vx = this.vz = 0;
+    }
+    _e.set(this.restX + this.ax, 0, this.restZ + this.az, 'XYZ');
+    if (this.world) {
+      _q2.setFromAxisAngle(Y_AXIS, yaw).multiply(_q.setFromEuler(_e));
+      this.obj.parent.getWorldQuaternion(_q).invert();
+      this.obj.quaternion.copy(_q).multiply(_q2);
+      // deitado, a ponta acompanha o corpo em vez de cair no chão através da barriga
+      if (fix > 0) this.obj.quaternion.slerp(_q.setFromEuler(_e), fix);
+    } else this.obj.quaternion.setFromEuler(_e);
+  }
+  moving() { return this.ax !== 0 || this.az !== 0 || this.vx !== 0 || this.vz !== 0; }
+}
+const dangles = [
+  new Dangle(tail1, { world: true, restX: -0.5, restZ: 0, k: 70, c: 7, gain: 1.1, maxBack: 0.12 }),
+  new Dangle(tail2, { world: true, restX: -0.12, restZ: 0, k: 55, c: 5, gain: 1.5, maxBack: 0.2 }),
+  new Dangle(capTip, { world: false, restX: -0.35, restZ: 0.95, k: 45, c: 4.5, gain: 1.0 }),
+];
+
+/* ---------- olhar ---------- */
+let look = { type: 'camera' }, lookUntil = 0;
+let idleX = 0, idleY = 0, nextSacc = 0;
+const _hv = new THREE.Vector3(), _dv = new THREE.Vector3();
+function lookAt(target, holdMs = 0) { look = target; lookUntil = holdMs ? simTime + holdMs / 1000 : 0; wake(); }
+function aimParam(p, val, pr) {
+  if (p.t !== val) { p.t = val; p.k = pr.k; p.c = pr.c; }
+  if (reduced()) { p.v = val; p.vel = 0; }
+}
+function updateLook() {
+  if (lookUntil && simTime > lookUntil) { look = { type: 'camera' }; lookUntil = 0; }
+  let yaw = 0, pitch = 0;
+  if (look.type !== 'none') {
+    head.getWorldPosition(_hv);
+    _dv.copy(look.type === 'camera' ? camera.position : look.v).sub(_hv).applyAxisAngle(Y_AXIS, -(P.rootYaw.v + P.bodyTwist.v));
+    yaw = Math.atan2(_dv.x, _dv.z);
+    pitch = Math.atan2(_dv.y, Math.hypot(_dv.x, _dv.z));
+  }
+  aimParam(P.lookYaw, clamp(yaw * 0.7, -0.95, 0.95), PRESET.calma);
+  aimParam(P.lookPitch, clamp(-pitch * 0.6, -0.4, 0.4), PRESET.calma);
+  aimParam(P.eyeX, clamp(yaw * 1.3 + idleX + P.gazeX.v, -1, 1), PRESET.olho);
+  aimParam(P.eyeY, clamp(pitch * 1.3 + idleY + P.gazeY.v, -1, 1), PRESET.olho);
+}
+
+/* ---------- olhos: aberto, feliz (∩) ou dormindo (∪). A troca passa por uma piscada ---------- */
+let eyeMode = 'open', eyeSwap = null, blinkT = -1, nextBlink = 1;
+function showEyes(mode) { for (const s of [L, R]) { const E = eyes[s]; E.lid.visible = mode === 'open'; E.happy.visible = mode === 'happy'; E.sleep.visible = mode === 'sleep'; } }
+function eyesTo(mode) {
+  if (mode === (eyeSwap ? eyeSwap.mode : eyeMode)) return;
+  if (reduced()) { crossfade(); eyeMode = mode; eyeSwap = null; showEyes(mode); wake(); return; }
+  eyeSwap = { mode, t0: simTime, done: false };
+  wake();
+}
+function eyeSwapMul() {
+  if (!eyeSwap) return 1;
+  const u = (simTime - eyeSwap.t0) / 0.14;
+  if (u >= 0.5 && !eyeSwap.done) { eyeMode = eyeSwap.mode; showEyes(eyeMode); eyeSwap.done = true; }
+  if (u >= 1) { eyeSwap = null; return 1; }
+  return u < 0.5 ? 1 - u * 2 : (u - 0.5) * 2;
+}
+
+/* ---------- fala ---------- */
+let talkUntil = 0, bubbleUntil = 0, bubbleOn = false, bubbleHideAt = 0, bubbleW = 0, bubbleH = 0;
+function say(text, holdMs = 2000) {
+  btext.textContent = text;
+  bubble.hidden = false;
+  bubble.classList.remove('on');
+  bubbleW = btext.offsetWidth; bubbleH = btext.offsetHeight;
+  placeBubble();
+  requestAnimationFrame(() => bubble.classList.add('on'));
+  bubbleOn = true;
+  talkUntil = simTime + Math.min(2.2, 0.35 + text.length * 0.045);
+  bubbleUntil = talkUntil + holdMs / 1000;
+  live();
+}
+const _bv = new THREE.Vector3();
+function placeBubble() {
+  if (bubble.hidden) return;
+  head.localToWorld(_bv.set(0, 0.42 + P.cap.v * 0.3, 0)).project(camera);
+  const x = (_bv.x + 1) / 2 * W, y = (1 - _bv.y) / 2 * H;
+  bubble.style.setProperty('--bx', clamp(x - 8, 10, W - bubbleW - 10) + 'px');
+  bubble.style.setProperty('--by', Math.max(y - 2, bubbleH + 64) + 'px');
+}
+
+/* ---------- troca por opacidade (movimento reduzido) ---------- */
+let fading = false, fadeTimer = 0, frameNo = 0, lastFadeFrame = -1;
+function crossfade() {
+  if (!ready || !zeno.visible || lastFadeFrame === frameNo) return;
+  lastFadeFrame = frameNo;
+  draw(0);
+  const g = snapCanvas.getContext('2d');
+  g.clearRect(0, 0, snapCanvas.width, snapCanvas.height);
+  g.drawImage(canvas, 0, 0, snapCanvas.width, snapCanvas.height);
+  snapCanvas.style.transition = canvas.style.transition = 'none';
+  snapCanvas.style.opacity = '1'; canvas.style.opacity = '0';
+  fading = true; clearTimeout(fadeTimer);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const d = `opacity ${Math.round(150 / speed)}ms linear`;
+    snapCanvas.style.transition = canvas.style.transition = d;
+    snapCanvas.style.opacity = '0'; canvas.style.opacity = '1';
+    fadeTimer = setTimeout(() => { fading = false; }, 150 / speed + 40);
+  }));
+  wake();
+}
+
+/* ---------- casco trocando de cor ---------- */
+let shellFade = null;
+function updateShell(animated) {
+  if (!animated || reduced()) {
+    if (reduced()) crossfade();
+    paintShell(shellCv); shellTex.needsUpdate = true; draw(0); wake();
+    return;
+  }
+  shellPrev.getContext('2d').drawImage(shellCv, 0, 0);
+  paintShell(shellNext);
+  shellFade = { t0: simTime, dur: 0.24 };
+  wake();
+}
+function stepShell() {
+  if (!shellFade) return;
+  const u = clamp((simTime - shellFade.t0) / shellFade.dur, 0, 1), g = shellCv.getContext('2d');
+  g.globalAlpha = 1; g.drawImage(shellNext, 0, 0);
+  g.globalAlpha = 1 - easeOut(u); g.drawImage(shellPrev, 0, 0);
+  g.globalAlpha = 1;
+  shellTex.needsUpdate = true;
+  if (u >= 1) shellFade = null;
+}
+
+/* ---------- cena por quadro ---------- */
+let walkPhase = 0, breathAmp = 0, breathPhase = 0, talkM = 0;
+let snotOn = 0, popT = -1, popMul = 1;
+function popSnot() { if (snot.visible && !reduced()) popT = simTime; else snotOn = 0; }
+function update(dt) {
+  stepParams(dt);
+  stepShell();
+  const living = present && !sleeping && !reduced();    // em cena e acordado: respira, pisca e olha em volta
+  const dozing = present && !!sleeping && !reduced();   // descansando: respira sem parar, mais devagar
+  breathAmp += ((living || dozing ? 1 : 0) - breathAmp) * (1 - Math.exp(-dt * 2.2));
+  if (!living && !dozing && breathAmp < 2e-3) breathAmp = 0;
+  breathPhase += dt * 2 * Math.PI / (sleeping ? 5.2 : 3.6);
+  const snotTarget = present && sleeping && eyeMode === 'sleep' ? 1 : 0;
+  if (reduced()) snotOn = snotTarget;
+  else snotOn += (snotTarget - snotOn) * (1 - Math.exp(-dt * 1.2));
+  if (!snotTarget && snotOn < 0.01) snotOn = 0;
+  popMul = 1;
+  if (popT >= 0) {
+    const u = (simTime - popT) / 0.16;
+    if (u >= 1) { popT = -1; snotOn = 0; } else popMul = 1 + u * 0.6;
+  }
+  if (living && eyeMode === 'open' && blinkT < 0 && simTime >= nextBlink) {
+    blinkT = simTime;
+    nextBlink = simTime + (Math.random() < 0.15 ? 0.32 : rand(2.4, 5.5));
+  }
+  if (living && look.type === 'camera' && simTime >= nextSacc) {
+    if (idleX || idleY) { idleX = idleY = 0; nextSacc = simTime + rand(1.6, 3.4); }
+    else { idleX = rand(-0.35, 0.35); idleY = rand(-0.22, 0.18); nextSacc = simTime + rand(0.45, 0.9); }
+  }
+  if (!living) idleX = idleY = 0;
+  if (living && !sceneRunning) idleTick();
+  updateLook();
+  if (P.walk.v > 0.01) walkPhase += dt * 2 * Math.PI * 2.3;
+  talkM = simTime < talkUntil && !reduced() ? (0.25 + 0.55 * Math.abs(Math.sin(simTime * 13))) * Math.min(1, (talkUntil - simTime) * 6) : 0;
+  if (bubbleOn && simTime > bubbleUntil) { bubble.classList.remove('on'); bubbleOn = false; bubbleHideAt = simTime + 0.26; }
+  if (!bubbleOn && !bubble.hidden && simTime > bubbleHideAt) bubble.hidden = true;
+}
+function apply() {
+  const v = (n) => P[n].v, wk = v('walk'), sw = Math.sin(walkPhase), l = v('limbs');
+  const br = breathAmp * Math.sin(breathPhase) * (sleeping ? 1.8 : 1);
+  zeno.position.set(home.x + v('rootX'), home.y + v('rootY') + wk * 0.035 * Math.abs(sw), 0);
+  zeno.rotation.y = v('rootYaw');
+  const sq = v('squash'), st = v('sit'), fl = v('flip');
+  zeno.scale.set(1 + sq * 0.5, 1 - sq, 1 + sq * 0.5);
+  flipG.rotation.x = -Math.PI / 2 * fl;
+  flipG.position.set(0, SHELL_C.y - 0.38 * fl, SHELL_C.z + 0.10 * fl);
+  hips.position.y = 0.40 + v('hipsY') - 0.26 * st + (sleeping ? 0.006 * br : 0);
+  body.rotation.set(v('bodyLean') - 0.1 * st, v('bodyTwist'), v('bodyTilt') + wk * 0.07 * sw);
+  torso.scale.set(1 - 0.006 * br, 1 + 0.014 * br, 1 - 0.006 * br);
+  neckPivot.position.y = 0.80 + 0.008 * br;
+  neckPivot.rotation.set(v('headPitch') + v('lookPitch'), v('headYaw') + v('lookYaw'), v('headRoll'));
+  const n = v('neck');
+  head.position.set(0, 0.28 + (n > 0 ? n * 0.13 : n * 0.30), 0.04 + n * 0.05);
+  neckMesh.scale.y = 1 + Math.max(0, n) * 0.9;
+  for (const s of [L, R]) {
+    const A = arms[s], k = s > 0 ? 'L' : 'R';
+    A.sh.position.set(s * lerp(0.27, 0.36, l), lerp(0.50, 0.62, l), 0.12);
+    A.sh.scale.setScalar(lerp(0.3, 1, l));
+    A.sh.rotation.set(v('a' + k) - s * wk * 0.3 * sw, 0, v('g' + k));
+    A.el.rotation.set(v('ex' + k), 0, v('ez' + k));
+    const f = v('f' + k);
+    A.finger.visible = f > 0.02; A.finger.scale.set(1, Math.max(0.001, f), 1);
+    const G = legs[s];
+    G.position.y = lerp(0.16, 0, l);
+    G.scale.setScalar(lerp(0.35, 1, l));
+    G.rotation.x = v('leg' + k) + s * wk * 0.5 * sw - 1.45 * st;
+  }
+  tailMesh.scale.setScalar(lerp(0.5, 1, l));
+  let blink = 1;
+  if (blinkT >= 0) { const u = (simTime - blinkT) / 0.15; if (u >= 1) blinkT = -1; else blink = 1 - Math.sin(Math.PI * u); }
+  const swap = eyeSwapMul();
+  for (const s of [L, R]) {
+    const E = eyes[s];
+    E.g.position.set(s * 0.135 + v('eyeX') * 0.03, 0.05 + v('eyeY') * 0.022, 0.322);
+    E.g.scale.y = Math.max(0.02, swap);
+    E.lid.scale.y = Math.max(0.05, v('eyeOpen') * blink);
+  }
+  const m = Math.max(v('mouth'), talkM);
+  mouthOpen.visible = m > 0.04;
+  mouthOpen.scale.set(0.042 + m * 0.008, 0.012 + m * 0.032, 0.02);
+  smile.visible = m < 0.3;
+  const infl = reduced() ? 0.6 : (1 - Math.sin(breathPhase)) / 2;
+  const sr = snotOn * lerp(0.02, 0.115, infl) * popMul;
+  snot.visible = sr > 0.004;
+  snotBall.scale.setScalar(Math.max(0.001, sr));
+  snotBall.position.copy(SNOT_DIR).multiplyScalar(sr * 0.9);
+  snotBall.material.opacity = 0.6 * (1 - (popMul - 1) / 0.6); // ao estourar, cresce e some
+  const cp = v('cap'); cap.visible = cp > 0.003; cap.scale.setScalar(Math.max(0.003, cp));
+  const bk = v('book'); book.visible = bk > 0.003; book.scale.setScalar(Math.max(0.003, bk));
+  shadow.visible = zeno.visible;
+  shadow.position.set(zeno.position.x, home.y + 0.005, -0.3);
+  const ss = Math.max(0.4, 1 - v('rootY') * 1.4);
+  shadow.scale.set(ss * (1 + sq * 0.5), ss, 1);
+  shadow.material.opacity = 0.2 * ss;
+}
+let lastDt = 0;
+function draw(dt) {
+  apply();
+  zeno.updateMatrixWorld(true);
+  const still = reduced(), fix = clamp(P.flip.v * 1.5, 0, 1);
+  for (const d of dangles) d.step(dt, P.rootYaw.v, still, fix);
+  if (style === 'papel') effect.render(scene, camera); else renderer.render(scene, camera);
+  placeBubble();
+}
+
+/* ---------- o laço só roda enquanto há o que mostrar ---------- */
+let raf = 0, nap = 0, last = 0, fpsN = 0, fpsT = 0, fps = 0;
+let frozen = false; // só para capturas: segura o tempo da cena
+const waits = [];
+function wake() {
+  if (document.hidden || !ready) return;
+  if (nap) { clearTimeout(nap); nap = 0; raf = requestAnimationFrame(frame); return; }
+  if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); status(); }
+}
+function live() { idleNext = Math.max(idleNext, simTime + rand(3.5, 6.5)); wake(); }
+function touched() { lastUser = simTime; live(); }
+function busy() {
+  if (waits.length || sceneRunning || shellFade || eyeSwap || blinkT >= 0 || fading || popT >= 0 || !bubble.hidden) return true;
+  if (present && !reduced()) return true;   // em cena, ele está sempre vivo: à toa ou dormindo
+  if (breathAmp > 0 || !settled()) return true;
+  return dangles.some((d) => d.moving());
+}
+/* à toa ou dormindo, sem nenhuma ação no meio: respiração, piscadas e olhares bastam a 30 quadros por segundo */
+const calm = () => !sceneRunning && !waits.length && !eyeSwap && !fading && !shellFade && popT < 0 && bubble.hidden
+  && P.walk.v < 0.01 && PL.every((p) => !p.tw);
+function frame() {
+  frameNo++;
+  // o relógio é o de verdade, e não o carimbo do quadro: há navegadores que entregam quadros fora do ritmo
+  const now = performance.now();
+  const real = clamp((now - last) / 1000, 0, 0.05);
+  last = now;
+  const dt = frozen ? 0 : real * speed;
+  simTime += dt;
+  for (let i = 0; i < waits.length;) { if (waits[i].at <= simTime) waits.splice(i, 1)[0].res(); else i++; }
+  update(dt);
+  draw(dt);
+  fpsN++;
+  if (now - fpsT > 500) { fps = Math.round(fpsN * 1000 / (now - fpsT)); fpsN = 0; fpsT = now; status(); }
+  if (!busy()) { raf = 0; fps = 0; status(); }
+  else if (calm()) { raf = 0; nap = setTimeout(() => { nap = 0; raf = requestAnimationFrame(frame); }, 1000 / 30 - 6); }
+  else raf = requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { cancelAnimationFrame(raf); clearTimeout(nap); raf = nap = 0; } else wake();
+});
+
+/* ---------- roteiro: cada cena é uma função que espera em tempo de cena e pode ser interrompida ---------- */
+class Cancel {}
+let token = 0, sceneRunning = false, idleRunning = false, tapWaiter = null;
+function newRun() {
+  const tok = ++token;
+  for (const w of waits.splice(0)) w.rej(new Cancel());
+  return {
+    alive: () => tok === token,
+    wait: (ms) => new Promise((res, rej) => {
+      if (tok !== token) { rej(new Cancel()); return; }
+      waits.push({ at: simTime + ms / 1000, res, rej });
+      wake();
+    }),
+  };
+}
+function waitTap(run, kind, ms) {
+  return new Promise((res, rej) => {
+    tapWaiter = { kind, res: () => { tapWaiter = null; res(true); } };
+    run.wait(ms).then(() => { if (tapWaiter && tapWaiter.kind === kind) { tapWaiter = null; res(false); } }, rej);
+  });
+}
+function clearTargets() { document.querySelectorAll('.zl-alvo').forEach((x) => x.classList.remove('zl-alvo')); }
+async function play(fn, btn, idle = false) {
+  const run = newRun();
+  clearTargets(); tapWaiter = null;
+  if (!idle) lastUser = simTime;
+  sceneRunning = true; idleRunning = idle; pressed(idle ? null : btn); live();
+  try { await fn(run); }
+  catch (e) { if (!(e instanceof Cancel)) console.error(e); return; }
+  if (run.alive()) { sceneRunning = false; idleRunning = false; pressed(null); clearTargets(); live(); }
+}
+
+const k = (s, n) => n + (s > 0 ? 'L' : 'R');
+function armPose(s, a, gOut, ex = -0.2, ezOut = 0, f = 0) {
+  return { [k(s, 'a')]: a, [k(s, 'g')]: gOut * s, [k(s, 'ex')]: ex, [k(s, 'ez')]: ezOut * s, [k(s, 'f')]: f };
+}
+const restArms = () => ({ ...armPose(L, REST.aL, REST.gL, REST.exL), ...armPose(R, REST.aR, -REST.gR, REST.exR) });
+function aimDir(d) {
+  d.normalize();
+  let a = Math.atan2(-d.z, -d.y);
+  if (a > 0.6) a -= Math.PI * 2;
+  return { a, g: Math.asin(clamp(d.x, -1, 1)) };
+}
+const aimLocal = (s, x, y, z) => aimDir(new THREE.Vector3(x - s * 0.36, y - 0.62, z - 0.12));
+/* alcançar um ponto do corpo com a mão: ombro e cotovelo achados por busca, com o cotovelo dobrando só para a frente */
+const _ik = { q1: new THREE.Quaternion(), q2: new THREE.Quaternion(), e: new THREE.Euler(), a: new THREE.Vector3(), b: new THREE.Vector3(), h: new THREE.Vector3() };
+function handAt(s, a, g, ex) {
+  _ik.q1.setFromEuler(_ik.e.set(a, 0, g, 'XZY'));
+  _ik.q2.setFromEuler(_ik.e.set(ex, 0, 0, 'XZY'));
+  _ik.a.set(0, -0.21, 0).applyQuaternion(_ik.q1);
+  _ik.b.set(0, -0.2, 0).applyQuaternion(_ik.q2).applyQuaternion(_ik.q1);
+  return _ik.h.set(s * 0.36, 0.62, 0.12).add(_ik.a).add(_ik.b);
+}
+function reach(s, x, y, z) {
+  const T = new THREE.Vector3(x, y, z), K = s > 0 ? 'L' : 'R';
+  let { a, g } = aimLocal(s, x, y, z), ex = -0.6, step = 0.3;
+  const err = (a2, g2, e2) => handAt(s, a2, g2, e2).distanceTo(T);
+  let best = err(a, g, ex);
+  for (let i = 0; i < 120 && step > 0.004; i++) {
+    let moved = false;
+    for (const [da, dg, de] of [[step, 0, 0], [-step, 0, 0], [0, step, 0], [0, -step, 0], [0, 0, step], [0, 0, -step]]) {
+      const e2 = clamp(ex + de, -2.2, 0), v = err(a + da, g + dg, e2);
+      if (v < best) { best = v; a += da; g += dg; ex = e2; moved = true; }
+    }
+    if (!moved) step /= 2;
+  }
+  return { ['a' + K]: a, ['g' + K]: g, ['ex' + K]: ex, ['ez' + K]: 0 };
+}
+function aimWorld(s, T) {
+  zeno.updateMatrixWorld(true);
+  const S = arms[s].sh.getWorldPosition(new THREE.Vector3());
+  return aimDir(T.clone().sub(S).applyQuaternion(body.getWorldQuaternion(new THREE.Quaternion()).invert()));
+}
+function elWorld(el) {
+  const a = el.getBoundingClientRect(), b = canvas.getBoundingClientRect();
+  return screenToPlane(a.left + a.width / 2 - b.left, a.top + a.height / 2 - b.top, new THREE.Vector3());
+}
+
+function enter() { present = true; zeno.visible = true; }
+async function walkIn(run) {
+  enter();
+  sleeping = null; eyeMode = 'open'; eyeSwap = null; showEyes('open');
+  if (reduced()) { crossfade(); snapAll({ ...REST, rootX: 0, rootY: 0, walk: 0 }); lookAt({ type: 'camera' }); return; }
+  snapAll({ ...REST, rootX: -offLeft, rootY: 0, rootYaw: Math.PI / 2, walk: 1 });
+  lookAt({ type: 'none' });
+  const from = -offLeft;
+  tween('rootX', (u) => from * (1 - easeOut(u)), 2000);
+  await run.wait(1750);
+  set({ walk: 0 }, 'calma');
+  await run.wait(200);
+  set({ rootYaw: FACE }, 'toque');
+  lookAt({ type: 'camera' });
+  await run.wait(320);
+}
+async function walkOut(run) {
+  lookAt({ type: 'none' });
+  if (reduced()) { crossfade(); present = false; zeno.visible = false; return; }
+  set({ rootYaw: -Math.PI / 2 }, 'calma');
+  await run.wait(260);
+  set({ walk: 1 }, 'calma');
+  tween('rootX', (u) => -offLeft * easeIn(u), 1900);
+  await run.wait(1900);
+  present = false; zeno.visible = false;
+  snapAll({ walk: 0, rootX: 0, rootYaw: FACE });
+}
+const sitArms = () => ({ ...armPose(L, -0.5, 0.22, -0.55), ...armPose(R, -0.5, 0.22, -0.55) });
+async function sitDown(run) {
+  set({ squash: 0.07 }, 'rapido');
+  set({ sit: 1, ...sitArms() }, 'leve');
+  await run.wait(380);
+  set({ squash: 0 }, 'toque');
+  await run.wait(120);
+}
+/* volta ao normal de onde estiver (deitado, recolhido, de touca, sentado). Com { sit: true }, termina sentado */
+async function standUp(run, o = {}) {
+  $('#clock').textContent = '20:41';
+  if (!present) { await walkIn(run); if (o.sit) await sitDown(run); return; }
+  const seated = P.sit.t > 0.5;
+  const down = sleeping || P.limbs.t < 0.99 || P.cap.t > 0.01 || P.book.t > 0.01 || P.flip.t > 0.01;
+  popSnot();
+  sleeping = null;
+  eyesTo('open');
+  lookAt({ type: 'camera' });
+  const keep = o.sit && seated && !down;
+  if (down) {
+    set({ cap: 0, book: 0, eyeOpen: 1, gazeX: 0, gazeY: 0, flip: 0 }, 'calma');
+    set({ limbs: 1, hipsY: 0, neck: 0.2, headPitch: 0, headRoll: 0, ...restArms() }, 'toque');
+    await run.wait(280);
+  }
+  set(keep ? { ...REST, sit: 1, ...sitArms() } : { ...REST }, 'calma');
+  if (down || (seated && !keep)) await run.wait(260);
+  if (o.sit && !keep) await sitDown(run);
+}
+async function hop(run, h = 0.22, ms = 360) {
+  if (reduced()) return;
+  set({ squash: 0.13 }, 'rapido');
+  await run.wait(80);
+  set({ squash: -0.08 }, 'rapido');
+  tween('rootY', (u) => h * 4 * u * (1 - u), ms);
+  await run.wait(ms - 30);
+  set({ squash: 0.1 }, 'rapido');
+  await run.wait(90);
+  set({ squash: 0 }, 'toque');
+}
+async function nod(run, times = 1, amp = 0.2, preset = 'toque') {
+  for (let i = 0; i < times; i++) {
+    set({ headPitch: amp }, preset); await run.wait(preset === 'leve' ? 260 : 170);
+    set({ headPitch: 0 }, preset); await run.wait(preset === 'leve' ? 280 : 190);
+  }
+}
+async function wave(run, text, s = NEAR, times = 3) {
+  lookAt({ type: 'camera' });
+  set({ ...armPose(s, -2.75, 0.5, -0.3), bodyTilt: s * 0.06, headRoll: -s * 0.1 }, 'toque');
+  if (text) say(text);
+  await run.wait(220);
+  if (reduced()) await run.wait(1000);
+  else for (let i = 0; i < times; i++) {
+    set({ [k(s, 'ez')]: s * 0.55 }, 'rapido'); await run.wait(170);
+    set({ [k(s, 'ez')]: -s * 0.25 }, 'rapido'); await run.wait(170);
+  }
+  set({ ...restArms(), bodyTilt: 0, headRoll: 0 }, 'calma');
+}
+async function pointAt(run, el, text) {
+  const T = elWorld(el);
+  el.classList.add('zl-alvo');
+  lookAt({ type: 'point', v: T });
+  set({ rootYaw: FACE + 0.1, bodyLean: 0.04 }, 'calma');
+  await run.wait(300);
+  const side = T.clone().sub(zeno.position).applyAxisAngle(Y_AXIS, -P.rootYaw.v).x >= 0 ? L : R;
+  const { a, g } = aimWorld(side, T);
+  set({ [k(side, 'a')]: a, [k(side, 'g')]: g, [k(side, 'ex')]: 0, [k(side, 'ez')]: 0, [k(side, 'f')]: 1, bodyTilt: side * 0.05 }, 'toque');
+  if (text) say(text, 2600);
+  await run.wait(1000);
+  lookAt({ type: 'camera' });
+}
+function lowerArms() {
+  clearTargets();
+  set({ ...restArms(), bodyLean: 0, bodyTilt: 0, rootYaw: FACE }, 'calma');
+}
+async function cheer(run, text) {
+  eyesTo('happy');
+  if (text) say(text, 1400);
+  await nod(run, 1, 0.2);
+  await run.wait(500);
+  eyesTo('open');
+}
+async function thanks(run) {
+  say('Obrigado por contar.', 1800);
+  eyesTo('happy');
+  await nod(run, 2, 0.16, 'leve');
+  await run.wait(500);
+  eyesTo('open');
+}
+
+const scenes = {
+  async entrar(run) {
+    present = false; zeno.visible = false;
+    await walkIn(run);
+    await wave(run, 'Oi! Eu sou o Zeno.');
+    await run.wait(900);
+    await pointAt(run, $('#chk'), 'Quando fizer um hábito, toque aqui.');
+    const tapped = await waitTap(run, 'chk', 5000);
+    lowerArms();
+    if (tapped) await cheer(run, 'Isso!');
+    await run.wait(500);
+    say('Um pé depois do outro.', 2000);
+    await run.wait(1200);
+  },
+  async acenar(run) { await standUp(run); await wave(run, 'Oi!'); },
+  async apontar(run) {
+    await standUp(run);
+    await pointAt(run, $('#chk'), 'Toque aqui quando fizer.');
+    await run.wait(1400);
+    lowerArms();
+  },
+  async checkin(run) {
+    await standUp(run, { sit: true });   // senta para conversar
+    const ci = $('#ci');
+    lookAt({ type: 'point', v: elWorld(ci) });
+    await run.wait(450);
+    lookAt({ type: 'camera' });
+    ci.classList.add('zl-alvo');
+    set({ headRoll: -0.16, rootYaw: FACE - 0.1 }, 'leve');
+    say('Como foi hoje?', 4500);
+    const tapped = await waitTap(run, 'r5', 7000);
+    ci.classList.remove('zl-alvo');
+    set({ headRoll: 0, rootYaw: FACE }, 'calma');
+    if (tapped) await thanks(run);
+  },
+  async dia(run) {
+    await standUp(run);
+    eyesTo('happy');
+    say('Dia fechado.', 1800);
+    await hop(run, 0.16, 330);
+    set({ ...armPose(NEAR, -2.2, 0.75, -0.5) }, 'toque');
+    await run.wait(200);
+    if (!reduced()) for (let i = 0; i < 2; i++) {
+      set({ [k(NEAR, 'ez')]: NEAR * 0.45 }, 'rapido'); await run.wait(170);
+      set({ [k(NEAR, 'ez')]: -NEAR * 0.2 }, 'rapido'); await run.wait(170);
+    } else await run.wait(700);
+    set({ ...restArms() }, 'calma');
+    await run.wait(400);
+    eyesTo('open');
+  },
+  async fase(run) {
+    await standUp(run);
+    eyesTo('happy');
+    say('Fase nova!', 3400);
+    const up = { ...armPose(L, -2.95, 0.35, -0.1), ...armPose(R, -2.95, 0.35, -0.1) };
+    set(up, 'festa');
+    await run.wait(260);
+    if (reduced()) { await run.wait(1600); set({ ...restArms() }, 'calma'); eyesTo('open'); return; }
+    // pula e cai de costas, com o casco no chão
+    lookAt({ type: 'none' });
+    set({ squash: 0.14 }, 'rapido'); await run.wait(90);
+    set({ squash: -0.06, ...armPose(L, -1.6, 0.9, -0.4), ...armPose(R, -1.6, 0.9, -0.4) }, 'toque');
+    tween('rootY', (u) => 0.42 * 4 * u * (1 - u), 480);
+    tween('flip', (u) => easeInOut(u), 480);
+    await run.wait(470);
+    set({ squash: 0.12 }, 'rapido'); await run.wait(100);
+    set({ squash: 0 }, 'toque');
+    // gira no casco, esperneando
+    const y0 = P.rootYaw.v;
+    tween('rootYaw', (u) => y0 + Math.PI * 4 * easeInOut(u), 1800);
+    for (let i = 0; i < 5; i++) {
+      set({ legL: -0.7, legR: 0.3, ezL: 0.5, ezR: -0.5 }, 'rapido'); await run.wait(170);
+      set({ legL: 0.3, legR: -0.7, ezL: -0.5, ezR: 0.5 }, 'rapido'); await run.wait(170);
+    }
+    await run.wait(120);
+    P.rootYaw.v -= Math.PI * 4; P.rootYaw.t -= Math.PI * 4;
+    // levanta num pulo e fecha de braços para cima
+    set({ legL: 0, legR: 0, ezL: 0, ezR: 0 }, 'calma');
+    tween('rootY', (u) => 0.45 * 4 * u * (1 - u), 500);
+    tween('flip', (u) => 1 - easeInOut(u), 500);
+    await run.wait(490);
+    set({ squash: 0.13 }, 'rapido'); await run.wait(100);
+    set({ squash: 0, ...up }, 'festa');
+    lookAt({ type: 'camera' });
+    await run.wait(700);
+    set({ ...restArms() }, 'calma');
+    await run.wait(500);
+    eyesTo('open');
+  },
+  async pausa(run) {
+    if (!present) await walkIn(run);
+    else if (sleeping || P.sit.t > 0.5 || P.flip.t > 0.01) await standUp(run);
+    say('Pausa ligada. Bom descanso.', 1800);
+    await run.wait(900);
+    eyesTo('sleep');
+    lookAt({ type: 'none' });
+    sleeping = 'pausa';
+    set({ ...restArms(), limbs: 0, neck: -1, hipsY: -0.28, headPitch: 0.12, rootYaw: FACE - 0.15, bodyLean: 0 }, 'lento');
+  },
+  async noite(run) {
+    await standUp(run);
+    // perto do horário de telas desligadas da pessoa (21h no plano base)
+    $('#clock').textContent = '20:50';
+    say('Daqui a pouco é hora de desligar as telas.', 1500);
+    await run.wait(1200);
+    set({ cap: 1 }, 'festa');
+    await run.wait(600);
+    lookAt({ type: 'none' });
+    eyesTo('sleep');
+    set({ ...armPose(L, -2.9, 0.5, -0.1), ...armPose(R, -2.9, 0.5, -0.1), bodyLean: -0.08, headPitch: -0.22, squash: -0.05, mouth: 0.9 }, 'lento');
+    await run.wait(1150);
+    set({ mouth: 0, squash: 0, bodyLean: 0, headPitch: 0, ...restArms() }, 'leve');
+    eyesTo('open');
+    set({ eyeOpen: 0.55 }, 'lento');
+    lookAt({ type: 'camera' });
+    await run.wait(300);
+    await sitDown(run);   // senta para ler
+    set({ book: 1 }, 'leve');
+    set({ ...reach(L, 0.16, 0.5, 0.48), ...reach(R, -0.16, 0.5, 0.48) }, 'calma');
+    lookAt({ type: 'none' });
+    set({ headPitch: 0.3, gazeY: -0.7 }, 'lento');
+    sleeping = 'noite';
+    await run.wait(3400);
+    eyesTo('sleep');
+    set({ headPitch: 0.46, headRoll: 0.1, bodyLean: 0.04, gazeY: 0, eyeOpen: 1 }, 'lento');
+  },
+  async sair(run) {
+    await standUp(run);
+    await wave(run, 'Até amanhã.');
+    await run.wait(500);
+    await walkOut(run);
+  },
+  async toque(run) {
+    if (sleeping) return;
+    await cheer(run, null);
+  },
+  async obrigado(run) {
+    if (!present) return;
+    if (sleeping) await standUp(run);
+    await thanks(run);
+  },
+  async acordar(run) {
+    // acorda do cochilo de tédio com um susto pequeno; a bolha estoura no standUp
+    await standUp(run);
+    set({ squash: -0.08, eyeOpen: 1.2 }, 'rapido'); await run.wait(140);
+    set({ squash: 0 }, 'toque');
+    say('Opa, cochilei.', 1400);
+    await run.wait(500);
+    set({ eyeOpen: 1 }, 'calma');
+    eyesTo('happy'); await run.wait(500); eyesTo('open');
+  },
+  async boop(run) {
+    if (sleeping) {
+      popSnot();   // a bolha estoura, ele se mexe e volta a dormir
+      set({ headRoll: 0.16 }, 'toque'); await run.wait(200);
+      set({ headRoll: sleeping === 'noite' ? 0.1 : 0 }, 'leve');
+      return;
+    }
+    eyesTo('happy');
+    say(['Oi!', 'Hehe.', 'Tô aqui.'][Math.floor(Math.random() * 3)], 1200);
+    set({ squash: 0.12 }, 'rapido'); await run.wait(110);
+    set({ squash: 0, headRoll: 0.12 }, 'toque'); await run.wait(220);
+    set({ headRoll: -0.08 }, 'toque'); await run.wait(200);
+    set({ headRoll: 0 }, 'calma'); await run.wait(400);
+    eyesTo('open');
+  },
+  async casco(run) {
+    if (sleeping) return;
+    await standUp(run);
+    // dá as costas para mostrar as placas e olha por cima do ombro
+    set({ rootYaw: FACE + 1.9 }, 'leve');
+    await run.wait(380);
+    say('Cada cor é um pilar seu.', 1500);
+    await run.wait(1700);
+    set({ rootYaw: FACE }, 'leve');
+    await run.wait(250);
+    await cheer(run, null);
+  },
+};
+
+/* ---------- à toa: coisinhas calmas enquanto ele espera, para nunca ficar encarando ---------- */
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const seatedNow = () => P.sit.t > 0.5;
+const restNow = () => (seatedNow() ? { ...REST, sit: 1, ...sitArms() } : { ...REST });
+const SPOTS = ['.lt', '#ci', '#row-walk', '.vpill', '.avatar', '.tb span:nth-child(2)', '.tb span:nth-child(3)', '#r5 span:nth-child(3)'];
+function spot() {
+  const r = Math.random();
+  if (r < 0.22) return { type: 'camera' };   // só de vez em quando ele olha para quem vê
+  const el = r < 0.75 ? document.querySelector(pick(SPOTS)) : null;
+  if (el) return { type: 'point', v: elWorld(el) };
+  return { type: 'point', v: screenToPlane(rand(0.1, 0.9) * W, rand(0.35, 0.95) * H, new THREE.Vector3()) };
+}
+function headTop() {
+  head.localToWorld(_bv.set(0, 0.42, 0)).project(camera);
+  return { x: (_bv.x + 1) / 2 * W, y: (1 - _bv.y) / 2 * H };
+}
+function note() {
+  if (reduced()) return;
+  const p = headTop(), n = document.createElement('span');
+  n.className = 'zl-note'; n.textContent = '♪'; n.setAttribute('aria-hidden', 'true');
+  n.style.left = `${p.x + rand(10, 26)}px`; n.style.top = `${p.y + 4}px`;
+  stage.appendChild(n);
+  n.addEventListener('animationend', () => n.remove());
+}
+const groundAt = (x) => screenToPlane(x, H - tabbar.offsetHeight - 12, new THREE.Vector3());
+const IDLE = {
+  async olhar(run) {
+    lookAt(spot());
+    set({ rootYaw: FACE + rand(-0.15, 0.12) }, 'leve');
+    await run.wait(rand(1300, 2100));
+    lookAt(spot());
+    await run.wait(rand(900, 1600));
+    set({ rootYaw: FACE }, 'leve');
+  },
+  async cachecol(run) {
+    // pega a ponta do cachecol e dá dois puxõezinhos
+    const s = NEAR, hold = reach(s, -0.13, 0.72, 0.36), tug = reach(s, -0.14, 0.64, 0.38);
+    lookAt({ type: 'none' });
+    set({ ...hold, headPitch: 0.22, gazeY: -0.6, gazeX: -0.3 }, 'calma');
+    await run.wait(420);
+    for (let i = 0; i < 2; i++) {
+      set({ squash: 0.05, ...tug }, 'rapido'); await run.wait(150);
+      set({ squash: 0, ...hold }, 'rapido'); await run.wait(170);
+    }
+    set({ ...restNow() }, 'calma');
+    lookAt({ type: 'camera' });
+    eyesTo('happy'); await run.wait(600); eyesTo('open');
+  },
+  async cocar(run) {
+    // os braços são curtos: ele coça a bochecha, olhando para cima, pensativo
+    const s = NEAR, up = reach(s, -0.4, 1.0, 0.16), down = reach(s, -0.4, 0.95, 0.18);
+    lookAt({ type: 'none' });
+    set({ ...up, headRoll: -s * 0.12, gazeY: 0.6, gazeX: 0.3 }, 'calma');
+    await run.wait(380);
+    for (let i = 0; i < 3; i++) {
+      set({ ...down }, 'rapido'); await run.wait(120);
+      set({ ...up }, 'rapido'); await run.wait(120);
+    }
+    await run.wait(300);
+    set({ ...restNow() }, 'calma');
+    lookAt(spot());
+  },
+  async cantarolar(run) {
+    eyesTo('happy');
+    lookAt({ type: 'none' });
+    for (let i = 0; i < 4; i++) {
+      set({ headRoll: (i % 2 ? -1 : 1) * 0.12, bodyTilt: (i % 2 ? 1 : -1) * 0.04 }, 'leve');
+      if (i === 0 || i === 2) note();
+      await run.wait(440);
+    }
+    set({ headRoll: 0, bodyTilt: 0 }, 'leve');
+    await run.wait(300);
+    eyesTo('open');
+    lookAt(spot());
+  },
+  async casco(run) {
+    set({ rootYaw: FACE + 0.75 }, 'leve');
+    lookAt({ type: 'point', v: shell.localToWorld(new THREE.Vector3(0, 0.3, -1.2)) });
+    await run.wait(1300);
+    set({ rootYaw: FACE }, 'leve');
+    lookAt({ type: 'camera' });
+    await run.wait(400);
+  },
+  async pedrinha(run) {
+    // apoia no outro pé, balança a perna para trás e chuta uma pedrinha imaginária
+    const s = NEAR;
+    lookAt({ type: 'point', v: groundAt(headTop().x + 30) });
+    set({ bodyTilt: s * 0.06 }, 'calma');
+    await run.wait(300);
+    set({ [k(s, 'leg')]: 0.5 }, 'calma'); await run.wait(260);
+    set({ [k(s, 'leg')]: -0.75 }, 'rapido'); await run.wait(180);
+    lookAt({ type: 'point', v: groundAt(W * 0.85) });
+    set({ [k(s, 'leg')]: 0, bodyTilt: 0 }, 'calma');
+    await run.wait(1100);
+    lookAt({ type: 'camera' });
+  },
+  async espreguicar(run) {
+    eyesTo('sleep');
+    lookAt({ type: 'none' });
+    set({ ...armPose(L, -2.9, 0.45, -0.1), ...armPose(R, -2.9, 0.45, -0.1), bodyLean: -0.07, squash: -0.04, headPitch: -0.15 }, 'leve');
+    await run.wait(900);
+    set({ ...restNow(), squash: 0 }, 'leve');
+    await run.wait(300);
+    eyesTo('open');
+    lookAt({ type: 'camera' });
+  },
+  async sentar(run) {
+    await sitDown(run);
+    await IDLE.olhar(run);
+    await run.wait(rand(1500, 3000));
+    await IDLE.olhar(run);
+    set({ squash: -0.05, ...REST }, 'leve');
+    await run.wait(250);
+    set({ squash: 0 }, 'toque');
+  },
+  async tedio(run) {
+    // muito tempo sem ninguém: senta e fica
+    await sitDown(run);
+    lookAt(spot());
+  },
+};
+const IDLE_PESO = { olhar: 3, cachecol: 2, cocar: 1.4, cantarolar: 2, casco: 1.5, pedrinha: 1.4, espreguicar: 0.8, sentar: 1 };
+const SO_EM_PE = new Set(['pedrinha', 'sentar']);
+let lastIdle = '';
+/* chamado a cada quadro enquanto ele está acordado e sem cena */
+function idleTick() {
+  const bored = simTime - lastUser;
+  let act = null;
+  if (bored > 65) act = scenes.cochilo;
+  else if (bored > 40 && !seatedNow()) act = IDLE.tedio;
+  else if (simTime >= idleNext) {
+    const opts = Object.keys(IDLE_PESO).filter((n) => n !== lastIdle && !(seatedNow() && SO_EM_PE.has(n)));
+    let r = Math.random() * opts.reduce((a, n) => a + IDLE_PESO[n], 0);
+    const n = opts.find((o) => (r -= IDLE_PESO[o]) <= 0) || opts[0];
+    lastIdle = n; act = IDLE[n];
+  } else if (simTime >= nextGaze && !lookUntil) {
+    lookAt(spot());
+    nextGaze = simTime + rand(2, 4.5);
+  }
+  if (act) { sceneRunning = true; queueMicrotask(() => play(act, null, true)); }
+}
+scenes.cochilo = async (run) => {
+  if (sleeping) return;
+  if (!seatedNow()) await sitDown(run);
+  lookAt({ type: 'none' });
+  set({ eyeOpen: 0.5 }, 'lento'); await run.wait(1200);
+  set({ headPitch: 0.3 }, 'lento'); await run.wait(900);               // cabeceia...
+  set({ headPitch: 0.05, eyeOpen: 0.8 }, 'toque'); await run.wait(700); // ...acorda um pouco...
+  set({ headPitch: 0.36, headRoll: 0.08, eyeOpen: 1 }, 'lento');         // ...e dorme
+  eyesTo('sleep');
+  sleeping = 'tedio';
+};
+
+const CENAS = [
+  { id: 'entrar', nome: 'Primeiro acesso', desc: 'Entra, acena e mostra o ✓' },
+  { id: 'acenar', nome: 'Acenar', desc: 'Um oi' },
+  { id: 'apontar', nome: 'Apontar', desc: 'Olha e aponta para o ✓' },
+  { id: 'casco', nome: 'Mostrar o casco', desc: 'Dá as costas e olha para trás' },
+  { id: 'checkin', nome: 'Check-in', desc: 'Senta e pergunta do dia' },
+  { id: 'dia', nome: 'Dia fechado', desc: 'Comemoração média' },
+  { id: 'fase', nome: 'Fase nova', desc: 'Gira de costas no casco' },
+  { id: 'pausa', nome: 'Pausa', desc: 'Recolhe no casco e dorme' },
+  { id: 'noite', nome: 'Hora de desligar', desc: 'Touca, livro e cochilo' },
+  { id: 'sair', nome: 'Sair de cena', desc: 'Tchau e vai embora' },
+];
+const sceneBox = $('#scenes');
+for (const box of [sceneBox, $('#strip')]) for (const c of CENAS) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'zl-sc'; b.dataset.scene = c.id; b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `${c.nome}<small>${c.desc}</small>`;
+  b.addEventListener('click', () => play(scenes[c.id], c.id));
+  box.appendChild(b);
+}
+function pressed(id) { document.querySelectorAll('.zl-sc').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scene === id))); }
+
+/* ---------- toques no palco ---------- */
+const raycaster = new THREE.Raycaster(), _ndc = new THREE.Vector2();
+stage.addEventListener('pointerdown', (e) => {
+  if (!ready || !present) return;
+  const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  _ndc.set(x / r.width * 2 - 1, -(y / r.height) * 2 + 1);
+  raycaster.setFromCamera(_ndc, camera);
+  if (sleeping === 'tedio') { play(scenes.acordar); return; }   // cochilo de tédio: qualquer toque acorda
+  if (raycaster.intersectObject(zeno, true).length) { play(scenes.boop); return; }
+  if (sleeping) return;
+  lookAt({ type: 'point', v: screenToPlane(x, y, new THREE.Vector3()) }, 1400);
+  touched();
+}, { capture: true });
+const chk = $('#chk');
+chk.addEventListener('click', () => {
+  const on = !chk.classList.contains('on');
+  chk.classList.toggle('on', on); chk.setAttribute('aria-pressed', String(on));
+  $('#row-walk').classList.toggle('done', on);
+  if (!on || !present) return;
+  if (tapWaiter && tapWaiter.kind === 'chk') tapWaiter.res();
+  else if (!sceneRunning || idleRunning) play(scenes.toque);
+});
+const r5 = $('#r5');
+function pickMood(el) {
+  r5.querySelectorAll('span').forEach((s) => s.classList.toggle('on', s === el));
+  if (tapWaiter && tapWaiter.kind === 'r5') tapWaiter.res();
+  else if (!sceneRunning || idleRunning) play(scenes.obrigado);
+}
+r5.addEventListener('click', (e) => { const s = e.target.closest('span'); if (s) pickMood(s); });
+r5.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('span')) { e.preventDefault(); pickMood(e.target); } });
+
+/* ---------- câmera e lugar do Zeno ---------- */
+let W = 1, H = 1, offLeft = 6;
+const home = new THREE.Vector3();
+function screenToPlane(x, y, out) {
+  const p = new THREE.Vector3(x / W * 2 - 1, -(y / H) * 2 + 1, 0.5).unproject(camera);
+  const dir = p.sub(camera.position).normalize();
+  return out.copy(camera.position).addScaledVector(dir, -camera.position.z / dir.z);
+}
+function layout() {
+  const r = stage.getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height);
+  renderer.setSize(W, H, false);
+  snapCanvas.width = canvas.width; snapCanvas.height = canvas.height;
+  const zenoPx = clamp(H * 0.22, 104, 164), unit = zenoPx / 1.84;
+  const dist = (H / unit) / 2 / Math.tan(FOV * Math.PI / 360);
+  camera.aspect = W / H;
+  camera.near = dist * 0.5; camera.far = dist * 2;
+  camera.position.set(0, dist * Math.tan(4 * Math.PI / 180), dist);
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+  const tb = tabbar.offsetHeight || 80;
+  screenToPlane(Math.max(zenoPx * 0.62, 70), H - tb - 4, home);
+  offLeft = home.x - screenToPlane(0, H - tb, new THREE.Vector3()).x + 1.4;
+  $('#st-px').textContent = `${canvas.width} × ${canvas.height}`;
+  if (ready) draw(0);
+}
+new ResizeObserver(layout).observe(stage);
+
+/* ---------- controles da página ---------- */
+function seg(attr, value) { document.querySelectorAll(`[${attr}]`).forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(value)))); }
+document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => {
+  speed = Number(b.dataset.speed);
+  document.documentElement.style.setProperty('--zl-k', String(1 / speed));
+  seg('data-speed', b.dataset.speed);
+}));
+function applyMotion() {
+  document.documentElement.toggleAttribute('data-zl-reduced', reduced());
+  seg('data-motion', motion);
+  if (ready) { draw(0); wake(); }
+}
+document.querySelectorAll('[data-motion]').forEach((b) => b.addEventListener('click', () => { motion = b.dataset.motion; store.set('pk-zeno-motion', motion); applyMotion(); }));
+mqReduce.addEventListener('change', applyMotion);
+function applyTheme(animated) {
+  if (theme === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', theme);
+  seg('data-theme-btn', theme);
+  applyLights();
+  if (ready) updateShell(animated);
+}
+document.querySelectorAll('[data-theme-btn]').forEach((b) => b.addEventListener('click', () => { theme = b.dataset.themeBtn; store.set('pk-zeno-theme', theme); applyTheme(true); }));
+mqDark.addEventListener('change', () => { if (theme === 'system') applyTheme(true); });
+document.querySelectorAll('[data-style]').forEach((b) => b.addEventListener('click', () => {
+  style = b.dataset.style; store.set('pk-zeno-style', style); seg('data-style', style);
+  if (reduced()) crossfade();
+  restyle(); draw(0); wake();
+}));
+
+const pilsBox = $('#pils');
+function renderPilares() {
+  pilsBox.innerHTML = '';
+  pilares.forEach((p) => {
+    const h = hueOf(p.cor), row = document.createElement('div');
+    row.className = 'zl-pil';
+    row.innerHTML = `<span class="zl-sw hued" style="--h:${h};${h === 150 ? '--fl:90.5%;--dfl:82%;' : h === 60 ? '--fl:81.5%;--dfl:73%;' : ''}"></span><span>${p.nome}</span>`
+      + `<select aria-label="Cor de ${p.nome}">${PALETA.map((c) => `<option value="${c.id}"${c.id === p.cor ? ' selected' : ''}>${c.nome}</option>`).join('')}</select>`;
+    row.querySelector('select').addEventListener('change', (e) => { p.cor = e.target.value; pilaresMudaram(); });
+    pilsBox.appendChild(row);
+  });
+  $('#pil-add').disabled = pilares.length >= 6;
+  $('#pil-del').disabled = pilares.length <= 1;
+}
+function pilaresMudaram() {
+  renderPilares();
+  updateShell(true);
+  if (present && !sleeping && (!sceneRunning || idleRunning)) play(scenes.casco); else touched();
+}
+$('#pil-add').addEventListener('click', () => { if (pilares.length < 6) { pilares.push({ ...EXTRAS[(pilares.length - 4 + EXTRAS.length) % EXTRAS.length] }); pilaresMudaram(); } });
+$('#pil-del').addEventListener('click', () => { if (pilares.length > 1) { pilares.pop(); pilaresMudaram(); } });
+
+function status() {
+  const on = raf !== 0 || nap !== 0;
+  $('#st-state').innerHTML = !on ? '<span class="zl-dot"></span>Parado, sem desenhar'
+    : !(nap || calm()) ? '<span class="zl-dot on"></span>Em ação, no ritmo de 60'
+    : sleeping ? '<span class="zl-dot on"></span>Dormindo, no ritmo de 30' : '<span class="zl-dot on"></span>À toa, no ritmo de 30';
+  $('#st-fps').textContent = on ? `${fps || '…'} por segundo` : 'nenhum';
+}
+
+/* ---------- começo: ele já está em cena, parado ---------- */
+seg('data-speed', 1); seg('data-style', style); seg('data-theme-btn', theme);
+applyMotion();
+applyLights();
+restyle();
+renderPilares();
+layout();
+snapAll({ ...REST });
+ready = true;
+draw(0);
+updateLook();                                   // já começa olhando para quem vê
+for (const n of ['lookYaw', 'lookPitch', 'eyeX', 'eyeY']) { P[n].v = P[n].t; P[n].vel = 0; }
+draw(0);
+$('#zload').hidden = true;
+$('#st-tri').textContent = Math.round(triangles).toLocaleString('pt-BR');
+$('#st-load').textContent = `${Math.round(performance.now())} ms desde que a página abriu`;
+status();
+wake();
+window.Zeno = { play: (id) => play(scenes[id], id), idle: (id) => play(IDLE[id], null, true), P, get busy() { return busy(); }, get t() { return simTime; }, get frames() { return frameNo; }, freeze(b) { frozen = b; }, get drawing() { return raf !== 0 || nap !== 0; } };
+</script>
+</body>
+</html>

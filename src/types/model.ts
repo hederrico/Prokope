@@ -38,6 +38,32 @@ export interface ProfilePrefs {
   weightTrendOnly: boolean;
   /** jeito de ver o Hoje; documentos antigos não têm o campo (vale o Resumo: leia com todayViewOf) */
   todayView?: TodayViewPref;
+  /** "Mostrar o Zeno" (Ajustes › Aparência); documentos antigos não têm o campo (vale mostrar: leia com zenoShown) */
+  zeno?: boolean;
+}
+
+/** Capítulos do tutorial com o Zeno, na ordem de Ajustes › Tutorial. */
+export type TutorialChapter = 'hoje' | 'habito' | 'progresso' | 'jornada' | 'ajustes';
+
+/** Nota dos Primeiros passos (a mesma escala de 1 a 5 das refeições). */
+export type FirstStepRating = 1 | 2 | 3 | 4 | 5;
+
+/**
+ * O tutorial com o Zeno, dentro do perfil. Documentos antigos não têm o campo: leia com tutorialOf.
+ * Grave por mescla (merge), campo a campo, para um aparelho não apagar o que o outro gravou.
+ */
+export interface TutorialState {
+  /** quando o Zeno se apresentou: no primeiro acesso, ou oferecendo o tutorial a uma conta que já existia */
+  introAt?: Millis;
+  /** capítulos vistos até o fim, com o instante da primeira vez */
+  done?: Partial<Record<TutorialChapter, Millis>>;
+  /** capítulos que o Zeno já ofereceu ao abrir a aba (ele oferece uma vez só) */
+  offered?: Partial<Record<TutorialChapter, Millis>>;
+  /**
+   * Primeiros passos: o primeiro instante de cada um, gravado uma vez só. Ficam aqui, fora de marks e entries,
+   * para nunca entrarem na constância, na força nem nos padrões. A Jornada mostra uma entrada só com eles.
+   */
+  firstSteps?: { markAt?: Millis; addAt?: Millis; rateAt?: Millis; rating?: FirstStepRating };
 }
 
 export interface ScheduleChange {
@@ -72,6 +98,8 @@ export interface Profile {
   linkId: string | null;
   /** apagando tudo (retoma a tela se o app fechar no meio) */
   deleting?: boolean;
+  /** o tutorial com o Zeno (leia com tutorialOf) */
+  tutorial?: TutorialState;
   createdAt: Millis;
   updatedAt: Millis;
 }
