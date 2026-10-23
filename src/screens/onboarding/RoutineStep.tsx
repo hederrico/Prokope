@@ -45,8 +45,8 @@ export function RoutineStep({
       <div className="ob-body">
         {rows.length > 0 && (
           <ListGroup label="Horários">
-            {rows.map((r) => (
-              <div key={r.key} className="ob-row" onClick={openPicker}>
+            {rows.map((r, i) => (
+              <div key={r.key} className="ob-row" onClick={openPicker} data-tour={i === 0 ? 'ob-horario' : undefined}>
                 <ListItem
                   icon={r.icon}
                   pillar={r.pillar}

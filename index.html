@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- a ordem das camadas do CSS, antes de qualquer folha: o build pode pôr o CSS de um pedaço compartilhado (o Zeno,
+         o tutorial) antes do principal, e a camada que aparece primeiro perderia a ordem do Tailwind -->
+    <style>
+      @layer properties, theme, base, components, utilities;
+    </style>
     <title>Prokopē</title>
     <meta name="description" content="Um pouco de progresso, todo dia. Poucos hábitos por vez, no seu ritmo." />
 

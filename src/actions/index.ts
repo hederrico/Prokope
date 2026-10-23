@@ -8,3 +8,4 @@ export * from './profile';
 export * from './data';
 export * from './together';
 export * from './practice';
+export * from './tutorial';

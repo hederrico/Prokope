@@ -2,13 +2,16 @@
 // StepTop parado em cima (sem X: o primeiro acesso não pode ser interrompido), o conteúdo trocando com StepTransition
 // (24 px pela direita; voltar faz o inverso) e o botão preso embaixo. O rascunho fica no aparelho, por conta, e
 // nada vai para os dados antes de "Começar a fase 1": aí setupPlan grava tudo num lote e o primeiro Hoje entra.
-// Ao reabrir no meio, abre direto no passo salvo, sem animação.
+// Ao reabrir no meio, abre direto no passo salvo, sem animação. O Zeno acompanha os três passos (run 'comecar',
+// src/tutorial/scripts.ts) e vai junto para o Hoje.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { setupPlan } from '@/actions';
 import { FullScreen, StepTop, StepTransition, useFlowStep } from '@/components/shell';
 import { Button, NumberFlow } from '@/components/ui';
 import { TEMPLATE_PHASES, planStartDay, useNow, useSession, type DraftPillar } from '@/data';
+import { useTour } from '@/stores/tour';
+import { startTour } from '@/tutorial';
 import { PillarForm } from './PillarForm';
 import { PillarsStep } from './PillarsStep';
 import { RoutineStep } from './RoutineStep';
@@ -42,6 +45,11 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (resumed) saveStep(step);
   }, [resumed, step, saveStep]);
+
+  // o Zeno no Começar (tutorial.md › Começar): um balão por passo, sem véu. Ao chegar no Hoje, começa "O dia"
+  useEffect(() => {
+    if (!useTour.getState().run) startTour('comecar');
+  }, []);
 
   // formulário do pilar (passo 2)
   const [form, setForm] = useState<{ open: boolean; key: string | null; seq: number }>({

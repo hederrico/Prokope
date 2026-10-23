@@ -128,6 +128,43 @@ O aviso curto com Desfazer. Quadro: `toast()`.
 type ToastInput = { title: string; detail?: string; icon?: IconName; pillar?: PillarColor; action?: { label: string; onClick: () => void; filled?: boolean }; duration?: number };
 ```
 
+## Balão do Zeno, véu e anel
+
+O balão do tutorial, o véu do passo e o anel no alvo ([telas/tutorial.md](telas/tutorial.md)). O quadro não tem helper: o balão segue o cartão (raio 20, sombra das folhas) e o anel segue o anel de foco.
+
+- **Partes do balão:**
+  - "Zeno" em cima: 12 px, caixa alta, `--accent-ink`;
+  - o texto: Onest 17/24, `--text`;
+  - embaixo, "3 de 9" (13 px, algarismos tabulares, `--text-3`), "Sair do tutorial" (`Button` fantasma pequeno, em `--text-2`) e o botão do passo (`Button` primário pequeno: "Próximo", "Concluir", "Vamos", "Mostrar"). Nas ofertas, "Agora não" é o fantasma.
+- **Medidas:** até 340 px de largura (encostado na borda, a largura toda da área). Respiro de 14 px em cima e 16 dos lados, raio de 20 px, fundo `--raised`, `--shadow-2` e um fio de 1 px em `--border`, que separa o balão do véu nos dois temas. A ponta é um quadrado de 14 px girado, que aponta para a cabeça do Zeno ou para o alvo e fica a pelo menos 28 px dos cantos.
+- **Variações:**
+  - passo de olhar, com o botão do passo;
+  - passo de fazer, sem botão;
+  - resposta ("Isso. Um pé depois do outro."), sem botão;
+  - Começar: sem contador e sem "Sair do tutorial", encostado em cima (cobrindo o título do passo) ou embaixo;
+  - oferta: sem contador e sem sair, com "Agora não" e o botão principal.
+- **Posição:** perto da cabeça do Zeno. Sem ele, perto do alvo, de preferência embaixo, sem cobri-lo, dentro da área segura: fora da barra de abas, do pé preso de uma tela cheia e do teclado. Acompanha a rolagem, o giro e o teclado. Sem alvo, fica embaixo, acima da barra de abas.
+- **Animação:** entra com `fadeUp` (8 px em `base`) e sai em `micro`. Um balão por vez: o do passo novo entra depois de o anterior sair. Reduzido: só opacidade.
+- **Véu:** `--dim` a 62%, mais leve que o fundo da folha, desenhado em SVG com um furo arredondado no alvo (o alvo crescido de 6 px, com o raio dele mais 6). No passo de olhar, uma camada transparente segura todos os toques. No passo de fazer, quatro faixas em volta do furo seguram o resto, e só o alvo responde. Entra em `base` e sai em `micro`.
+- **Anel:** o traço do foco (2,5 px em `--accent-mark`) na borda do furo, com um halo de 9 px em `--accent-mark` a 26%. Não pulsa: nada se mexe sozinho. O furo desliza de um alvo para o outro com a mola `calma`. Reduzido: troca de lugar de uma vez, e o anel entra só com opacidade.
+- **Camadas:** véu e anel em z-index 60, o Zeno em 70, o balão em 80. As folhas ficam em 40 e os toasts por cima de tudo.
+- **Acessibilidade:**
+  - o balão é uma região com o nome "Zeno" e recebe o foco ao abrir (`tabIndex={-1}`);
+  - o texto é anunciado numa região viva educada (`aria-live="polite"`), montada sempre na camada;
+  - `Esc`, com o foco no balão, sai do tutorial;
+  - o balão que sai fica `inert` e fora da árvore do leitor de tela; o véu e o anel são `aria-hidden`.
+- **Base:** `src/tutorial/Balloon.tsx` (o balão, com o `Button` do design system), `TourScene.tsx` (o véu, o anel e a posição) e `placement.ts` (as contas).
+
+```ts
+type BalloonProps = {
+  id: string; text: string; counter?: string | null;
+  primary?: { label: string; onClick: () => void } | null;   // Próximo, Concluir, Vamos, Mostrar
+  secondary?: { label: string; onClick: () => void } | null; // Agora não
+  onExit?: (() => void) | null;                              // Sair do tutorial
+  tail: number | null; side: 'above' | 'below' | 'dock'; width: number; minHeight?: number;
+};
+```
+
 ## TabBar
 
 As quatro abas: Hoje, Progresso, Jornada e Ajustes. Quadro: `tb()`. No computador, vira barra lateral.

@@ -43,7 +43,7 @@ flowchart LR
   JOR ==> REV
   REV ==> FASE[Fase desbloqueada] ==> HOJE
 
-  AJU -->|empurra| AJ2[Pilares / Hábitos / Horários / Lembretes / Aparência / Pausar / A dois / Dados e conta]
+  AJU -->|empurra| AJ2[Pilares / Hábitos / Horários / Lembretes / Aparência / Pausar / A dois / Tutorial / Dados e conta]
   AJ2 ==> NOVO[Novo pilar / Novo hábito]
   AJ2 -->|empurra| HAB
 ```
@@ -120,6 +120,7 @@ O primeiro trecho da rota diz qual aba está ativa. Folhas e o dia escolhido fic
 | `/ajustes/habitos`, `/ajustes/habitos/:id` | Hábitos e o hábito | Empurrada |
 | `/ajustes/habitos/novo/tipo`, `/ajustes/habitos/novo/detalhes` | Novo hábito | Tela cheia |
 | `/ajustes/horarios`, `/lembretes`, `/aparencia`, `/pausar`, `/a-dois`, `/dados` | Itens de Ajustes | Empurrada |
+| `/ajustes/tutorial` | Ajustes › Tutorial: os capítulos do tutorial com o Zeno; tocar num capítulo abre a aba dele e começa ali ([telas/tutorial.md](telas/tutorial.md)) | Empurrada |
 
 **Folhas** (sobre qualquer aba): `?folha=proteina`, `agua`, `acordar`, `nota&refeicao=almoco`, `checkin`, `peso`, `deslize&habito=:id`, `menu&habito=:id`, `jeito` (o jeito de ver o Hoje: Resumo, Lista completa ou Linha do tempo), `corrigir&habito=:id&dia=:dia` (corrigir um dia do hábito), `dia&dia=:dia` (o resumo de um dia no Progresso) e `apagar&pilar=:id` (apagar um pilar com hábitos).
 

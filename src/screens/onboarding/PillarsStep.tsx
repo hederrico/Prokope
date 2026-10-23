@@ -16,12 +16,15 @@ function PillarBlock({
   onDraft,
   onEdit,
   isNew,
+  tour,
 }: {
   draft: PlanDraft;
   pillar: DraftPillar;
   onDraft: (fn: (d: PlanDraft) => PlanDraft) => void;
   onEdit: () => void;
   isNew: boolean;
+  /** os chips deste pilar são o alvo do Zeno no passo 2 (o primeiro pilar com hábitos) */
+  tour?: boolean;
 }) {
   const chips = draft.mode === 'template' ? planChips(draft, pillar.key) : [];
   const later = laterLine(pillar.key);
@@ -61,7 +64,12 @@ function PillarBlock({
           >
             <div className="ob-pc-in">
               {chips.length > 0 && (
-                <div className="pk-chips" role="group" aria-label={`Hábitos de ${pillar.name}`}>
+                <div
+                  className="pk-chips"
+                  role="group"
+                  aria-label={`Hábitos de ${pillar.name}`}
+                  data-tour={tour ? 'ob-chips' : undefined}
+                >
                   {chips.map((c) => (
                     <Chip
                       key={c.chip}
@@ -102,6 +110,11 @@ export function PillarsStep({
 }) {
   const animateIn = useFirstShow(2);
   const empty = draft.pillars.length === 0;
+  // o Zeno aponta para o primeiro chip do primeiro pilar com hábitos (plano base)
+  const tourKey =
+    draft.mode === 'template'
+      ? draft.pillars.find((p) => p.enabled && planChips(draft, p.key).length > 0)?.key
+      : undefined;
   return (
     <>
       <StepHead
@@ -131,12 +144,16 @@ export function PillarsStep({
                   onDraft={onDraft}
                   onEdit={() => onEditPillar(p.key)}
                   isNew={newKeys.has(p.key)}
+                  tour={p.key === tourKey}
                 />
               ))}
             </m.div>
           </Card>
         )}
-        <AddRow onClick={onNewPillar}>{empty ? 'Criar o primeiro pilar' : 'Criar outro pilar'}</AddRow>
+        {/* do zero, o Zeno aponta para "Criar o primeiro pilar" */}
+        <div data-tour={empty ? 'ob-novo-pilar' : undefined}>
+          <AddRow onClick={onNewPillar}>{empty ? 'Criar o primeiro pilar' : 'Criar outro pilar'}</AddRow>
+        </div>
         {!empty && (
           <p className="ob-pils-foot">
             Toque no nome de um pilar para mudar a cor ou o ícone. Pilar fora do plano fica arquivado, com os hábitos

@@ -12,5 +12,6 @@ A lista completa, com exemplos, está em `src/data/README.md`, "Ações e o desf
 | `data.ts` | primeiro acesso (`setupPlan`), exportar, apagar tudo |
 | `together.ts` | A dois: convite, ligação, o que mostrar, carinho |
 | `practice.ts` | Primeiros passos do tutorial: a primeira vez de cada gesto de treino em `profile.tutorial.firstSteps` (nunca em marks ou entries) |
+| `tutorial.ts` | o tutorial com o Zeno: a apresentação, os capítulos vistos e os oferecidos (`profile.tutorial`) |
 | `drafts.ts` | o rascunho do check-in vira check-in na virada do dia |
 | `core.ts` | `commit` (grava e monta o desfazer) |

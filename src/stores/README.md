@@ -9,3 +9,4 @@ Stores do Zustand. As telas não leem daqui direto: usam os hooks de `@/data` (a
 | `together.ts` | A dois: a ligação, os convites e os carinhos (fora de `users/{uid}`) |
 | `drafts.ts` | Rascunhos no `localStorage` (check-in, revisão, primeiro acesso, formulário de hábito) e o brilho do dia fechado. No modo exemplo (`isolateDrafts`), os da pessoa ficam guardados e os do exemplo, só na memória |
 | `practice.ts` | As três linhas dos Primeiros passos do tutorial, só em memória (zeram quando o grupo aparece), e o gancho `window.__pkPractice.show(on)`. Como o `tour.ts`, o Hoje lê direto daqui |
+| `tour.ts` | O tutorial em andamento (`useTour`: `run`, `step`, `practice`, escrito só pelo condutor em `src/tutorial`), o canal de avisos `emitTour`/`onTour` e `tourAuto` (as ofertas sozinhas; nos testes, a chave `pk-tour-auto` liga) |
