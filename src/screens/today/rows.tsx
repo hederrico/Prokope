@@ -346,12 +346,57 @@ export interface ItemRowProps {
   className?: string;
   /** sem controle (Amanhã cedo) e com uma legenda própria */
   readOnly?: { subtitle: ReactNode; text: string };
+  /** Lista completa: o horário do hábito abre a legenda ("até 20h30 · coleta hoje") */
+  withTime?: boolean;
+}
+
+/**
+ * A legenda com o horário na frente: a frase do horário que já estava nela ("meta 6h50", "às 21h", "até 20h30")
+ * vem para o começo, em destaque; sem frase, entra o horário ("20h30 · coleta hoje · ainda dá tempo").
+ */
+function timeFirst(
+  sub: { node: ReactNode; text: string; accent?: boolean },
+  time: string,
+): { node: ReactNode; text: string; accent?: boolean } {
+  const t = formatTime(time);
+  let phrase = t;
+  let restNode: ReactNode = sub.node;
+  let restText = sub.text;
+  if (typeof sub.node === 'string') {
+    const parts = sub.node.split(' · ');
+    const at = parts.findIndex((p) => p === t || p === `meta ${t}` || p === `até ${t}` || p === `às ${t}`);
+    if (at >= 0) {
+      phrase = parts[at]!;
+      restNode = parts.filter((_, i) => i !== at).join(' · ');
+      restText = restNode as string;
+    }
+  }
+  const hasRest = restNode !== '' && restNode != null;
+  return {
+    // texto: uma frase só, que quebra como texto; com bolinhas da semana, as peças lado a lado
+    node:
+      typeof restNode === 'string' || !hasRest ? (
+        <span>
+          <span className="td-at pk-num">{phrase}</span>
+          {hasRest && ` · ${restNode as string}`}
+        </span>
+      ) : (
+        <>
+          <span className="td-at pk-num">{phrase}</span>
+          <span className="td-at-sep">·</span>
+          {restNode}
+        </>
+      ),
+    text: [phrase, restText].filter(Boolean).join(', '),
+    accent: sub.accent,
+  };
 }
 
 /** Uma linha de hábito do Hoje. */
-export function ItemRow({ item, className, readOnly }: ItemRowProps) {
+export function ItemRow({ item, className, readOnly, withTime }: ItemRowProps) {
   const ctx = useTodayCtx();
-  const sub = readOnly ?? subtitleFor(item, ctx);
+  const plain = readOnly ?? subtitleFor(item, ctx);
+  const sub = withTime && item.time && !readOnly && 'node' in plain ? timeFirst(plain, item.time) : plain;
   const subtitle = 'node' in sub ? sub.node : sub.subtitle;
   const accent = 'accent' in sub && sub.accent;
   const isNew = item.isNew && !readOnly;
@@ -614,7 +659,8 @@ export function CheckinCard({ item }: { item: TodayItem }) {
   const checkin = useCheckin(ctx.day);
   const done = isDoneLike(item.state) && !!checkin;
   return (
-    <div className="pk-card p td-ci" data-pillar="accent" data-flip="checkin">
+    // td-fl-<id>: a faixa do dia acha o cartão como acha uma linha
+    <div className={`pk-card p td-ci td-fl-${item.habit.id}`} data-pillar="accent" data-flip="checkin">
       <AnimatePresence mode="wait" initial={false}>
         {done && checkin ? (
           <m.button

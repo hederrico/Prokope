@@ -1,7 +1,7 @@
 // Regras do Hoje: os grupos por momento do dia, o modo pelo horário, o dia fechado, o convite gentil
 // e os botões rápidos da hora. A Noite abre às 18h; o check-in sobe às 20h30 (horário do perfil);
 // o dia fecha quando o último hábito do dia é marcado (o deitar fica para a manhã seguinte).
-import type { DayKey, DayMoment, Habit, Pillar, QuickAdd, QuickAddSlot } from '@/types';
+import type { DayKey, DayMoment, Habit, Pillar, QuickAdd, QuickAddSlot, TimeHM, TodayViewPref } from '@/types';
 import type { DomainData } from './context';
 import { addDays, timeToMinutes } from './day';
 import { budgetWeek, type BudgetWeek, compareBudgets } from './budget';
@@ -96,7 +96,11 @@ function groupOf(habit: Habit): TodayGroupKey | 'limits' | 'daysSince' {
   return m === 'morning' ? 'morning' : m === 'evening' ? 'evening' : 'day';
 }
 
-function habitTime(habit: Habit, day: DayKey, data: DomainData): string | null {
+/**
+ * O horário de um hábito num dia ('20:30'), ou null: a meta de horário (acordar, deitar) vence o horário da agenda;
+ * um horário do perfil (timeKey, como `chores`) vale com o valor da época daquele dia.
+ */
+export function habitTime(habit: Habit, day: DayKey, data: DomainData): string | null {
   if (habit.goal.timeKey) return scheduleTimeOn(habit.goal.timeKey, day, data.profile);
   if (habit.goal.time) return habit.goal.time;
   if (habit.schedule.timeKey) return scheduleTimeOn(habit.schedule.timeKey, day, data.profile);
@@ -210,6 +214,81 @@ export function todayLayout(
     limits,
     daysSince: ds,
     counters,
+  };
+}
+
+// ---------- os três jeitos de ver o dia (Resumo, Lista completa, Linha do tempo) ----------
+
+/** O jeito guardado no perfil. Documento antigo sem o campo, ou um valor que não conhecemos, vale o Resumo. */
+export function todayViewOf(value: unknown): TodayViewPref {
+  return value === 'full' || value === 'timeline' ? value : 'summary';
+}
+
+/**
+ * Minutos de um horário no dia lógico: o que vem depois da meia-noite e antes da virada do dia (4h) conta no
+ * mesmo dia, depois das 24h ('00:30' = 1470). Os mesmos minutos do `useNow`.
+ */
+export function logicalMinutes(time: TimeHM, dayStartHour = 4): number {
+  const t = timeToMinutes(time);
+  return t < dayStartHour * 60 ? t + 1440 : t;
+}
+
+/** Um ponto da Linha do tempo: um horário (os hábitos daquele horário) ou um momento (os sem horário). */
+export type TimelineSlot =
+  | { key: string; kind: 'time'; minutes: number; time: TimeHM; items: TodayItem[] }
+  | { key: string; kind: 'moment'; minutes: number; moment: TodayGroupKey; items: TodayItem[] };
+
+/** Onde entram os sem horário: o "ao longo do dia" no meio do dia e a noite às 19h (a manhã depende do acordar). */
+const MOMENT_ANCHOR_MIN: Record<TodayGroupKey, number> = { morning: 7 * 60, day: 12 * 60, evening: 19 * 60 };
+
+/**
+ * A Linha do tempo do dia: os hábitos em ordem de horário, os do mesmo horário juntos. Os sem horário entram pelo
+ * momento: a manhã logo depois do acordar (7h, ou o minuto seguinte ao horário de acordar, se for mais tarde),
+ * o "ao longo do dia" (proteína, água, almoço) no meio do dia e a noite às 19h. Num empate, o horário vem antes do
+ * momento. Limites da semana e dias sem não têm hora e ficam fora (vão no fim da tela, como no Resumo).
+ */
+export function dayTimeline(items: TodayItem[], dayStartHour = 4): TimelineSlot[] {
+  const rows = items.filter((i) => {
+    const g = groupOf(i.habit);
+    return g !== 'limits' && g !== 'daysSince';
+  });
+  const wake = rows.find((i) => i.habit.role === 'wake' && i.time);
+  const anchor: Record<TodayGroupKey, number> = {
+    ...MOMENT_ANCHOR_MIN,
+    morning: Math.max(MOMENT_ANCHOR_MIN.morning, wake?.time ? logicalMinutes(wake.time, dayStartHour) + 1 : 0),
+  };
+  const byKey = new Map<string, TimelineSlot>();
+  for (const item of rows) {
+    if (item.time) {
+      const minutes = logicalMinutes(item.time, dayStartHour);
+      const key = `t-${minutes}`;
+      const slot = byKey.get(key) ?? { key, kind: 'time' as const, minutes, time: item.time, items: [] };
+      slot.items.push(item);
+      byKey.set(key, slot);
+    } else {
+      const moment = groupOf(item.habit) as TodayGroupKey;
+      const key = `m-${moment}`;
+      const slot = byKey.get(key) ?? { key, kind: 'moment' as const, minutes: anchor[moment], moment, items: [] };
+      slot.items.push(item);
+      byKey.set(key, slot);
+    }
+  }
+  return [...byKey.values()].sort(
+    (a, b) => a.minutes - b.minutes || Number(a.kind === 'moment') - Number(b.kind === 'moment'),
+  );
+}
+
+/**
+ * O trecho do dia que a faixa do Resumo mostra, em minutos do dia lógico: das 6h às 23h, alargado em horas cheias
+ * para o primeiro e o último horário nunca ficarem colados na borda.
+ */
+export function dayStripRange(minutes: number[]): { start: number; end: number } {
+  if (!minutes.length) return { start: 6 * 60, end: 23 * 60 };
+  const first = Math.min(...minutes);
+  const last = Math.max(...minutes);
+  return {
+    start: Math.min(6 * 60, Math.ceil(first / 60) * 60 - 60),
+    end: Math.max(23 * 60, Math.floor(last / 60) * 60 + 60),
   };
 }
 

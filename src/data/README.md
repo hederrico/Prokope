@@ -245,7 +245,7 @@ usePillars({ includeArchived? });  // [{ pillar, habitCount }]
 usePillar(id);                     // { pillar, habits, exitPlan: [{ kind: 'goes' | 'moves' | 'stays', habit, to? }] }
 useHabits('active' | 'upcoming' | 'archived' | 'all'); // [{ habit, pillar, alsoIn, status, pausedUntil, startsOn }]
 useProfile();                      // Profile | null (horários em profile.schedule, revisão, coleta, tolerância)
-usePrefs();                        // { theme, motion, sound, runSound, weightTrendOnly }
+usePrefs();                        // { theme, motion, sound, runSound, weightTrendOnly, todayView? } (todayViewOf: sem o campo, Resumo)
 usePause();                        // { current: a pausa de agora ou a próxima, app: a do app hoje, isScheduled }
 useTogether();                     // { linked, link, partner: { id, name }, myShare, partnerShare, invite, invites, hugsToday }
 useInvite(id);                     // Invite | null (não existe) | undefined (carregando)
@@ -329,7 +329,7 @@ async function onCheck() {
 
 | Ação | Faz |
 |---|---|
-| `setTheme('system' \| 'light' \| 'dark')`, `setMotion(on)`, `setSound(on)`, `setRunSound(on)`, `setWeightTrendOnly(on)` | preferências (o tema troca ao vivo pela casca) |
+| `setTheme('system' \| 'light' \| 'dark')`, `setMotion(on)`, `setSound(on)`, `setRunSound(on)`, `setWeightTrendOnly(on)`, `setTodayView('summary' \| 'full' \| 'timeline')` | preferências (o tema troca ao vivo pela casca; o jeito de ver o Hoje vale nos aparelhos da pessoa) |
 | `setScheduleTime('wake' \| 'bed' \| 'screensOff' \| 'chores' \| 'checkin' \| 'caffeine', '22:30')` | vale a partir de hoje; o que passou guarda a meta da época |
 | `setWeeklyReview(6, '18:00')`, `setCollectionDays([0, 3])`, `setWeekendTolerance(on)`, `updateProfile({ name })` | rotina |
 | `setupPlan(draft, { name? })` | primeiro acesso: grava perfil, pilares, hábitos e fases num lote |

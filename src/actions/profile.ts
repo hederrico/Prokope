@@ -1,7 +1,7 @@
 // Preferências e rotina do perfil: tema, animações, som, privacidade do peso, horários, revisão,
 // coleta do lixo, tolerância do fim de semana.
 import { setPreferences } from '@/app/preferences';
-import type { Profile, ScheduleKey, ThemePref, TimeHM, Weekday } from '@/types';
+import type { Profile, ScheduleKey, ThemePref, TimeHM, TodayViewPref, Weekday } from '@/types';
 import { useDataStore } from '@/stores/data';
 import { commit, noUndo, profileMerge, today, type Undo } from './core';
 
@@ -32,6 +32,8 @@ export const setMotion = (on: boolean) => setPref('motion', on);
 export const setSound = (on: boolean) => setPref('sound', on);
 export const setRunSound = (on: boolean) => setPref('runSound', on);
 export const setWeightTrendOnly = (on: boolean) => setPref('weightTrendOnly', on);
+/** Jeito de ver o Hoje (o botão no topo do Hoje e Ajustes › Aparência); vale para a pessoa, em todos os aparelhos. */
+export const setTodayView = (view: TodayViewPref) => setPref('todayView', view);
 
 /**
  * Muda um horário a partir de hoje. Os dias que passaram guardam a meta da época (scheduleLog),

@@ -38,6 +38,7 @@ export const DEFAULT_PREFS: Profile['prefs'] = {
   sound: false,
   runSound: true,
   weightTrendOnly: false,
+  todayView: 'summary',
 };
 
 export interface TemplatePillar {

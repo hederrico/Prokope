@@ -23,6 +23,9 @@ export type ScheduleKey = 'wake' | 'bed' | 'screensOff' | 'chores' | 'checkin' |
 
 export type ThemePref = 'system' | 'light' | 'dark';
 
+/** Jeito de ver o Hoje: Resumo (o padrão), Lista completa ou Linha do tempo. */
+export type TodayViewPref = 'summary' | 'full' | 'timeline';
+
 export interface ProfilePrefs {
   theme: ThemePref;
   /** animações do app (o Reduzir Movimento do iPhone sempre vence) */
@@ -33,6 +36,8 @@ export interface ProfilePrefs {
   runSound: boolean;
   /** "Mostrar só a tendência" do peso */
   weightTrendOnly: boolean;
+  /** jeito de ver o Hoje; documentos antigos não têm o campo (vale o Resumo: leia com todayViewOf) */
+  todayView?: TodayViewPref;
 }
 
 export interface ScheduleChange {
