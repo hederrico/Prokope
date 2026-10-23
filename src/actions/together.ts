@@ -8,7 +8,7 @@ import { noUndo, today, type Undo } from './core';
 /** Endereço do convite para a folha de compartilhar. */
 export function inviteUrl(id: string): string {
   const origin = typeof location !== 'undefined' ? location.origin : '';
-  return `${origin}/convite/${id}`;
+  return `${origin}${import.meta.env.BASE_URL}convite/${id}`;
 }
 
 /** Cria o convite (vale 7 dias). O desfazer cancela. */

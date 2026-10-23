@@ -81,18 +81,23 @@ export const routes: RouteObject[] = [
   },
 ];
 
-// abrir pelo ícone da Tela de Início entra no Hoje (start_url): se a última aba foi usada há pouco, volta para ela
+// o app mora na raiz ("") ou numa pasta ("/Prokope" no GitHub Pages); as rotas não levam a pasta
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// abrir pelo ícone da Tela de Início entra no Hoje (start_url é a raiz, que leva ao Hoje): se a última aba foi usada
+// há pouco, volta para ela
 function initialRedirect() {
   if (typeof window === 'undefined') return;
-  if (!isStandalone() || window.location.pathname !== '/hoje' || window.location.search) return;
+  const path = window.location.pathname.slice(basename.length) || '/';
+  if (!isStandalone() || (path !== '/' && path !== '/hoje') || window.location.search) return;
   const last = recentLastPath();
-  if (last && last !== '/hoje') window.history.replaceState(window.history.state, '', last);
+  if (last && last !== '/hoje') window.history.replaceState(window.history.state, '', basename + last);
 }
 
 captureGesturesFlag();
 initialRedirect();
 
-export const router = createBrowserRouter(routes);
+export const router = createBrowserRouter(routes, { basename: basename || '/' });
 
 recordNavigation(router.state.location, 'INIT');
 router.subscribe((state) => recordNavigation(state.location, state.historyAction));

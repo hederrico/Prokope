@@ -8,6 +8,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 // Cor do manifesto: --bg do tema claro, convertido de OKLCH
 const BG_LIGHT = '#fbf9f6';
 
+// Pasta do app: "/" no desenvolvimento e no Firebase Hosting, "/Prokope/" no GitHub Pages (BASE_PATH em pages.yml)
+const base = (process.env.BASE_PATH ?? '/').replace(/\/?$/, '/');
+
 // O app usa só os pesos regular, duotone, fill e bold do Phosphor: tira thin e light de cada ícone (um terço a menos no pacote)
 function phosphorWeights(): Plugin {
   const entry = /\n {2}\[\n {4}"(?:thin|light)",\n[\s\S]*?\n {2}\],?/g;
@@ -24,6 +27,7 @@ function phosphorWeights(): Plugin {
 }
 
 export default defineConfig({
+  base,
   plugins: [
     phosphorWeights(),
     react(),
@@ -34,28 +38,29 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon-180.png', 'fonts/*.woff2'],
       manifest: {
-        id: '/',
+        id: base,
         name: 'Prokopē',
         short_name: 'Prokopē',
         description: 'Um pouco de progresso, todo dia. Poucos hábitos por vez, no seu ritmo.',
         lang: 'pt-BR',
         dir: 'ltr',
-        start_url: '/hoje',
-        scope: '/',
+        // a raiz leva ao Hoje; é um arquivo de verdade (index.html) também no GitHub Pages, que não reescreve rotas
+        start_url: base,
+        scope: base,
         display: 'standalone',
         theme_color: BG_LIGHT,
         background_color: BG_LIGHT,
         categories: ['health', 'lifestyle', 'productivity'],
         icons: [
-          { src: '/icons/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icons/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icons/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: `${base}icons/pwa-192.png`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: `${base}icons/pwa-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: `${base}icons/pwa-maskable-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
         // as fontes latinas entram no pacote offline; os outros recortes da Onest (cirílico etc.) vêm sob demanda
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}', 'fonts/*.woff2', 'assets/onest-latin-*.woff2'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
         // /__/auth e /__/firebase são do Firebase Hosting (login com redirecionamento): nunca servir o app no lugar
         navigateFallbackDenylist: [/^\/__\//],
         cleanupOutdatedCaches: true,

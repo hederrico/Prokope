@@ -13,8 +13,22 @@ npm run dev:phone    # o mesmo, na rede de casa, para abrir no iPhone
 - Na tela Entrar, toque em **Explorar com dados de exemplo**.
 - **Ver o dia em outro horário:** acrescente `?agora=20:34` à URL (ou `?agora=2026-11-01T18:30`). Depois de mudar a hora, use **Começar de novo a demonstração** em Ajustes.
 - **Testar o primeiro acesso:** Ajustes › **Testar o primeiro acesso**.
-- **Componentes:** a galeria fica em `/dev/componentes`.
-- **Instalar no iPhone:** só funciona com HTTPS, então fica para depois da publicação no Firebase Hosting.
+- **Componentes:** a galeria fica em `/dev/componentes` (só no `npm run dev`).
+
+## No iPhone
+
+A demonstração está publicada em **<https://hederrico.github.io/Prokope/>**:
+
+1. Abra o endereço no Safari.
+2. Toque em **Compartilhar › Adicionar à Tela de Início**.
+3. Abra pelo ícone e toque em **Explorar com dados de exemplo**.
+
+Detalhes:
+
+- **Os dados ficam no aparelho.** Cada iPhone tem a sua própria demonstração, sem login e sem sincronização. Para recomeçar a história, use **Ajustes › Começar de novo a demonstração**.
+- **Publicação.** O fluxo `.github/workflows/pages.yml` roda os testes e publica a cada push na branch `etapa-9-github-pages` (e na `main`, quando o app chegar nela).
+- **Atualização.** Quando sai uma versão nova, o app mostra o aviso para atualizar.
+- **O que é diferente do Firebase Hosting.** O app mora na pasta `/Prokope/`, e um link direto para uma tela chega pelo `404.html`, que é o próprio app.
 
 ## O que está pronto
 
@@ -50,13 +64,14 @@ Uma por etapa, cada uma partindo da anterior:
 | `etapa-5-progresso` | Hábito e Progresso |
 | `etapa-6-jornada` | Jornada, corrida e revisão |
 | `etapa-7-ajustes` | Ajustes |
-| `etapa-8-acabamento` | Correções da auditoria de fidelidade (a ponta, com tudo) |
+| `etapa-8-acabamento` | Correções da auditoria de fidelidade |
+| `etapa-9-github-pages` | A demonstração no GitHub Pages (a ponta, com tudo) |
 
-Nada foi enviado para o GitHub nem publicado. A `main` continua como estava.
+As branches estão no GitHub. A `main` continua como estava.
 
 ## O que ficou para depois
 
-- **Firebase:** a conta Google atingiu a cota de projetos (os apagados contam por 30 dias). Os caminhos estão em [firebase.md](firebase.md). O código já está pronto para ele.
+- **Firebase:** a conta Google atingiu a cota de projetos (os apagados contam por 30 dias). Os caminhos estão em [firebase.md](firebase.md). O código já está pronto para ele. Até lá, o login com Google não existe, e o app funciona só na demonstração.
 - **Layout do computador:** por enquanto, o app aparece numa coluna central. O desenho próprio do computador vem depois, como combinado (mobile first).
 - **Regras do Firestore:** não foram testadas no emulador, que pede Java 11 (a máquina tem o 8).
 

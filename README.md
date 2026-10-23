@@ -20,7 +20,7 @@ App pessoal de hábitos, organizado em pilares e fases, para iPhone (instalado p
 
 ## Rodar
 
-Vite, React e TypeScript. Sem o `.env.local`, o app roda no modo demonstração, com os dados no aparelho.
+Vite, React e TypeScript. Sem o `.env.local`, o app roda no modo demonstração, com os dados no aparelho. A demonstração publicada fica em <https://hederrico.github.io/Prokope/>.
 
 | Comando | O que faz |
 |---|---|

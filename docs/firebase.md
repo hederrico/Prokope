@@ -18,7 +18,7 @@ Os comandos abaixo usam o Firebase CLI, que já está instalado e logado na sua 
 
 ## 1. Liberar a cota de projetos
 
-A conta estourou o limite de projetos, e **projetos apagados continuam contando na cota por 30 dias** (ficam em "exclusão pendente"). Por isso a criação ainda falha com `exceeded your allotted project quota`. Há três saídas; escolha uma:
+A conta estourou o limite de projetos, e **projetos apagados continuam contando na cota por 30 dias** (ficam em "exclusão pendente"). Por isso a criação ainda falha com `exceeded your allotted project quota`, pelo CLI ou pelo console. Em 23 de outubro de 2026, com todos os projetos já apagados, ela ainda falhou. Apagar mais projetos não ajuda. Há três saídas; escolha uma:
 
 1. **Pedir aumento de cota.** Preencha o formulário de cota de projetos do Google Cloud: <https://support.google.com/code/contact/project_quota_increase>. Diga que é um app pessoal no plano gratuito. A resposta costuma chegar por e-mail em um ou dois dias.
 2. **Restaurar um projeto apagado e reaproveitá-lo.** No console do Google Cloud, abra **IAM e administrador › Gerenciar recursos** (<https://console.cloud.google.com/cloud-resource-manager>), clique em **Exclusão pendente**, marque o projeto e toque em **Restaurar**. Depois:

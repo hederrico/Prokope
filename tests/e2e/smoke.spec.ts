@@ -33,5 +33,5 @@ test('tem o manifesto do app instalável', async ({ page, request }) => {
   const href = await page.locator('link[rel="manifest"]').getAttribute('href');
   expect(href).toBeTruthy();
   const manifest = await (await request.get(href!)).json();
-  expect(manifest).toMatchObject({ name: 'Prokopē', display: 'standalone', start_url: '/hoje', lang: 'pt-BR' });
+  expect(manifest).toMatchObject({ name: 'Prokopē', display: 'standalone', start_url: '/', lang: 'pt-BR' });
 });
