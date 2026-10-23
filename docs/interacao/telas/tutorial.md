@@ -106,9 +106,14 @@ Nos dados da pessoa, só apontando: pilares e hábitos (com "Também conta em"),
 | Primeiro registro · 0 de 3 | Toque no + (`data-tour="pp-add"`) | Soma 1, o anel anda e o número rola |
 | Primeira nota | Escolher de 1 a 5 (`data-tour="pp-rate"`) | O mesmo jeito de dar nota das refeições |
 
-- O grupo inteiro tem `data-tour="pp-group"`.
-- **Na primeira vez**, cada gesto grava o instante em `tutorial.firstSteps` (`markAt`, `addAt`, `rateAt`, mais a `rating`). Rever o capítulo usa as mesmas linhas, sem gravar de novo.
-- **Na Jornada**, uma entrada só, "Primeiros passos com o Zeno", com a data, assim que houver o primeiro.
+- O grupo inteiro tem `data-tour="pp-group"`. Na folha da nota, as opções têm `pp-rate-options` e o "Salvar nota" tem `pp-rate-save`.
+- **Na primeira vez**, cada gesto grava o instante em `tutorial.firstSteps` (`markAt`, `addAt`, `rateAt`, mais a `rating`), pelas ações `practiceMark`, `practiceAdd` e `practiceRate`. Rever o capítulo usa as mesmas linhas, sem gravar de novo.
+- **O estado das linhas** fica em memória (`src/stores/practice.ts`) e zera quando o grupo aparece (`practice` passa a verdadeiro). O condutor só liga e desliga `useTour().practice`.
+- **O Desfazer** do toast volta só a linha de treino e avisa `undo`. O instante guardado fica, porque o gesto aconteceu: quem desfaz a marcação no passo 4 continua com "a primeira marcação" na Jornada.
+- **Os avisos:** `pp-mark` e `pp-unmark` no círculo, `pp-add` com o total a cada toque no + (até 3), `pp-rate` com a nota ao salvar a folha e `undo` no Desfazer da marcação.
+- **Na Jornada**, uma entrada só, "Primeiros passos com o Zeno", com a data do primeiro gesto e o que foi feito, assim que houver o primeiro. Ela fica no caminho das fases, no ponto do tempo em que aconteceu ([jornada.md](jornada.md)).
+- **Sem o condutor** (testes e capturas): `window.__pkPractice.show(true)` liga o grupo.
+- O desenho, os toasts e onde o grupo aparece em cada estado do Hoje estão em [hoje.md](hoje.md) › Primeiros passos.
 
 ## Modo exemplo
 

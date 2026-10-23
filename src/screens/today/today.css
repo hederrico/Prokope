@@ -870,3 +870,34 @@
 .td-closed-view {
   padding-bottom: 8px;
 }
+
+/* ---------- Primeiros passos (hoje.md › Primeiros passos): o grupo de treino do tutorial "O dia" ---------- */
+.td-pp {
+  position: relative;
+}
+/* no dia fechado não há cabeçalho: o grupo fica abaixo da área segura */
+.td-pp-top {
+  padding-top: var(--safe-top);
+}
+/* só enquanto a altura anima (entrar e sair): parado, a sombra do cartão aparece inteira */
+.td-pp-clip {
+  overflow: hidden;
+}
+/* o alvo do tutorial em volta do controle (data-tour): do tamanho dele, sem mexer no lugar */
+.td-pp-t {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+/* a linha de treino não abre um hábito: o nome não convida ao toque */
+.td-pp-row .pk-hr-main {
+  cursor: default;
+}
+/* o anel do registro, como o da água */
+.td-pp-row .pk-ringbox .rc {
+  color: var(--ink);
+  font-size: 18px;
+}
+.td-pp-note {
+  color: var(--text-2);
+}

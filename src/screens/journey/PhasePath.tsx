@@ -1,12 +1,20 @@
 // PhasePath: o caminho das fases da Jornada (quadro: .xd-tl). As fases ficam na primária; os hábitos dentro
 // mantêm a cor do próprio pilar. É uma lista: cada fase é um item com o nome completo para o leitor de tela.
 // Na primeira montagem da sessão, os nós entram em cascata, o anel da fase atual se desenha em ring e as barras
-// das semanas enchem em fill. Nas outras vezes, nada anima.
+// das semanas enchem em fill. Nas outras vezes, nada anima. A entrada dos Primeiros passos (tutorial) é um marco
+// pequeno entre as fases, no ponto do tempo em que aconteceu.
 import { useEffect, useState } from 'react';
 import { m } from 'motion/react';
 import clsx from 'clsx';
-import type { PhaseView, PhaseWeek } from '@/data';
-import { formatDayShort, formatPercent, formatRange, diffDays } from '@/data';
+import type { FirstStepsEntry, PhaseView, PhaseWeek } from '@/data';
+import {
+  FIRST_STEPS_TITLE,
+  firstStepsIndex,
+  formatDayShort,
+  formatPercent,
+  formatRange,
+  diffDays,
+} from '@/data';
 import type { Pause, Pillar } from '@/types';
 import { Chip, Ring, Tag } from '@/components/ui';
 import { Icon } from '@/icons';
@@ -25,24 +33,41 @@ export interface PhasePathProps {
   justClosed?: number | null;
   /** quantos hábitos das fases anteriores seguem ativos */
   carried: { count: number; phases: number[] };
+  /** a entrada dos Primeiros passos do tutorial, quando já houve o primeiro gesto */
+  firstSteps?: FirstStepsEntry | null;
   onOpenDone: (phase: PhaseView) => void;
   onOpenPhase: (phase: PhaseView) => void;
 }
 
-export function PhasePath({ phases, today, pillarById, pause, animate, justClosed, carried, onOpenDone, onOpenPhase }: PhasePathProps) {
+export function PhasePath({ phases, today, pillarById, pause, animate, justClosed, carried, firstSteps, onOpenDone, onOpenPhase }: PhasePathProps) {
+  // a entrada dos Primeiros passos fica no ponto do tempo dela: antes da primeira fase que não tinha começado
+  const at = firstSteps ? firstStepsIndex(phases, firstSteps.day) : -1;
+  const count = phases.length + (firstSteps ? 1 : 0);
+  const motionOf = (i: number) =>
+    animate
+      ? {
+          initial: { opacity: 0, y: distance.rise },
+          animate: { opacity: 1, y: 0, transition: { ...tween.base, delay: cascadeDelay(i) } },
+        }
+      : {};
+  const steps =
+    firstSteps && at >= 0 ? (
+      <FirstStepsItem
+        key="pp"
+        entry={firstSteps}
+        // o traço até a próxima fase: tracejado quando ela ainda não começou
+        dash={phases[at]?.status === 'future'}
+        motionProps={motionOf(at)}
+      />
+    ) : null;
   return (
     <ol className="jr-tl" aria-label="Fases">
       {phases.map((p, i) => {
-        const last = i === phases.length - 1;
+        const index = at >= 0 && i >= at ? i + 1 : i;
+        const last = index === count - 1;
         const dash = p.status !== 'done';
-        const motionProps = animate
-          ? {
-              initial: { opacity: 0, y: distance.rise },
-              animate: { opacity: 1, y: 0, transition: { ...tween.base, delay: cascadeDelay(i) } },
-            }
-          : {};
-        return (
-          <m.li key={p.number} className={clsx('jr-ph', dash && !last && 'dash')} {...motionProps}>
+        const item = (
+          <m.li key={p.number} className={clsx('jr-ph', dash && !last && 'dash')} {...motionOf(index)}>
             {p.status === 'done' && <DonePhase p={p} fresh={justClosed === p.number} onOpen={() => onOpenDone(p)} />}
             {p.status === 'current' && (
               <CurrentPhase
@@ -58,8 +83,37 @@ export function PhasePath({ phases, today, pillarById, pause, animate, justClose
             {p.status === 'future' && <FuturePhase p={p} onOpen={() => onOpenPhase(p)} />}
           </m.li>
         );
+        return i === at ? [steps, item] : item;
       })}
+      {at === phases.length && steps}
     </ol>
+  );
+}
+
+/**
+ * "Primeiros passos com o Zeno": a entrada dos Primeiros passos do tutorial, um marco pequeno no caminho, com a data
+ * do primeiro gesto e o que foi feito. Só leitura: não abre nada.
+ */
+function FirstStepsItem({
+  entry,
+  dash,
+  motionProps,
+}: {
+  entry: FirstStepsEntry;
+  dash: boolean;
+  motionProps: object;
+}) {
+  const date = formatDayShort(entry.day);
+  return (
+    <m.li className={clsx('jr-ph jr-ms', dash && 'dash')} data-tour="pp-journey" {...motionProps}>
+      <span className="jr-node ms" aria-hidden="true">
+        <Icon name="footprints" weight="duotone" />
+      </span>
+      <div className="jr-mst">
+        <b>{FIRST_STEPS_TITLE}</b>
+        <span className="cap">{`${date} · ${entry.text}`}</span>
+      </div>
+    </m.li>
   );
 }
 

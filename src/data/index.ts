@@ -124,6 +124,8 @@ export { isDoneLike, isCountable, isWeeklyKind, goalOn, nextRampStep, timeMeetsG
 export { pillarUsingColor, duplicatePillarName, firstFreeColor, pillarExitPlan } from '@/domain/pillars';
 export { CORRELATION_NEEDED } from '@/domain/correlation';
 export { WEIGHT_NEEDED } from '@/domain/weight';
+export { FIRST_STEPS_TITLE, firstStepsEntry, firstStepsIndex } from '@/domain/firstSteps';
+export type { FirstStepsEntry, FirstStepKind } from '@/domain/firstSteps';
 export { markId, measurementId } from '@/domain/context';
 export { CHAPTERS, chapterInfo, tutorialOf, zenoShown } from '@/domain/tutorial';
 export type { ChapterInfo } from '@/domain/tutorial';

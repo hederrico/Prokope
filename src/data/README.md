@@ -372,6 +372,15 @@ async function onCheck() {
 | `cancelInvite(id)`, `declineInvite(id)`, `markInviteSeen(id)`, `acceptInvite(id)`, `unlink()` | convite e ligação |
 | `setSharing({ mood: true })`, `setSharedHabit(habitId, on)`, `sendHug()` | o que mostrar e o carinho (um por minuto) |
 
+### Tutorial: os Primeiros passos
+
+| Ação | Faz |
+|---|---|
+| `practiceMark()`, `practiceAdd()`, `practiceRate(4)` | o instante da primeira vez de cada gesto de treino do capítulo "O dia" em `profile.tutorial.firstSteps` (`markAt`, `addAt`, `rateAt` e a `rating`), por mescla e só se o campo ainda não existe. Depois disso, devolvem um desfazer vazio. Nunca escrevem em `marks` nem em `entries`, então nada entra nas contas do dia, na constância, na força nem nos padrões |
+
+- O estado das três linhas durante o capítulo fica em memória, em `src/stores/practice.ts` (`usePractice`, zera quando `useTour().practice` liga). O Hoje não chama o desfazer dessas ações no toast: desfazer volta só a linha.
+- A entrada da Jornada sai de `firstStepsEntry(tutorialOf(profile).firstSteps, clock)` → `{ at, day, kinds, text: 'a primeira marcação e a primeira nota' }` ou `null`, e o lugar no caminho de `firstStepsIndex(phases, day)`. O título é `FIRST_STEPS_TITLE` ("Primeiros passos com o Zeno").
+
 ## Celebrar ou não: de onde veio a mudança
 
 ```ts

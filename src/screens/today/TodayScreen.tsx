@@ -48,6 +48,7 @@ import {
   RunStrip,
   TodaySkeleton,
 } from './parts';
+import { PracticeSlot } from './PracticeGroup';
 import { CheckinCard, CounterCard, DaysSinceGrid, ItemRow, LimitsList, NightGoals, NudgeStrip, WaterRow } from './rows';
 import { foldKey, openFold, revealRows, rowOf, useFold } from './reveal';
 import { TodayViewButton } from './TodayViewPicker';
@@ -501,6 +502,7 @@ function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, show
     return (
       <div className="td-body td-body-fill">
         {weekBlock}
+        <PracticeSlot />
         <PausedDay live={live} />
       </div>
     );
@@ -543,6 +545,8 @@ function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, show
     <AnimatePresence mode="popLayout" initial={false}>
       {closed ? (
         <m.div key="closed" className="td-body td-body-fill" {...SWAP}>
+          {/* os Primeiros passos continuam no topo, acima do anel: eles não fecham nem reabrem o dia */}
+          <PracticeSlot top />
           <DayClosedView
             day={ctx.day}
             done={live.count.done}
@@ -572,6 +576,8 @@ function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, show
                     onReveal={reveal}
                     className={next()}
                   />
+                  {/* os Primeiros passos no topo da lista, antes de Manhã (ou de Ainda hoje, à noite) */}
+                  <PracticeSlot />
                   {night ? (
                     <NightBlocks layout={layout} liveOf={liveOf} next={next} nudgeFor={nudgeFor} />
                   ) : (
@@ -587,6 +593,7 @@ function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, show
               ) : (
                 <>
                   {weekBlock}
+                  <PracticeSlot />
                   {view === 'full' ? (
                     <FullBlocks
                       layout={layout}

@@ -20,6 +20,8 @@ export const SHEETS: Record<string, SheetDef> = {
   menu: { args: ['habito'], load: () => import('@/screens/today/HabitMenuSheet') },
   // os três jeitos de ver o Hoje (Resumo, Lista completa, Linha do tempo)
   jeito: { args: [], load: () => import('@/screens/today/TodayViewSheet') },
+  // a nota de treino dos Primeiros passos (tutorial "O dia"): não grava em marks
+  'primeira-nota': { args: [], load: () => import('@/screens/today/PracticeRatingSheet') },
   corrigir: { args: ['habito', 'dia'], load: () => import('@/screens/habit/FixDaySheet') },
   dia: { args: ['dia'], load: () => import('@/screens/progress/DaySheet') },
   apagar: { args: ['pilar'], load: () => import('@/screens/settings/DeletePillarSheet') },

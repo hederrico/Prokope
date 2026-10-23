@@ -6,6 +6,7 @@ import { TabsLayout } from '@/components/shell/TabsLayout';
 import { recentLastPath } from '@/components/shell/navigation';
 import { showToast, showUndo } from '@/components/shell/toast';
 import { takeExampleReturn } from '@/data/example';
+import { installPracticeHook } from '@/stores/practice';
 import { recordNavigation } from './history';
 import { captureGesturesFlag, isStandalone } from './platform';
 import { RootLayout } from './RootLayout';
@@ -118,3 +119,5 @@ router.subscribe((state) => recordNavigation(state.location, state.historyAction
 if (typeof navigator !== 'undefined' && navigator.webdriver) {
   (window as unknown as { __pkShell: unknown }).__pkShell = { navigate: router.navigate, showUndo, showToast };
 }
+// os Primeiros passos sem o condutor do tutorial (testes e capturas): window.__pkPractice.show(true)
+installPracticeHook();

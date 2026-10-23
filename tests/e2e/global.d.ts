@@ -47,5 +47,7 @@ declare global {
     __pkZeno: ZenoHook;
     /** marcado pelos testes do Desfazer */
     __undone?: boolean;
+    /** os Primeiros passos sem o condutor do tutorial (src/stores/practice.ts), sempre ligado */
+    __pkPractice: { show: (on: boolean) => void };
   }
 }
