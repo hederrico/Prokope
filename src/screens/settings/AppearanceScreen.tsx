@@ -1,67 +1,107 @@
-// Provisório da casca (B1): o agente D6 troca este arquivo pela tela de verdade (docs/interacao/telas/ajustes-rotina-conta.md).
-// Já liga as preferências da casca (tema, animações e som), para testar o tema e o movimento reduzido.
+// Aparência: o tema troca ao vivo, sem salvar (as cores passam em base); Animações só reduz (com o Reduzir Movimento
+// do iPhone, o interruptor fica desligado e travado, com o aviso de onde mudar); o som toca uma vez ao ligar; e a
+// Privacidade do peso (ajustes-rotina-conta.md › Aparência).
+import { useRef, useState } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { NavBar } from '@/components/shell';
-import { PlaceholderNote } from '@/components/shell/Placeholder';
-import { setPreferences, usePreferences, type ThemePreference } from '@/app/preferences';
-
-const THEMES: { id: ThemePreference; label: string }[] = [
-  { id: 'system', label: 'Sistema' },
-  { id: 'light', label: 'Claro' },
-  { id: 'dark', label: 'Escuro' },
-];
+import { ListGroup, ListItem, SectionLabel } from '@/components/ui';
+import { usePrefs } from '@/data';
+import { setMotion, setSound, setTheme, setWeightTrendOnly } from '@/actions';
+import { Icon } from '@/icons';
+import { fadeUp, tween } from '@/motion/tokens';
+import { useSystemReducedMotion } from '@/motion/reducedMotion';
+import { playSoftTick, unlockAudio } from '@/motion/sound';
+import { Foot } from './parts';
+import { useSynced } from './hooks';
+import { ThemePicker } from './ThemePreview';
+import './settings.css';
 
 export default function AppearanceScreen() {
-  const { theme, animations, sound } = usePreferences();
-  const row = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 52,
-    padding: '0 16px',
-    gap: 12,
-  } as const;
+  const prefs = usePrefs();
+  const system = useSystemReducedMotion();
+  // o interruptor anda na hora; o modo reduzido entra 150 ms depois, quando o botão já chegou
+  const [motionOn, setMotionOn] = useSynced(prefs.motion);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [noteId] = useState(() => `motion-note-${Math.random().toString(36).slice(2)}`);
+
+  const toggleMotion = (on: boolean) => {
+    if (system) return;
+    setMotionOn(on);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => void setMotion(on), 150);
+  };
+
+  const toggleSound = (on: boolean) => {
+    // o iOS só libera o som dentro de um toque: o áudio começa aqui
+    try {
+      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+      if (session) session.type = 'ambient';
+    } catch {
+      /* sem audioSession */
+    }
+    unlockAudio();
+    void setSound(on);
+    if (on) playSoftTick();
+  };
+
   return (
-    <>
+    <div className="st-screen">
       <NavBar title="Aparência" />
-      <PlaceholderNote owner="D6" />
-      <div style={{ padding: '0 16px', display: 'grid', gap: 16 }}>
-        <div role="radiogroup" aria-label="Tema" style={{ display: 'flex', gap: 8 }}>
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="radio"
-              aria-checked={theme === t.id}
-              onClick={() => setPreferences({ theme: t.id })}
-              style={{
-                flex: 1,
-                minHeight: 44,
-                borderRadius: 12,
-                border: theme === t.id ? '2px solid var(--accent-mark)' : '1px solid var(--border-strong)',
-                background: theme === t.id ? 'var(--accent-wash)' : 'var(--surface)',
-                color: 'var(--text)',
-                font: '600 15px/20px var(--font-ui)',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div style={{ borderRadius: 20, background: 'var(--surface)', boxShadow: 'var(--shadow-1)' }}>
-          <label style={row}>
-            <span>Animações</span>
-            <input
-              type="checkbox"
-              checked={animations}
-              onChange={(e) => setPreferences({ animations: e.target.checked })}
+      <SectionLabel>Tema</SectionLabel>
+      <ThemePicker value={prefs.theme} onChange={(t) => void setTheme(t)} />
+      <Foot>Em Sistema, o Prokopē acompanha o claro e o escuro do iPhone ao longo do dia.</Foot>
+
+      <SectionLabel>Movimento e som</SectionLabel>
+      <div className="st-pad">
+        <ul className="pk-lg" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          <li className={system ? 'st-sw-dis' : undefined} aria-describedby={system ? noteId : undefined}>
+            <ListItem
+              icon="wave-sine"
+              title="Animações"
+              subtitle="O check dá uma mola, os números rolam e o dia fechado brilha."
+              toggle={{ checked: system ? false : motionOn, onCheckedChange: toggleMotion, disabled: system }}
             />
-          </label>
-          <label style={{ ...row, borderTop: '1px solid var(--border)' }}>
-            <span>Som suave ao marcar</span>
-            <input type="checkbox" checked={sound} onChange={(e) => setPreferences({ sound: e.target.checked })} />
-          </label>
-        </div>
+            <AnimatePresence initial={false}>
+              {system && (
+                <m.div
+                  key="sys"
+                  id={noteId}
+                  className="st-sys"
+                  initial={fadeUp.initial}
+                  animate={fadeUp.animate}
+                  exit={{ opacity: 0, transition: tween.micro }}
+                >
+                  <Icon name="info" weight="regular" />
+                  <span>
+                    O Reduzir Movimento está ligado no iPhone, então aqui nada se desloca. Para mudar: Ajustes do iPhone
+                    › Acessibilidade › Movimento.
+                  </span>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </li>
+          <li>
+            <ListItem
+              icon="speaker-simple-low"
+              title="Som suave ao marcar"
+              subtitle="Um toque baixinho. Respeita o silencioso."
+              toggle={{ checked: prefs.sound, onCheckedChange: toggleSound }}
+            />
+          </li>
+        </ul>
       </div>
-    </>
+
+      <SectionLabel>Privacidade</SectionLabel>
+      <div className="st-pad">
+        <ListGroup>
+          <ListItem
+            icon="eye-slash"
+            title="Mostrar só a tendência do peso"
+            subtitle="Esconde o número de cada dia no Hoje, na folha do peso e em Medidas. Ficam a frase e a linha da média."
+            toggle={{ checked: !!prefs.weightTrendOnly, onCheckedChange: (on) => void setWeightTrendOnly(on) }}
+          />
+        </ListGroup>
+      </div>
+    </div>
   );
 }
