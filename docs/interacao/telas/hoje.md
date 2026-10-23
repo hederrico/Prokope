@@ -9,6 +9,8 @@ O Hoje é a tela mais aberta do app: cedo, meio acordado, e à noite, cansado. T
 
 | Elemento | Gesto | Resposta | Animação | Dado gravado | Reflexo em outras telas |
 |---|---|---|---|---|---|
+| Botão do jeito ("Resumo ⌄", no topo, à direita da data) | toque | Abre a folha "Ver o dia", `?folha=jeito` | folha | — | — |
+| Ponto da faixa do dia (só no Resumo) | toque | Leva até a linha do hábito (abaixo) | rolagem suave e destaque de cor | — | — |
 | `WeekCard` · "76% na semana ›" | toque | Troca para a aba Progresso, `/progresso?periodo=semana&tema=visao` | troca de aba | — | — |
 | `WeekStrip` · dia passado | toque | Abre o dia, `/hoje?dia=2026-10-21` | "Ver outro dia" | — | — |
 | `WeekStrip` · dia futuro | toque | Nada (não é focável) | — | — | — |
@@ -55,7 +57,7 @@ O Hoje é a tela mais aberta do app: cedo, meio acordado, e à noite, cansado. T
 - Cada linha tem dois botões: o nome ("Caminhada com o cachorro. 2 de 7 na semana, meta 6. Abre o hábito") e o controle (`role="checkbox"`, com o nome do hábito).
 - Na web não existem ações personalizadas do VoiceOver. Por isso cada linha tem um botão "Mais opções de Caminhada", visível só para o leitor de tela, que abre o menu.
 - O total "x de 12" não é anunciado; o toast já diz o que aconteceu.
-- Ordem de foco: faixa da corrida (se houver), cabeçalho, `WeekCard` (resumo, "76% na semana", dias), os momentos na ordem da tela, limites, dias sem e barra de abas.
+- Ordem de foco: faixa da corrida (se houver), cabeçalho (com o botão do jeito de ver o dia), `WeekCard` (resumo, "76% na semana", dias), a faixa do dia (no Resumo), os momentos na ordem da tela, limites, dias sem e barra de abas.
 - Com letra grande (acima de 130%), o subtítulo quebra em duas linhas, o controle continua centrado na altura da linha, os botões rápidos passam de 4 para 2 por linha e o "Marcar ontem" desce para baixo da frase do convite.
 
 **Implementação:**
@@ -72,6 +74,53 @@ O Hoje é a tela mais aberta do app: cedo, meio acordado, e à noite, cansado. T
 **Ajuste da semana:** o ajuste escrito na revisão ("Começar a desligar as telas às 20h45") aparece como uma linha pequena no fim do `WeekCard`, com o ícone `lightbulb`, até a próxima revisão. A linha não anima e não tem controle; tocar nela abre a revisão em que ele foi escrito.
 
 **Carinho recebido (A dois):** um `HugCard` discreto entra no topo com `fadeUp` na primeira aparição do Hoje depois do carinho e fica até o fim do dia lógico. Vários carinhos viram um cartão só, sem contagem e sem histórico.
+
+## Os três jeitos de ver o dia
+
+O mesmo dia pode ser visto de três jeitos, e a pessoa troca quando quiser. Os três usam as mesmas linhas (`HabitRow`, `ValuePill`, os controles de cada tipo), os mesmos toques (marcar, abrir a folha, menu do hábito pelo toque longo, Desfazer) e a mesma arrumação adiada: a lista e a ordem vêm do instantâneo congelado e o estado de cada linha vem ao vivo, então marcar nunca tira nada do lugar. Limites da semana, Dias sem e A dois ficam no fim nos três.
+
+| Jeito | O que mostra |
+|---|---|
+| **Resumo** (o padrão) | O Hoje descrito nas seções abaixo (Manhã, Ao longo do dia e Noite; a Noite recolhida até as 18h; momento completo em "Tudo feito"; Ainda hoje e Feitos hoje a partir das 20h30), com a **faixa do dia** logo abaixo do cartão da semana (à noite, logo abaixo do cabeçalho) |
+| **Lista completa** | Os mesmos momentos, todos abertos o dia todo: sem "Tudo feito", sem a Noite recolhida e sem a divisão Ainda hoje e Feitos hoje. Cada linha com horário começa a legenda pelo horário em destaque ("até **20h30** · coleta hoje", "às **21h** · em 26 min", "**20h30** · ainda dá tempo"). O cartão da semana fica também à noite. Proteína e água viram o cartão das metas a partir das 20h30, como no Resumo |
+| **Linha do tempo** | Todos os hábitos do dia em ordem de horário, com a marca de cada horário à esquerda ("6h50", "20h30") num trilho vertical, e a linha do agora. Os do mesmo horário ficam juntos num cartão. Os sem horário entram pelo momento: **Manhã** logo depois do acordar (7h, ou o minuto seguinte ao horário de acordar, se for mais tarde), **Ao longo do dia** (proteína, água, almoço) no meio do dia, às 12h, e **Noite** (o jantar) às 19h. A bolinha do trilho fica cheia nos horários que já passaram |
+
+**A faixa do dia (Resumo):** das 6h às 23h (alargada em horas cheias quando algum horário passa disso), com marcas de 3 em 3 horas. Um ponto por hábito com horário, na cor do pilar: feito é cheio, parcial é meio cheio de baixo para cima (como o círculo de marcar), por fazer é só o contorno, "não conta hoje" é o contorno pontilhado. O trecho que já passou fica um pouco mais escuro, e a marca do agora é um traço na primária com a hora embaixo ("7h42").
+
+- Pontos do mesmo horário, ou quase, ficam lado a lado (14 px, 4 px entre eles), centrados no horário médio, nunca um em cima do outro. A marca do agora passa no vão entre o último que já foi e o primeiro que ainda vem.
+- Pontos a menos de 44 px dividem uma área de toque só (no mínimo 44 × 44 px). Na quinta, check-in, louça, lixo, telas e deitar são um alvo só, das 20h30 às 22h.
+- **Tocar num ponto** leva até a linha: se ela está num momento recolhido (a Noite de manhã, "Tudo feito", "Feitos hoje"), ele abre no lugar com layout `calma`; a lista rola suave até a linha (no meio da tela) e a linha ganha o fundo do pilar, que entra em `base`, fica um instante e sai em `fill`. Num alvo com vários pontos, a lista rola até o primeiro e todos ganham o destaque. Nada muda de lugar.
+- Quando um hábito é marcado, o ponto troca de cor em `micro`, no lugar. A marca do agora anda com o relógio, sem animação.
+- Num dia que passou, a faixa mostra os pontos daquele dia, sem a marca do agora.
+
+**A linha do agora (Linha do tempo):** um traço de 2 px na primária, com a bolinha no trilho e a hora ("7h42"), no espaço entre o último horário que já chegou e o próximo. Esse espaço existe entre todos os horários, então quando a linha passa de um para o outro nada é empurrado. Num dia que passou, não há linha do agora.
+
+**A troca:** o botão no topo do Hoje (no `ScreenHeader`, à direita da data) mostra o ícone e o nome do jeito atual e abre a folha "Ver o dia" (`?folha=jeito`), com os três jeitos num `OptionGroup` (Resumo com o selo "padrão"). A escolha vale na hora e a folha fecha sozinha 200 ms depois, para a pessoa ver o rádio escolhido. A mesma escolha aparece em Ajustes › Aparência, em "Jeito de ver o Hoje".
+
+| Tempo | O que anima |
+|---|---|
+| 0 ms | O rádio escolhido enche com a mola `toque` |
+| 0 a 240 ms | Atrás do fundo da folha, o jeito que sai some em `base` (`--ease-exit`) no lugar dele, enquanto o novo aparece em `base` no mesmo lugar. Nada desliza nem pula: o cabeçalho e o cartão da semana ficam onde estavam |
+| 200 ms | A folha desce em `base` |
+
+- A troca não mexe na rolagem nem no que está aberto ou recolhido (os momentos abertos continuam abertos ao voltar para o Resumo).
+- Com movimento reduzido, a troca continua por opacidade; a rolagem da faixa vira um salto; o destaque continua (é só cor).
+
+**Dado gravado:** `profile.prefs.todayView` (`'summary' | 'full' | 'timeline'`), pela ação `setTodayView`. Vale para a pessoa em todos os aparelhos, como o tema e o som. Um documento antigo sem o campo, ou com um valor desconhecido, vale o Resumo (`todayViewOf`).
+
+**Estados nos três jeitos:** manhã, tarde, noite, domingo com a revisão, primeiro dia, convite gentil e "Marcar ontem", outro dia e carregando funcionam igual nos três (o esqueleto é o mesmo). Num dia que passou, a faixa "Você está vendo um dia que passou" ocupa o topo e o botão do jeito não aparece; o dia continua no jeito escolhido. Pausado mostra o cartão da pausa nos três. No dia fechado, o anel e a celebração são os mesmos; "Ver o dia" abre os Feitos hoje no Resumo, a lista inteira na Lista completa e a linha do tempo inteira na Linha do tempo.
+
+**Acessibilidade:**
+- O botão do topo diz o jeito atual: "Jeito de ver o dia: Resumo. Trocar" (`aria-haspopup="dialog"`). A folha é um grupo de rádio ("Linha do tempo, Tudo em ordem de horário, com a linha do agora. Botão de opção, 3 de 3").
+- A faixa é um grupo, "Faixa do dia", com uma descrição: "6 hábitos com horário, das 6h50 às 22h; 1 feito. O próximo é check-in, às 20h30. Toque num ponto para ir até o hábito." Cada alvo é um botão: "Acordar, 6h50, feito. Mostrar na lista" ou "Das 20h30 às 22h: Check-in do dia, Louça, Lixo e recicláveis, Telas desligadas e Deitar; nenhum feito. Mostrar na lista". As marcas de hora e a do agora ficam fora do leitor.
+- Na Linha do tempo, cada horário é uma região com o título (h2: "6h50", "Manhã"). A linha do agora fica fora do leitor e nunca é anunciada, nem quando muda o minuto.
+- Na troca, o jeito que sai fica fora do leitor e do foco (`inert`) enquanto some.
+
+**Implementação:**
+- `TodayViewPicker.tsx` (o botão e as opções, usadas também em Ajustes › Aparência), `TodayViewSheet.tsx` (a folha), `DayStrip.tsx` e `stripLayout.ts` (onde cada ponto fica e as áreas de toque, com teste), `TodayViews.tsx` (Lista completa e Linha do tempo) e `reveal.ts` (os momentos recolhidos e o "levar até a linha").
+- O horário de cada hábito vem do domínio (`habitTime`, já no `TodayItem.time`): a meta de horário vence a agenda, e um horário do perfil (`timeKey`) vale o da época. A ordem da Linha do tempo é `dayTimeline` e o trecho da faixa é `dayStripRange` (`src/domain/today.ts`, com teste); os minutos contam no dia lógico (`logicalMinutes`: 0h30 = 1470).
+- O corpo do dia fica dentro de um `AnimatePresence mode="popLayout"` com a chave do jeito; o que sai ganha `data-leaving`, e a arrumação (`useFlip`) e o "levar até a linha" ignoram o que está saindo.
+- A cascata da primeira abertura vale só na primeira aparição: um jeito novo entra só com opacidade.
 
 ## Hoje · manhã  (7h42)
 

@@ -9,6 +9,11 @@ import { prefersReducedMotion } from '@/motion/reducedMotion';
 
 const SELECTOR = '[data-flip], .td-fl';
 
+/** Os blocos e as linhas da arrumação, fora do jeito de ver que está saindo (data-leaving). */
+function flipTargets(root: HTMLElement): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>(SELECTOR)].filter((el) => !el.closest('[data-leaving]'));
+}
+
 function flipId(el: HTMLElement): string | null {
   if (el.dataset.flip) return el.dataset.flip;
   for (const c of el.classList) if (c.startsWith('td-fl-')) return c.slice(6);
@@ -34,7 +39,7 @@ function layoutTop(el: HTMLElement, root: HTMLElement): number {
 
 function measure(root: HTMLElement): Map<string, number> {
   const map = new Map<string, number>();
-  root.querySelectorAll<HTMLElement>(SELECTOR).forEach((el) => {
+  flipTargets(root).forEach((el) => {
     const id = flipId(el);
     if (id && el.offsetParent) map.set(id, layoutTop(el, root));
   });
@@ -56,7 +61,7 @@ export function useFlip(rootRef: RefObject<HTMLElement | null>, version: number,
     if (seen.current !== version) {
       seen.current = version;
       if (animateNow && !prefersReducedMotion()) {
-        root.querySelectorAll<HTMLElement>(SELECTOR).forEach((el) => {
+        flipTargets(root).forEach((el) => {
           const id = flipId(el);
           if (!id) return;
           const before = last.current.get(id);
@@ -71,7 +76,7 @@ export function useFlip(rootRef: RefObject<HTMLElement | null>, version: number,
         });
       } else if (animateNow) {
         // reduzido: só a opacidade dos que mudaram de lugar
-        root.querySelectorAll<HTMLElement>(SELECTOR).forEach((el) => {
+        flipTargets(root).forEach((el) => {
           const id = flipId(el);
           if (!id) return;
           const before = last.current.get(id);

@@ -611,3 +611,262 @@
 .td-menu .pk-li {
   min-height: 56px;
 }
+
+/* ---------- os três jeitos de ver o dia (hoje.md › Os três jeitos de ver o dia) ---------- */
+.td-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+/* o botão do topo: o jeito atual, como a ação do cabeçalho da Jornada; 44 px de toque sem crescer a linha */
+.td-viewbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  margin: -4px -8px -4px 0;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--accent-ink);
+  font: 600 15px/20px var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+.td-viewbtn:active {
+  background-color: var(--accent-wash);
+  transition-duration: var(--dur-press);
+}
+.td-viewbtn > svg {
+  flex: none;
+  font-size: 17px;
+}
+.td-viewbtn > .td-viewbtn-cv {
+  font-size: 12px;
+}
+.td-views {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.td-views-foot {
+  margin: 0;
+  padding: 0 4px 4px;
+  font: var(--t-caption);
+  color: var(--text-3);
+}
+
+/* Lista completa: o horário abre a legenda */
+.td-at {
+  color: var(--text);
+  font-weight: 600;
+}
+.pk-hr.done .td-at {
+  color: var(--text-2);
+}
+.td-at-sep {
+  margin: 0 -2px;
+}
+
+/* a faixa leva até a linha: o fundo do pilar entra em base, fica um instante e sai em fill (só cor) */
+@keyframes td-hl {
+  17%,
+  71% {
+    /* mais claro que a bolha do ícone, que também é --wash */
+    background-color: color-mix(in oklch, var(--wash, var(--accent-wash)) 55%, var(--surface));
+  }
+}
+.td-hl {
+  animation: td-hl 1400ms var(--ease-out);
+}
+
+/* ---------- faixa do dia (Resumo) ---------- */
+.td-strip {
+  margin-top: 12px;
+}
+.td-strip-box {
+  position: relative;
+  height: 60px;
+}
+.td-strip-track {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 21px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--track);
+}
+.td-strip-past {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: var(--border-strong);
+}
+.td-strip-tick {
+  position: absolute;
+  top: 18px;
+  width: 2px;
+  height: 8px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--track);
+}
+.td-strip-now {
+  position: absolute;
+  top: 9px;
+  width: 2px;
+  height: 26px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--accent-ink);
+}
+.td-strip-hit {
+  position: absolute;
+  top: 0;
+  height: 44px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+.td-strip-hit:active {
+  background-color: color-mix(in oklch, var(--text) 6%, transparent);
+  transition-duration: var(--dur-press);
+}
+.td-strip-dot {
+  position: absolute;
+  top: 15px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  border: 2px solid var(--mark);
+  background: var(--bg);
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out);
+}
+.td-strip-dot[data-state='done'] {
+  background: var(--fill);
+}
+/* parcial: meio cheio de baixo para cima, como o círculo de marcar */
+.td-strip-dot[data-state='partial'] {
+  background: linear-gradient(to top, var(--fill) 50%, var(--bg) 50%);
+}
+.td-strip-dot[data-state='skipped'] {
+  border-style: dotted;
+  border-color: var(--border-strong);
+}
+.td-strip-lbls {
+  position: absolute;
+  inset: 44px 0 0;
+}
+.td-strip-lbl {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
+  font: 500 11px/14px var(--font-ui);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.td-strip-lbl.now {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* ---------- linha do tempo ---------- */
+/* o trilho fica à esquerda dos cartões (centro a 21 px da borda da tela); os cartões começam em 34 px */
+.td-tl {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 4px 34px;
+}
+.td-tl-slot {
+  position: relative;
+}
+.td-tl-slot::before,
+.td-tl-gap::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border);
+}
+.td-tl-slot::before {
+  top: 14px;
+  bottom: 0;
+}
+.td-tl-gap {
+  position: relative;
+  height: 22px;
+}
+.td-tl-gap::before {
+  top: 0;
+  bottom: 0;
+}
+.td-tl-gap.first::before,
+.td-tl-gap.last::before {
+  display: none;
+}
+.td-tl-h {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  margin: 0 0 6px;
+  font: 600 15px/20px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.td-tl-slot.moment .td-tl-h {
+  color: var(--text-2);
+}
+.td-tl-dot {
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--bg);
+}
+.td-tl-slot.past .td-tl-dot {
+  background: var(--border-strong);
+}
+/* a linha do agora: um traço da primária no espaço entre dois horários, sem ocupar lugar */
+.td-tl-now {
+  position: absolute;
+  left: -18px;
+  right: 0;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 0;
+}
+.td-tl-now > i {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-ink);
+}
+.td-tl-now > b {
+  flex: none;
+  font: 600 12px/16px var(--font-ui);
+  color: var(--accent-ink);
+}
+.td-tl-now > span {
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent-ink);
+}
+.td-closed-view {
+  padding-bottom: 8px;
+}

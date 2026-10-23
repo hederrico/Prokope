@@ -116,7 +116,7 @@ O primeiro trecho da rota diz qual aba está ativa. Folhas e o dia escolhido fic
 | `/ajustes/habitos/novo/tipo`, `/ajustes/habitos/novo/detalhes` | Novo hábito | Tela cheia |
 | `/ajustes/horarios`, `/lembretes`, `/aparencia`, `/pausar`, `/a-dois`, `/dados` | Itens de Ajustes | Empurrada |
 
-**Folhas** (sobre qualquer aba): `?folha=proteina`, `agua`, `acordar`, `nota&refeicao=almoco`, `checkin`, `peso`, `deslize&habito=:id`, `menu&habito=:id`, `corrigir&habito=:id&dia=:dia` (corrigir um dia do hábito), `dia&dia=:dia` (o resumo de um dia no Progresso) e `apagar&pilar=:id` (apagar um pilar com hábitos).
+**Folhas** (sobre qualquer aba): `?folha=proteina`, `agua`, `acordar`, `nota&refeicao=almoco`, `checkin`, `peso`, `deslize&habito=:id`, `menu&habito=:id`, `jeito` (o jeito de ver o Hoje: Resumo, Lista completa ou Linha do tempo), `corrigir&habito=:id&dia=:dia` (corrigir um dia do hábito), `dia&dia=:dia` (o resumo de um dia no Progresso) e `apagar&pilar=:id` (apagar um pilar com hábitos).
 
 **Rotas espelho:** uma tela empurrada aberta a partir de outra aba abre dentro da aba atual, com o primeiro trecho da rota dessa aba (`/progresso/habito/:id`, `/progresso/revisoes/:semana`). Assim a aba não troca sozinha e o "Voltar" leva de volta para onde a pessoa estava.
 

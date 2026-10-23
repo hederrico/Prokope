@@ -129,6 +129,7 @@ Valem para toda tela que mostra o Hoje (o fundo das folhas de B, os Estados de I
 - **Deitar:** é marcado na manhã seguinte, junto com o acordar, para o celular não voltar à mão depois das 21h.
 - **Limite cheio:** fica neutro, com "2 de 2 · a semana recomeça amanhã", e o "+" continua disponível.
 - **Ordem:** Manhã, Ao longo do dia e Noite. No fim, o que não tem hora: Limites da semana e Dias sem (`semTile()`).
+- **Três jeitos de ver o dia:** Resumo (o padrão, com a faixa dos horários), Lista completa (nada recolhido, com o horário em cada linha) e Linha do tempo (em ordem de horário, com a linha do agora). O botão no topo troca, e a escolha é da pessoa (Ajustes › Aparência). Detalhes em [`docs/interacao/telas/hoje.md`](../interacao/telas/hoje.md).
 
 ## Decisões tomadas
 

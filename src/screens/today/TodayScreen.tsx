@@ -2,9 +2,9 @@
 // Monta o cabeçalho, a semana (ou o convite da revisão), os momentos do dia, os limites e os dias sem, e troca de
 // modo pelo horário só quando a tela aparece. O agrupamento fica congelado (arrumação adiada) e os números vêm ao
 // vivo, para animar na hora sem nada mudar de lugar debaixo do dedo.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import clsx from 'clsx';
-import { AnimatePresence, m, PresenceContext } from 'motion/react';
+import { AnimatePresence, m, PresenceContext, useIsPresent } from 'motion/react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { endPause, markHabit } from '@/actions';
 import { previousEntry } from '@/app/history';
@@ -16,9 +16,12 @@ import {
   greeting,
   isDoneLike,
   timeOf,
+  todayViewOf,
   useChangeOrigin,
   useDataStatus,
   useNow,
+  usePrefs,
+  useProfile,
   useSession,
   useToday,
   useTogether,
@@ -27,13 +30,14 @@ import {
   type TodayLayout,
   type TodayView,
 } from '@/data';
-import type { DayKey } from '@/types';
+import type { DayKey, TodayViewPref } from '@/types';
 import { distance, dur, ease, tween } from '@/motion/tokens';
 import { haptic } from '@/motion/haptics';
 import { useFirstMount } from '@/motion/variants';
 import { listNames, shortOf, withParticiple } from './copy';
 import { TodayContext, useTodayCtx, type TodayCtx } from './context';
 import { DayClosedView } from './DayClosedView';
+import { DayStrip } from './DayStrip';
 import {
   BackToToday,
   HugCard,
@@ -45,6 +49,9 @@ import {
   TodaySkeleton,
 } from './parts';
 import { CheckinCard, CounterCard, DaysSinceGrid, ItemRow, LimitsList, NightGoals, NudgeStrip, WaterRow } from './rows';
+import { foldKey, openFold, revealRows, rowOf, useFold } from './reveal';
+import { TodayViewButton } from './TodayViewPicker';
+import { FullBlocks, TimelineBlocks } from './TodayViews';
 import { pillarColor } from './visual';
 import { ReviewInvite, TodayWeekCard, TweakLine, type WeekHead } from './TodayWeek';
 import { useArrangement } from './useArrangement';
@@ -52,21 +59,9 @@ import { useFlip } from './useFlip';
 import { useTodayActions } from './useTodayActions';
 import './today.css';
 
-// ---------- estado de interface (por dia, só nesta sessão) ----------
+// ---------- estado de interface (por dia, só nesta sessão; os momentos recolhidos ficam em reveal.ts) ----------
 
-const foldState = new Map<string, boolean>();
 let skeletonWasShown = false;
-
-function useFold(id: string): [boolean, () => void] {
-  const [open, setOpen] = useState(() => foldState.get(id) ?? false);
-  const toggle = useCallback(() => {
-    setOpen((v) => {
-      foldState.set(id, !v);
-      return !v;
-    });
-  }, [id]);
-  return [open, toggle];
-}
 
 const SHEETS_BY_ROLE: Record<string, [string, Record<string, string>?]> = {
   protein: ['proteina'],
@@ -149,6 +144,8 @@ function TodayReady() {
   const together = useTogether();
   const origin = useChangeOrigin();
   const rootRef = useRef<HTMLDivElement>(null);
+  // o jeito de ver o dia é da pessoa (perfil); sem o campo, o Resumo
+  const view = todayViewOf(usePrefs().todayView);
 
   // a arrumação acontece quando uma folha fecha (menos o check-in, que vira o resumo no próprio cartão)
   const folha = search.get('folha');
@@ -262,7 +259,13 @@ function TodayReady() {
   const openProgress = useCallback(() => void navigate('/progresso?periodo=semana&tema=visao'), [navigate]);
 
   const first = useFirstMount('hoje');
-  const cascade = first && !skeletonWasShown;
+  // a cascata é só da primeira aparição: depois dela, o que entra (outro jeito, outro dia) não sobe de novo
+  const [cascade, setCascade] = useState(() => first && !skeletonWasShown);
+  useEffect(() => {
+    if (!cascade) return;
+    const id = window.setTimeout(() => setCascade(false), 600);
+    return () => window.clearTimeout(id);
+  }, [cascade]);
   const headerKey = isPast ? 'past' : showClosed ? 'none' : 'hd';
 
   return (
@@ -284,7 +287,12 @@ function TodayReady() {
                 animate={{ opacity: 1, transition: tween.base }}
                 exit={{ opacity: 0, transition: tween.exit }}
               >
-                <ScreenHeader context={live.dateLabel} title={`${live.greeting}, ${live.name}`} className="td-c0" />
+                <ScreenHeader
+                  context={live.dateLabel}
+                  title={`${live.greeting}, ${live.name}`}
+                  className="td-c0"
+                  trailing={<TodayViewButton view={view} onOpen={() => openSheet('jeito')} />}
+                />
               </m.div>
             )}
           </AnimatePresence>
@@ -311,6 +319,7 @@ function TodayReady() {
                 <TodayContext.Provider value={ctx}>
                   <DayBody
                     live={live}
+                    view={view}
                     refreshKey={String(sheet.closes)}
                     closed={showClosed ? closed : null}
                     onSelectDay={selectDay}
@@ -336,6 +345,8 @@ function runPillar(live: TodayView): string | undefined {
 
 interface DayBodyProps {
   live: TodayView;
+  /** Resumo, Lista completa ou Linha do tempo */
+  view: TodayViewPref;
   refreshKey: string;
   closed: { celebrate: boolean } | null;
   onSelectDay: (d: DayKey) => void;
@@ -343,7 +354,7 @@ interface DayBodyProps {
   showPeer: boolean;
 }
 
-function DayBody({ live, refreshKey, closed, onSelectDay, onProgress, showPeer }: DayBodyProps) {
+function DayBody({ live, view, refreshKey, closed, onSelectDay, onProgress, showPeer }: DayBodyProps) {
   const ctx = useTodayCtx();
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -352,14 +363,41 @@ function DayBody({ live, refreshKey, closed, onSelectDay, onProgress, showPeer }
   useFlip(rootRef, arr.version, arr.reason === 'sheet');
   const items = useMemo(() => indexItems(live.layout), [live]);
   const liveOf = useCallback((i: TodayItem) => items.get(i.habit.id) ?? i, [items]);
+  const dayStartHour = useProfile()?.dayStartHour ?? 4;
 
   // destaque vindo do "Marcar ontem": a lista já abre rolada até a linha
   useEffect(() => {
-    if (!ctx.highlight) return;
-    rootRef.current
-      ?.querySelector<HTMLElement>(`.td-fl-${CSS.escape(ctx.highlight)}`)
-      ?.scrollIntoView({ block: 'center' });
+    if (!ctx.highlight || !rootRef.current) return;
+    rowOf(rootRef.current, ctx.highlight)?.scrollIntoView({ block: 'center' });
   }, [ctx.highlight]);
+
+  // ---------- faixa do dia (Resumo): os hábitos com horário e o "levar até a linha" ----------
+  const stripItems = useMemo(
+    () =>
+      frozen.layout.groups
+        .flatMap((g) => g.items)
+        .filter((i) => i.time)
+        .map(liveOf),
+    [frozen.layout, liveOf],
+  );
+  const reveal = useCallback(
+    (ids: string[]) => {
+      // a linha pode estar num momento recolhido (a Noite de manhã, "Tudo feito", "Feitos hoje"): ele abre no lugar
+      const layout = frozen.layout;
+      const nightSplit = !ctx.isPast && (layout.mode === 'night' || layout.mode === 'closed');
+      let opened = false;
+      for (const id of ids) {
+        if (nightSplit) {
+          if (layout.doneToday.some((i) => i.habit.id === id)) opened = openFold(foldKey.done(ctx.day)) || opened;
+          continue;
+        }
+        const g = layout.groups.find((x) => x.folded && x.items.some((i) => i.habit.id === id));
+        if (g) opened = openFold(foldKey.group(ctx.day, g.key, g.foldReason)) || opened;
+      }
+      revealRows(rootRef.current, ids, opened);
+    },
+    [frozen.layout, ctx.isPast, ctx.day],
+  );
 
   // ---------- convites dentro da linha ----------
   const frozenNudge = frozen.nudge && !frozen.nudge.doneToday ? frozen.nudge : null;
@@ -473,6 +511,33 @@ function DayBody({ live, refreshKey, closed, onSelectDay, onProgress, showPeer }
   const all = [...items.values()];
   const later = all.find((i) => i.markedNextMorning) ?? null;
 
+  // no dia fechado, "Ver o dia" abre o dia no jeito da pessoa (no Resumo, os Feitos hoje)
+  const closedDay =
+    view === 'summary'
+      ? undefined
+      : {
+          title: view === 'full' ? 'Lista completa' : 'Linha do tempo',
+          node:
+            view === 'full' ? (
+              <FullBlocks
+                layout={live.layout}
+                quick={live.quickAdds}
+                liveOf={liveOf}
+                next={noCascade}
+                nudgeFor={noNudge}
+              />
+            ) : (
+              <TimelineBlocks
+                layout={live.layout}
+                quick={live.quickAdds}
+                liveOf={liveOf}
+                next={noCascade}
+                nudgeFor={noNudge}
+                dayStartHour={dayStartHour}
+              />
+            ),
+        };
+
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       {closed ? (
@@ -487,41 +552,86 @@ function DayBody({ live, refreshKey, closed, onSelectDay, onProgress, showPeer }
             doneItems={live.layout.doneToday}
             tomorrow={live.tomorrowMorning}
             minutes={ctx.minutes}
+            dayView={closedDay}
           />
         </m.div>
       ) : (
         <m.div key="list" ref={rootRef} className="td-body" {...SWAP}>
-          {/* à noite a tela se divide em Ainda hoje e Feitos hoje, com o check-in no topo (sem o cartão da semana) */}
-          {!night && weekBlock}
-          {night ? (
-            <NightBlocks layout={layout} liveOf={liveOf} next={next} nudgeFor={nudgeFor} />
-          ) : (
-            <DayBlocks layout={layout} quick={frozen.quickAdds} liveOf={liveOf} next={next} nudgeFor={nudgeFor} />
-          )}
-          {layout.limits.length > 0 && (
-            <section aria-label="Limites da semana" data-flip="limits">
-              <SectionLabel className={next()}>Limites da semana</SectionLabel>
-              <div className={clsx('td-pad', next())}>
-                <LimitsList items={layout.limits.map(liveOf)} />
-              </div>
-            </section>
-          )}
-          {layout.daysSince.length > 0 && (
-            <section aria-label="Dias sem" data-flip="dsr">
-              <SectionLabel className={next()}>Dias sem</SectionLabel>
-              <div className={clsx('td-pad', next())}>
-                <DaysSinceGrid items={layout.daysSince.map(liveOf)} />
-              </div>
-            </section>
-          )}
-          {showPeer && (
-            <section aria-label="A dois" data-flip="peer">
-              <SectionLabel className={next()}>A dois</SectionLabel>
-              <div className={clsx('td-pad', next())}>
-                <PeerCard />
-              </div>
-            </section>
-          )}
+          {/* a troca de jeito: o jeito que sai e o que entra trocam por opacidade em base, cada um no seu lugar */}
+          <AnimatePresence mode="popLayout" initial={false}>
+            <ViewPane key={view}>
+              {view === 'summary' ? (
+                <>
+                  {/* à noite a tela se divide em Ainda hoje e Feitos hoje, com o check-in no topo (sem o cartão da semana) */}
+                  {!night && weekBlock}
+                  <DayStrip
+                    items={stripItems}
+                    now={ctx.isPast ? null : ctx.minutes}
+                    dayStartHour={dayStartHour}
+                    onReveal={reveal}
+                    className={next()}
+                  />
+                  {night ? (
+                    <NightBlocks layout={layout} liveOf={liveOf} next={next} nudgeFor={nudgeFor} />
+                  ) : (
+                    <DayBlocks
+                      layout={layout}
+                      quick={frozen.quickAdds}
+                      liveOf={liveOf}
+                      next={next}
+                      nudgeFor={nudgeFor}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  {weekBlock}
+                  {view === 'full' ? (
+                    <FullBlocks
+                      layout={layout}
+                      quick={frozen.quickAdds}
+                      liveOf={liveOf}
+                      next={next}
+                      nudgeFor={nudgeFor}
+                    />
+                  ) : (
+                    <TimelineBlocks
+                      layout={layout}
+                      quick={frozen.quickAdds}
+                      liveOf={liveOf}
+                      next={next}
+                      nudgeFor={nudgeFor}
+                      dayStartHour={dayStartHour}
+                    />
+                  )}
+                </>
+              )}
+              {layout.limits.length > 0 && (
+                <section aria-label="Limites da semana" data-flip="limits">
+                  <SectionLabel className={next()}>Limites da semana</SectionLabel>
+                  <div className={clsx('td-pad', next())}>
+                    <LimitsList items={layout.limits.map(liveOf)} />
+                  </div>
+                </section>
+              )}
+              {layout.daysSince.length > 0 && (
+                <section aria-label="Dias sem" data-flip="dsr">
+                  <SectionLabel className={next()}>Dias sem</SectionLabel>
+                  <div className={clsx('td-pad', next())}>
+                    <DaysSinceGrid items={layout.daysSince.map(liveOf)} />
+                  </div>
+                </section>
+              )}
+              {showPeer && (
+                <section aria-label="A dois" data-flip="peer">
+                  <SectionLabel className={next()}>A dois</SectionLabel>
+                  <div className={clsx('td-pad', next())}>
+                    <PeerCard />
+                  </div>
+                </section>
+              )}
+            </ViewPane>
+          </AnimatePresence>
         </m.div>
       )}
     </AnimatePresence>
@@ -534,6 +644,29 @@ const SWAP = {
   animate: { opacity: 1, transition: tween.base },
   exit: { opacity: 0, transition: { duration: dur.base, ease: ease.exit } },
 };
+
+const noCascade = () => '';
+const noNudge = () => null;
+
+/**
+ * Um jeito de ver o dia. Ao trocar, o que sai fica no lugar (popLayout) e some em base enquanto o novo aparece:
+ * nada desliza nem pula. O que sai fica fora do leitor de tela, do foco e da arrumação (data-leaving).
+ */
+function ViewPane({ children, ref }: { children: ReactNode; ref?: Ref<HTMLDivElement> }) {
+  const present = useIsPresent();
+  return (
+    <m.div
+      ref={ref}
+      className="td-pane"
+      data-leaving={present ? undefined : ''}
+      aria-hidden={present ? undefined : true}
+      inert={!present}
+      {...SWAP}
+    >
+      {children}
+    </m.div>
+  );
+}
 
 /** O último registro do dia (para a frase do dia fechado). */
 function lastMarked(items: TodayItem[]): TodayItem | null {
@@ -721,7 +854,7 @@ function GroupFold({
   liveOf: (i: TodayItem) => TodayItem;
 }) {
   const ctx = useTodayCtx();
-  const [open, toggle] = useFold(`${ctx.day}|${groupKey}|${reason}`);
+  const [open, toggle] = useFold(foldKey.group(ctx.day, groupKey, reason));
   const complete = reason === 'complete';
   return (
     <FoldedGroup
@@ -750,7 +883,7 @@ function NightBlocks({ layout, liveOf, next, nudgeFor }: BlocksProps) {
   const left = still.filter((i) => !isDoneLike(i.state) && i.state !== 'skipped').length;
   const done = layout.doneToday.map(liveOf);
   const doneNow = done.filter((i) => isDoneLike(i.state) || i.state === 'skipped').length;
-  const [open, toggle] = useFold(`${ctx.day}|done`);
+  const [open, toggle] = useFold(foldKey.done(ctx.day));
   const counters = layout.counters.map(liveOf);
   return (
     <section aria-label="Ainda hoje" data-flip="night">
@@ -798,7 +931,7 @@ function PausedDay({ live }: { live: TodayView }) {
   const ctx = useTodayCtx();
   const pause = live.pause!;
   const items = live.layout.groups.flatMap((g) => g.items).filter((i) => i.habit.type !== 'counter');
-  const [open, toggle] = useFold(`${ctx.day}|pause`);
+  const [open, toggle] = useFold(foldKey.pause(ctx.day));
   const end = async () => {
     const undo = await endPause(pause.id, ctx.day);
     window.setTimeout(

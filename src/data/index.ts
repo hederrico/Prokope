@@ -32,7 +32,7 @@ export type {
   ReviewView,
   EntryLine,
 } from '@/domain/views';
-export type { TodayItem, TodayLayout, TodayGroup, TodayMode, Nudge } from '@/domain/today';
+export type { TodayItem, TodayLayout, TodayGroup, TodayGroupKey, TodayMode, Nudge, TimelineSlot } from '@/domain/today';
 export type { HabitDay, HabitDayState, ResolvedGoal } from '@/domain/habitState';
 export type { DaysSince, DaysSincePeriod } from '@/domain/daysSince';
 export type { BudgetWeek } from '@/domain/budget';
@@ -84,7 +84,17 @@ export {
   intervalsCompleted,
   nextSession,
 } from '@/domain/runPlan';
-export { quickAddsFor, quickAddSlot, isHiddenInToday, GROUP_TITLES, EVENING_OPENS_MIN } from '@/domain/today';
+export {
+  quickAddsFor,
+  quickAddSlot,
+  isHiddenInToday,
+  GROUP_TITLES,
+  EVENING_OPENS_MIN,
+  todayViewOf,
+  logicalMinutes,
+  dayTimeline,
+  dayStripRange,
+} from '@/domain/today';
 export { groupEntries, insightText } from '@/domain/views';
 export { isDoneLike, isCountable, goalOn, nextRampStep, timeMeetsGoal } from '@/domain/habitState';
 export { pillarUsingColor, duplicatePillarName, firstFreeColor, pillarExitPlan } from '@/domain/pillars';

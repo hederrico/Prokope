@@ -18,6 +18,8 @@ export const SHEETS: Record<string, SheetDef> = {
   deslize: { args: ['habito', 'deslize'], load: () => import('@/screens/sheets/SlipSheet') },
   peso: { args: [], load: () => import('@/screens/sheets/WeightSheet') },
   menu: { args: ['habito'], load: () => import('@/screens/today/HabitMenuSheet') },
+  // os três jeitos de ver o Hoje (Resumo, Lista completa, Linha do tempo)
+  jeito: { args: [], load: () => import('@/screens/today/TodayViewSheet') },
   corrigir: { args: ['habito', 'dia'], load: () => import('@/screens/habit/FixDaySheet') },
   dia: { args: ['dia'], load: () => import('@/screens/progress/DaySheet') },
   apagar: { args: ['pilar'], load: () => import('@/screens/settings/DeletePillarSheet') },

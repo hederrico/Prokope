@@ -1,7 +1,7 @@
 // O dia fechado (hoje.md › Hoje · dia fechado): o anel de 196 px anda do penúltimo ao último em ring, brilha uma
 // vez (glow) e assenta; "Dia fechado" e a frase entram com fadeUp; "Ver o dia" e "Amanhã cedo" vêm em cascata.
 // A celebração acontece uma vez por dia (pk-dia-fechado-<dia>); reabrir mostra tudo parado, com o brilho assentado.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { Button, HabitList, Ring, SectionLabel, WeekDots, useReduced } from '@/components/ui';
 import { formatTime, greeting, markDayCelebrated, timeOf, weekdayName, type TodayItem } from '@/data';
@@ -25,6 +25,8 @@ export interface DayClosedViewProps {
   doneItems: TodayItem[];
   tomorrow: TodayItem[];
   minutes: number;
+  /** "Ver o dia" na Lista completa e na Linha do tempo: o dia inteiro naquele jeito, no lugar dos Feitos hoje */
+  dayView?: { title: string; node: ReactNode };
 }
 
 const fade = (delay: number, play: boolean) =>
@@ -42,6 +44,7 @@ export function DayClosedView({
   doneItems,
   tomorrow,
   minutes,
+  dayView,
 }: DayClosedViewProps) {
   const reduced = useReduced();
   // a celebração começa no penúltimo valor e anda até o atual
@@ -142,14 +145,22 @@ export function DayClosedView({
             animate={{ height: 'auto', opacity: 1, transition: { height: spring.calma, opacity: tween.base } }}
             exit={{ height: 0, opacity: 0, transition: { height: spring.calma, opacity: tween.exit } }}
           >
-            <SectionLabel trailing={String(doneItems.length)}>Feitos hoje</SectionLabel>
-            <div className="td-pad">
-              <HabitList label="Feitos hoje">
-                {doneItems.map((item) => (
-                  <ItemRow key={item.habit.id} item={item} />
-                ))}
-              </HabitList>
-            </div>
+            {dayView ? (
+              <section aria-label={dayView.title} className="td-closed-view">
+                {dayView.node}
+              </section>
+            ) : (
+              <>
+                <SectionLabel trailing={String(doneItems.length)}>Feitos hoje</SectionLabel>
+                <div className="td-pad">
+                  <HabitList label="Feitos hoje">
+                    {doneItems.map((item) => (
+                      <ItemRow key={item.habit.id} item={item} />
+                    ))}
+                  </HabitList>
+                </div>
+              </>
+            )}
           </m.div>
         )}
       </AnimatePresence>

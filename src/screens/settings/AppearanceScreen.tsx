@@ -1,16 +1,18 @@
 // Aparência: o tema troca ao vivo, sem salvar (as cores passam em base); Animações só reduz (com o Reduzir Movimento
-// do iPhone, o interruptor fica desligado e travado, com o aviso de onde mudar); o som toca uma vez ao ligar; e a
-// Privacidade do peso (ajustes-rotina-conta.md › Aparência).
+// do iPhone, o interruptor fica desligado e travado, com o aviso de onde mudar); o som toca uma vez ao ligar; o jeito
+// de ver o Hoje (o mesmo do botão no topo do Hoje, hoje.md › Os três jeitos de ver o dia); e a Privacidade do peso
+// (ajustes-rotina-conta.md › Aparência).
 import { useRef, useState } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { NavBar } from '@/components/shell';
 import { ListGroup, ListItem, SectionLabel } from '@/components/ui';
-import { usePrefs } from '@/data';
-import { setMotion, setSound, setTheme, setWeightTrendOnly } from '@/actions';
+import { todayViewOf, usePrefs } from '@/data';
+import { setMotion, setSound, setTheme, setTodayView, setWeightTrendOnly } from '@/actions';
 import { Icon } from '@/icons';
 import { fadeUp, tween } from '@/motion/tokens';
 import { useSystemReducedMotion } from '@/motion/reducedMotion';
 import { playSoftTick, unlockAudio } from '@/motion/sound';
+import { TodayViewOptions } from '@/screens/today/TodayViewPicker';
 import { Foot } from './parts';
 import { useSynced } from './hooks';
 import { ThemePicker } from './ThemePreview';
@@ -21,6 +23,8 @@ export default function AppearanceScreen() {
   const system = useSystemReducedMotion();
   // o interruptor anda na hora; o modo reduzido entra 150 ms depois, quando o botão já chegou
   const [motionOn, setMotionOn] = useSynced(prefs.motion);
+  // o rádio anda na hora; o perfil grava logo depois (documento antigo sem o campo = Resumo)
+  const [todayView, setTodayViewLocal] = useSynced(todayViewOf(prefs.todayView));
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [noteId] = useState(() => `motion-note-${Math.random().toString(36).slice(2)}`);
 
@@ -50,6 +54,18 @@ export default function AppearanceScreen() {
       <SectionLabel>Tema</SectionLabel>
       <ThemePicker value={prefs.theme} onChange={(t) => void setTheme(t)} />
       <Foot>Em Sistema, o Prokopē acompanha o claro e o escuro do iPhone ao longo do dia.</Foot>
+
+      <SectionLabel>Jeito de ver o Hoje</SectionLabel>
+      <div className="st-pad">
+        <TodayViewOptions
+          value={todayView}
+          onChange={(v) => {
+            setTodayViewLocal(v);
+            void setTodayView(v);
+          }}
+        />
+      </div>
+      <Foot>Dá para trocar a qualquer momento pelo botão no topo do Hoje.</Foot>
 
       <SectionLabel>Movimento e som</SectionLabel>
       <div className="st-pad">
