@@ -137,7 +137,7 @@ Tomadas durante a revisão e confirmadas pelo Henrique em 22 de outubro de 2026,
 - **Fases usam a primária.** Nenhuma fase usa cor de pilar (Jornada, Revisão 3 de 3, Fase desbloqueada).
 - **Toque na linha do hábito:** o controle da direita registra, o resto da linha abre o detalhe e o toque longo abre o menu do hábito.
 - **Revisões passadas ficam na Jornada.** "Semana passada" no Progresso abre a mesma revisão, só para leitura.
-- **Fases sai de Ajustes.** A Jornada ganha "Editar fases".
+- **Fases sai de Ajustes.** A Jornada ganha "Editar jornada" (antes "Editar fases").
 - **Avatar sai de todos os cabeçalhos.** O título já diz o nome, e a conta fica no cartão de perfil de Ajustes.
 - **O cartão da fase saiu do Hoje.** O cartão da semana traz "3 de 12 feitos hoje" e "76% na semana ›", que abre o Progresso.
 - **Cor de pilar só vale para pilar e hábito.** Os itens de Ajustes usam bolha neutra.
@@ -282,7 +282,7 @@ Todas estas telas são folhas sobre o Hoje: `phone({ body: <cabeçalho e semana 
    - Por fim, a lista "Revisões":
      - domingo, 18 out · semana 1 da fase 2 · 74%;
      - domingo, 11 out · fim da fase 1 · 81%.
-   - Cada revisão abre só para leitura. "Editar fases" fica na Jornada (Fases saiu de Ajustes). As fases usam a primária.
+   - Cada revisão abre só para leitura. "Editar jornada" fica na Jornada (Fases saiu de Ajustes). As fases usam a primária.
 2. **Plano de corrida** (tela empurrada, cor Corpo), título "Do zero aos 30 minutos".
    - O treino da semana 1 em blocos proporcionais: 5 min de aquecimento caminhando, 8 × (1 min de trote + 1,5 min de caminhada) e 5 min de volta à calma.
    - A lista das 13 semanas:
@@ -338,7 +338,7 @@ Todas estas telas são folhas sobre o Hoje: `phone({ body: <cabeçalho e semana 
 1. **Ajustes** (aba Ajustes):
    - cartão de perfil: avatar H, Henrique, "Conta Google conectada";
    - grupos com ícones em bolha neutra (`li({ ic })`, sem `hue` nem `p`: cor de pilar só vale para pilar e hábito):
-     - Meu plano: Pilares (4), Hábitos (16). Fases saiu de Ajustes e é editada pela Jornada ("Editar fases");
+     - Meu plano: Pilares (4), Hábitos (16). Fases saiu de Ajustes e é editada pela Jornada ("Editar jornada");
      - Rotina: Horários, Lembretes;
      - App: Aparência (Sistema), Pausar, A dois (desligado);
      - Dados: Dados e conta.

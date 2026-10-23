@@ -114,7 +114,7 @@ export const SCREENS: ScreenDef[] = [
     path: '/jornada/fases',
     kind: 'push',
     tab: 'jornada',
-    title: 'Fases',
+    title: 'Editar jornada',
     load: () => import('@/screens/journey/EditPhasesScreen'),
   },
   { path: '/jornada/revisoes/:semana', kind: 'push', tab: 'jornada', title: 'Revisão', load: pastReview },

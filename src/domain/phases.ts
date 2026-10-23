@@ -3,9 +3,58 @@
 import type { DayKey, Habit, Phase } from '@/types';
 import type { DomainData } from './context';
 import { addDays, diffDays, minDay, weekStart } from './day';
+import { isStoppedOn, stopDayOf } from './habitState';
 import { constancy } from './stats';
 
 export type PhaseStatus = 'done' | 'current' | 'future';
+
+/** Um hábito na lista de uma fase em Editar jornada, com a fase de origem e a parada. */
+export interface PhaseHabit {
+  habit: Habit;
+  /** fase em que entrou (null = sem fase) */
+  from: number | null;
+  /** fase em que sai do dia a dia (null = segue nas seguintes) */
+  until: number | null;
+  /** primeiro dia fora, quando já se sabe (a fase de parada começou, ou a parada foi escolhida nela) */
+  stopDay: DayKey | null;
+  /** a parada já vale hoje: o hábito saiu do dia a dia e é como um arquivado daquela data em diante */
+  stopped: boolean;
+}
+
+function phaseHabit(h: Habit, data: DomainData, today: DayKey): PhaseHabit {
+  return {
+    habit: h,
+    from: h.phase ?? null,
+    until: h.untilPhase ?? null,
+    stopDay: stopDayOf(h, data),
+    stopped: isStoppedOn(h, today, data),
+  };
+}
+
+/**
+ * As fases são cumulativas: um hábito entra na fase `phase` e segue nas próximas, até a fase `untilPhase` (sem ela).
+ * Os que continuam numa fase são os das fases anteriores que ainda valem nela; os que param nela também vêm,
+ * para o "Voltar a seguir" ficar no mesmo lugar. Arquivados ficam fora.
+ */
+function phaseLists(data: DomainData, number: number, today: DayKey): { entering: PhaseHabit[]; carried: PhaseHabit[] } {
+  const entering: PhaseHabit[] = [];
+  const carried: PhaseHabit[] = [];
+  for (const h of data.habits) {
+    if (h.archived || h.phase == null) continue;
+    if (h.phase === number) entering.push(phaseHabit(h, data, today));
+    else if (h.phase < number && (h.untilPhase == null || h.untilPhase >= number)) carried.push(phaseHabit(h, data, today));
+  }
+  // da fase mais antiga para a mais nova; dentro de cada uma, a ordem dos hábitos
+  carried.sort((a, b) => (a.from ?? 0) - (b.from ?? 0));
+  return { entering, carried };
+}
+
+/** Os hábitos sem fase que seguem no plano (seguem em todas as fases). */
+export function loosePhaseHabits(data: DomainData, today: DayKey): PhaseHabit[] {
+  return data.habits
+    .filter((h) => !h.archived && h.phase == null && !isStoppedOn(h, today, data))
+    .map((h) => phaseHabit(h, data, today));
+}
 
 export interface PhaseWeek {
   index: number;
@@ -36,6 +85,10 @@ export interface PhaseView {
   daysLeft: number | null;
   /** hábitos que entram nesta fase (ativos ou à espera), sem as medições e com "deitar e acordar" como um só */
   habits: Habit[];
+  /** Editar jornada: todos os que entram nesta fase, com as medições ("Novos nesta fase") */
+  entering: PhaseHabit[];
+  /** Editar jornada: os das fases anteriores que seguem nesta, e os que param nela ("Continuam") */
+  carried: PhaseHabit[];
   /** constância de fechamento (concluída) ou até agora (atual) */
   constancy: number | null;
   weekBars: PhaseWeek[];
@@ -112,6 +165,7 @@ export function phaseTimeline(data: DomainData, today: DayKey): PhaseView[] {
     let c: number | null = null;
     if (status === 'done') c = p.closingConstancy ?? (start && end ? constancy(data, start, end, today).ratio : null);
     else if (status === 'current' && start) c = constancy(data, start, today, today).ratio;
+    const lists = phaseLists(data, p.number, today);
     views.push({
       phase: p,
       number: p.number,
@@ -125,6 +179,8 @@ export function phaseTimeline(data: DomainData, today: DayKey): PhaseView[] {
       dayIndex,
       daysLeft,
       habits,
+      entering: lists.entering,
+      carried: lists.carried,
       constancy: c,
       weekBars,
       lastWeek,

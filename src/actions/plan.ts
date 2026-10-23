@@ -2,7 +2,7 @@
 import type { DayKey, Habit, Pause, PauseReason, Pillar } from '@/types';
 import type { WriteOp } from '@/data/source';
 import { addDays } from '@/domain/day';
-import { appPauseOn, scheduleTimeOn } from '@/domain/habitState';
+import { appPauseOn, scheduleTimeOn, stopDayOf } from '@/domain/habitState';
 import { ALL_DAYS } from '@/domain/planTemplate';
 import { pillarExitPlan } from '@/domain/pillars';
 import { timeToMinutes } from '@/domain/day';
@@ -231,7 +231,10 @@ export async function updateHabit(id: string, patch: Partial<Omit<Habit, 'id' | 
   return commit([setOp('habits', id, next)]);
 }
 
-/** Leva o hábito para outra fase ("Proteína movida para a fase 3"). Na fase atual, entra hoje. */
+/**
+ * Leva o hábito para outra fase ("Proteína movida para a fase 3"). Na fase atual, entra hoje. Uma parada marcada
+ * para esta fase ou antes dela deixa de valer (ele entra e segue).
+ */
 export async function moveHabitToPhase(habitId: string, phaseNumber: number): Promise<Undo> {
   const data = snapshot();
   const h = data.habitById.get(habitId);
@@ -239,13 +242,90 @@ export async function moveHabitToPhase(habitId: string, phaseNumber: number): Pr
   const d = today();
   const ph = data.phases.find((p) => p.number === phaseNumber);
   const started = !!ph?.start && ph.start <= d;
+  const until = h.untilPhase ?? null;
   return commit([
     mergeOp('habits', habitId, {
       phase: phaseNumber,
       startDay: started ? (h.startDay && h.startDay <= d ? h.startDay : d) : null,
+      ...(until !== null && until <= phaseNumber ? { untilPhase: null, untilDay: null } : {}),
       updatedAt: now(),
     }),
   ]);
+}
+
+function habitsOf(ids: string | string[], data: ReturnType<typeof snapshot>): Habit[] {
+  return (Array.isArray(ids) ? ids : [ids]).map((id) => data.habitById.get(id)).filter((h): h is Habit => !!h);
+}
+
+/**
+ * "Tirar da fase" (Editar jornada): o hábito fica sem fase e continua no dia a dia, em todas as fases. Um hábito que
+ * ainda esperava a fase dele entra hoje. Aceita mais de um id (acordar e deitar juntos).
+ */
+export async function removeHabitFromPhase(habitIds: string | string[]): Promise<Undo> {
+  const data = snapshot();
+  const d = today();
+  const t = now();
+  return commit(
+    habitsOf(habitIds, data).map((h) =>
+      mergeOp('habits', h.id, {
+        phase: null,
+        untilPhase: null,
+        untilDay: null,
+        startDay: h.startDay ?? d,
+        updatedAt: t,
+      }),
+    ),
+  );
+}
+
+/**
+ * "Parar nesta fase" (Editar jornada): o hábito sai do dia a dia quando a fase `phaseNumber` começa (o peso diário
+ * para na fase 3). Até lá, tudo segue igual; os dias antes continuam no histórico. Com a fase já em curso, ele sai
+ * a partir de hoje (o passado não muda). Aceita mais de um id.
+ */
+export async function stopHabitAtPhase(habitIds: string | string[], phaseNumber: number): Promise<Undo> {
+  const data = snapshot();
+  const ph = data.phases.find((p) => p.number === phaseNumber);
+  if (!ph) return noUndo();
+  const d = today();
+  const t = now();
+  const started = !!ph.start && ph.start <= d;
+  return commit(
+    habitsOf(habitIds, data).map((h) =>
+      mergeOp('habits', h.id, { untilPhase: phaseNumber, untilDay: started ? d : null, updatedAt: t }),
+    ),
+  );
+}
+
+/**
+ * "Voltar a seguir": desfaz a parada numa fase, e o hábito segue nas fases seguintes. Se ele já tinha saído do dia
+ * a dia, os dias em que ficou fora entram como pausa do hábito (fora das contas), como ao desarquivar.
+ */
+export async function keepHabitFollowing(habitIds: string | string[]): Promise<Undo> {
+  const data = snapshot();
+  const d = today();
+  const t = now();
+  const ops: WriteOp[] = [];
+  for (const h of habitsOf(habitIds, data)) {
+    if ((h.untilPhase ?? null) === null && !h.untilDay) continue;
+    const stop = stopDayOf(h, data);
+    ops.push(mergeOp('habits', h.id, { untilPhase: null, untilDay: null, updatedAt: t }));
+    if (h.startDay && stop && stop < d) {
+      const id = newId();
+      ops.push(
+        setOp('pauses', id, {
+          id,
+          start: stop > h.startDay ? stop : h.startDay,
+          end: addDays(d, -1),
+          reason: null,
+          habitIds: [h.id],
+          createdAt: t,
+          updatedAt: t,
+        } satisfies Pause),
+      );
+    }
+  }
+  return commit(ops);
 }
 
 /** Marca um dia para um hábito de vez na semana (programa a dois no sábado, com a nota). */

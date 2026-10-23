@@ -73,11 +73,43 @@ export function archivedDayOf(habit: Habit, data: DomainData): DayKey | null {
   return '0000-01-01';
 }
 
-/** O hábito existe neste dia (começou e não foi arquivado antes). */
+/**
+ * Primeiro dia sem o hábito por ele parar numa fase ("o peso diário para na fase 3"): o dia gravado quando a parada
+ * foi escolhida com a fase já em curso, ou o começo da fase de parada. Enquanto ela não começa, null (segue igual).
+ * Documentos antigos não têm `untilPhase`: valem como null.
+ */
+export function stopDayOf(habit: Habit, data: DomainData): DayKey | null {
+  const until = habit.untilPhase ?? null;
+  if (until === null) return null;
+  if (habit.untilDay) return habit.untilDay;
+  return data.phases.find((p) => p.number === until)?.start ?? null;
+}
+
+/** Primeiro dia fora do dia a dia: o arquivamento ou a parada numa fase, o que vier antes (null = segue). */
+export function endDayOf(habit: Habit, data: DomainData): DayKey | null {
+  const arch = archivedDayOf(habit, data);
+  const stop = stopDayOf(habit, data);
+  if (!arch) return stop;
+  if (!stop) return arch;
+  return arch < stop ? arch : stop;
+}
+
+/** O hábito já parou numa fase neste dia (a partir dali, ele é como um hábito arquivado naquela data). */
+export function isStoppedOn(habit: Habit, day: DayKey, data: DomainData): boolean {
+  const stop = stopDayOf(habit, data);
+  return !!stop && stop <= day;
+}
+
+/** O hábito segue no plano neste dia: não foi arquivado nem parou numa fase que já começou. */
+export function isInPlan(habit: Habit, day: DayKey, data: DomainData): boolean {
+  return !habit.archived && !isStoppedOn(habit, day, data);
+}
+
+/** O hábito existe neste dia (começou, não foi arquivado antes nem parou numa fase que já começou). */
 export function isActiveOn(habit: Habit, day: DayKey, data: DomainData): boolean {
   if (!habit.startDay || habit.startDay > day) return false;
-  const arch = archivedDayOf(habit, data);
-  return !(arch && arch <= day);
+  const end = endDayOf(habit, data);
+  return !(end && end <= day);
 }
 
 /** Dias da agenda do hábito (os de coleta para o lixo). */

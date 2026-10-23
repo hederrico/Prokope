@@ -56,20 +56,37 @@ export default function HabitFormScreen() {
   }
   const tipo = search.get('tipo');
   const pilar = search.get('pilar');
+  // vindo de Editar jornada (?fase=3): o hábito novo já entra naquela fase, e o fim do fluxo volta para lá
+  const fase = journey.phases.find((p) => String(p.number) === search.get('fase') && p.status !== 'done') ?? null;
   if (!isHabitType(tipo)) {
-    return <Navigate to={`/ajustes/habitos/novo/tipo${pilar ? `?pilar=${encodeURIComponent(pilar)}` : ''}`} replace />;
+    const back = new URLSearchParams();
+    if (pilar) back.set('pilar', pilar);
+    if (fase) back.set('fase', String(fase.number));
+    const q = back.toString();
+    return <Navigate to={`/ajustes/habitos/novo/tipo${q ? `?${q}` : ''}`} replace />;
   }
   const draft = useDrafts.getState().habitForm;
   const pillarId =
     (pilar && pillars.some((p) => p.id === pilar) ? pilar : null) ?? draft?.pillarId ?? pillars[0]?.id ?? '';
-  const start = journey.current ? journey.current.number : 'now';
+  const start = fase ? fase.number : journey.current ? journey.current.number : 'now';
   const initial = newForm(tipo, draft ? draftToForm(draft) : {}, pillarId, start);
-  return <HabitForm key={`novo-${tipo}`} initial={initial} origin={pilar} />;
+  return <HabitForm key={`novo-${tipo}`} initial={initial} origin={pilar} phase={fase?.number ?? null} />;
 }
 
 type SheetName = 'icon' | 'pillar' | 'moment' | 'days' | 'start' | 'phase' | 'unit' | 'unitOther' | 'partial' | 'ramp';
 
-function HabitForm({ initial, editing, origin }: { initial: FormState; editing?: Habit; origin?: string | null }) {
+function HabitForm({
+  initial,
+  editing,
+  origin,
+  phase,
+}: {
+  initial: FormState;
+  editing?: Habit;
+  origin?: string | null;
+  /** a fase vinda de Editar jornada (?fase=): o fim do fluxo volta para lá */
+  phase?: number | null;
+}) {
   const navigate = useNavigate();
   const goBack = useGoBack();
   const profile = useProfile();
@@ -174,7 +191,7 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
       start: form.start,
     });
     setDraft(null);
-    goBack(origin ? `/ajustes/pilares/${encodeURIComponent(origin)}` : '/ajustes/habitos');
+    goBack(phase ? '/jornada/fases' : origin ? `/ajustes/pilares/${encodeURIComponent(origin)}` : '/ajustes/habitos');
     const future = typeof form.start === 'number' ? journey.phases.find((p) => p.number === form.start) : null;
     if (future && future.status === 'future') {
       showUndo(
@@ -192,6 +209,7 @@ function HabitForm({ initial, editing, origin }: { initial: FormState; editing?:
     setDraft(formToDraft(form));
     const params = new URLSearchParams();
     if (origin) params.set('pilar', origin);
+    if (phase) params.set('fase', String(phase));
     const q = params.toString();
     void navigate(`/ajustes/habitos/novo/tipo${q ? `?${q}` : ''}`, {
       replace: true,

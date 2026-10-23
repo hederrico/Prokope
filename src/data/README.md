@@ -150,7 +150,7 @@ w.previous;   // a semana anterior (só uma para trás)
 
 ```ts
 const h = useHabit(id);          // { habit, pillar, alsoIn: Pillar[], today: HabitDay, pause, status, phase }
-// status: 'active' | 'upcoming' (fase futura) | 'archived' | 'paused'
+// status: 'active' | 'upcoming' (fase futura) | 'archived' (também o que parou numa fase que já começou) | 'paused'
 const st = useHabitStats(id, monthDay?);
 st.strength;       // { value: 0.72 | null, occurrences, needed: 7 }  (null = "poucos dados")
 st.week;           // { done: 3, target: 6 }
@@ -214,8 +214,11 @@ p.pillar;    // tema de pilar: { pillar, counters, habits, limits, daysSince, ra
 ```ts
 const j = useJourney();
 j.phases;   // PhaseView[]: { number, name, status: 'done' | 'current' | 'future', start, end, predicted, weeks,
-            //   weekIndex, dayIndex, daysLeft, habits, constancy, weekBars: [{ index, start, end, ratio, current, future }], lastWeek }
+            //   weekIndex, dayIndex, daysLeft, habits, constancy, weekBars: [{ index, start, end, ratio, current, future }], lastWeek,
+            //   entering, carried }   (Editar jornada: os novos nesta fase, com as medições, e os que continuam das anteriores)
+            //   PhaseHabit: { habit, from: fase de origem, until: fase de parada, stopDay, stopped: a parada já vale hoje }
 j.current; j.next;
+j.loose;    // Editar jornada: os hábitos sem fase (seguem em todas), como PhaseHabit[]
 j.run;      // { habit, startsOn: '2026-11-02', available, weeks: 13, perWeek: 2 }
 j.reviews;  // [{ week, day, label: 'domingo, 18 out', context: 'semana 1 da fase 2', constancy: 0.74, status: 'done' | 'pending', endOfPhase }]
 j.firstReviewDay; j.pause;
@@ -293,7 +296,7 @@ async function onCheck() {
 | `saveCheckin(day, { mood, energy, good, screenMinutes, youtubeMinutes })` | check-in (apague o rascunho depois) |
 | `logMeasurement('weight' \| 'waist', day, 83.6)`, `deleteMeasurement(kind, day)` | peso e cintura (uma por dia, a nova substitui) |
 | `skipToday(habitId, day?)`, `unskipToday(habitId, day?)` | "Hoje não se aplica" e "Voltar a contar hoje" |
-| `archiveHabit(habitId)`, `restoreHabit(habitId)` | arquivar e desarquivar (os dias arquivados ficam fora das contas) |
+| `archiveHabit(habitId)`, `restoreHabit(habitId)` | arquivar e desarquivar (os dias arquivados ficam fora das contas). Desarquivar um hábito que parou numa fase também o faz voltar a seguir |
 
 ### Plano
 
@@ -306,7 +309,10 @@ async function onCheck() {
 | `reorderPillars(ids)` | nova ordem, ao soltar o arrasto |
 | `createHabit(draft)` | `draft`: `{ name, type, pillarId, icon?, alsoIn?, goal?, schedule?, quickAdds?, checklist?, start?: 'now' \| <fase> \| <dia> }`. Numa fase futura, espera |
 | `updateHabit(id, patch)` | meta, mínimo, horário, dias, pilar, ícone, botões... |
-| `moveHabitToPhase(habitId, n)` | "Proteína movida para a fase 3" |
+| `moveHabitToPhase(habitId, n)` | "Proteína movida para a fase 3" (uma parada na fase `n` ou antes dela deixa de valer) |
+| `removeHabitFromPhase(ids)` | "Tirar da fase": fica sem fase e segue no dia a dia (um que esperava a fase entra hoje). `ids`: um id ou vários (acordar e deitar juntos) |
+| `stopHabitAtPhase(ids, n)` | "Parar nesta fase": sai do dia a dia quando a fase `n` começa (o peso diário para na fase 3); com a fase já em curso, a partir de hoje (`untilDay`). Os dias antes ficam no histórico |
+| `keepHabitFollowing(ids)` | "Voltar a seguir": desfaz a parada; se ele já tinha saído, os dias fora viram pausa do hábito |
 | `scheduleHabit(habitId, day, note?)` | um dia marcado (programa a dois no sábado) |
 | `startPause({ start, end, reason?, habitIds? })` | `end` é o último dia pausado; `habitIds` null = o app inteiro |
 | `updatePause(id, { end })`, `endPause(id, day?)`, `cancelPause(id)` | estender, encerrar (fim vira ontem), cancelar a marcada |
@@ -318,7 +324,7 @@ async function onCheck() {
 | `startPhase(n, startDay = amanhã)` | fecha a fase atual (constância de fechamento) e começa a `n`; o desfazer é o "Mudar de ideia" |
 | `undoPhaseChoice(n)` | "Mudar de ideia" depois de reabrir o app (a fase `n` ainda não começou ou começou hoje) |
 | `stayInPhase(n)` | a fase termina 7 dias depois |
-| `updatePhase(n, { name?, weeks?, end? })`, `addPhase({ name, weeks })`, `setPhaseThreshold(0.7 \| null)` | Editar fases |
+| `updatePhase(n, { name?, weeks?, end? })`, `addPhase({ name, weeks })`, `setPhaseThreshold(0.7 \| null)` | Editar jornada |
 | `markPhaseCelebrated(n)` | a celebração da fase desbloqueada aconteceu (`phase.celebratedAt`) |
 | `saveReviewStep(semana, passo, { tweakWorked?, tweak?, waist?, together? })` | guarda o passo; `waist` grava a cintura; `together` marca o dia do programa a dois |
 | `finishReview(semana, { decision?: 'advance' \| 'stay' })` | conclui e guarda a constância e o resumo |
@@ -366,7 +372,7 @@ Na virada do dia, um rascunho de check-in com humor e energia vira check-in salv
 
 Os tipos estão em `src/types/model.ts`: `Profile`, `Pillar`, `Habit`, `Mark`, `Entry`, `Slip`, `Checkin`, `Measurement`, `Pause`, `Phase`, `Review`, `Run`, `Invite`, `Link`, `Hug`.
 
-**Hábito** (`Habit`): `type` é `'check' | 'time' | 'counter' | 'rating' | 'number' | 'weekly' | 'budget' | 'daysSince' | 'checklist'`; `goal` = `{ value?, unit?, partialMin?, direction?, ramp?, perWeek?, time?, timeKey?, toleranceMin?, measuring? }`; `schedule` = `{ days, useCollectionDays?, moment: 'morning' | 'day' | 'evening' | 'free', time?, timeKey? }`; `pillarId` e `alsoIn`; `phase`, `startDay` (null = espera a fase), `role`, `icon`, `quickAdds`, `checklist`, `order`, `archived`.
+**Hábito** (`Habit`): `type` é `'check' | 'time' | 'counter' | 'rating' | 'number' | 'weekly' | 'budget' | 'daysSince' | 'checklist'`; `goal` = `{ value?, unit?, partialMin?, direction?, ramp?, perWeek?, time?, timeKey?, toleranceMin?, measuring? }`; `schedule` = `{ days, useCollectionDays?, moment: 'morning' | 'day' | 'evening' | 'free', time?, timeKey? }`; `pillarId` e `alsoIn`; `phase`, `startDay` (null = espera a fase), `untilPhase` (a fase em que sai do dia a dia; sem o campo = `null`, segue em todas) e `untilDay` (o dia gravado quando a parada foi escolhida com a fase em curso), `role`, `icon`, `quickAdds`, `checklist`, `order`, `archived`.
 
 **Estado de um dia** (`HabitDayState`):
 
@@ -394,6 +400,7 @@ Os tipos estão em `src/types/model.ts`: `Profile`, `Pillar`, `Habit`, `Mark`, `
 - **Convite gentil:** o hábito mais firme que ficou sem registro ontem, no máximo um, fora pausa, primeiro dia e deitar.
 - **Revisão:** abre no dia e na hora escolhidos e fica até 2 dias depois; depois, vira "pendente" na Jornada.
 - **Fases:** datas das futuras são previsões; sugestão de avançar com a constância da fase ≥ limite (70%). "Do zero" nasce com a fase 1, sem fim; numa conta em que nenhuma fase começou, `addPhase` começa a nova hoje.
+- **Fases se somam:** um hábito entra na fase `phase` e segue nas próximas, até antes da `untilPhase`. A partir do primeiro dia da fase de parada (ou do `untilDay`), ele é como um arquivado naquela data: sai do Hoje, das contas, da constância, da força, dos padrões, da revisão e do calendário, e `useHabit`/`useHabits` dizem `status: 'archived'`. Os dias antes ficam.
 - **Pausa:** marcar feito (ou parcial) num dia pausado tira aquele dia da pausa, só para aquele hábito (conta na constância e na força).
 - **Revisão:** sem nada feito, a linha não começa pelo zero: "Futebol ficou para a próxima semana".
 

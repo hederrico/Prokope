@@ -38,7 +38,7 @@ export type { DaysSince, DaysSincePeriod } from '@/domain/daysSince';
 export type { BudgetWeek } from '@/domain/budget';
 export type { Correlation } from '@/domain/correlation';
 export type { WeightTrend, WeightPoint } from '@/domain/weight';
-export type { PhaseView, PhaseWeek } from '@/domain/phases';
+export type { PhaseHabit, PhaseView, PhaseWeek } from '@/domain/phases';
 export type { WeekProgress, Strength } from '@/domain/stats';
 export type { RunWeek, RunBlock, RunPosition } from '@/domain/runPlan';
 export type { ReviewSummary, ReviewLine, ReviewWindow } from '@/domain/review';

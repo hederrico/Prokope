@@ -35,7 +35,7 @@ flowchart LR
   PROG -->|semana passada| RP
 
   JOR -->|empurra| PLANO[Plano de corrida]
-  JOR -->|empurra| EF[Editar fases]
+  JOR -->|empurra| EF[Editar jornada]
   JOR -->|empurra| RP[Revisão passada]
   PLANO ==> CORR[Corrida em andamento] ==> TF[Treino feito] ==> HOJE
   JOR ==> REV
@@ -102,7 +102,7 @@ O primeiro trecho da rota diz qual aba está ativa. Folhas e o dia escolhido fic
 | `/jornada/corrida` | Plano de corrida | Empurrada |
 | `/jornada/revisoes/:semana` | Revisão passada, só leitura | Empurrada |
 | `/progresso/revisoes/:semana` | A mesma revisão, aberta a partir do Progresso (rota espelho) | Empurrada |
-| `/jornada/fases` | Editar fases (datas, hábitos de cada fase, sugestão aos 70%) | Empurrada |
+| `/jornada/fases` | Editar jornada (sugestão aos 70%, datas e duração, os hábitos de cada fase: os que continuam, os novos, adicionar, parar nesta fase) | Empurrada |
 | `/corrida/:semana/:treino` | Corrida em andamento | Tela cheia |
 | `/corrida/:semana/:treino/feito` | Treino feito | Tela cheia |
 | `/revisao/:semana/1` a `/revisao/:semana/3` | Revisão de domingo | Tela cheia |
