@@ -8,3 +8,4 @@ Stores do Zustand. As telas não leem daqui direto: usam os hooks de `@/data` (a
 | `clock.ts` | A hora do app e o dia lógico (vira às 4h; troca também ao voltar para a frente). `?agora=20:34` fixa a hora para capturas |
 | `together.ts` | A dois: a ligação, os convites e os carinhos (fora de `users/{uid}`) |
 | `drafts.ts` | Rascunhos no `localStorage` (check-in, revisão, primeiro acesso, formulário de hábito) e o brilho do dia fechado |
+| `practice.ts` | As três linhas dos Primeiros passos do tutorial, só em memória (zeram quando o grupo aparece), e o gancho `window.__pkPractice.show(on)`. Como o `tour.ts`, o Hoje lê direto daqui |

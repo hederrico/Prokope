@@ -1,5 +1,6 @@
 // Jornada (aba): o caminho das fases, um cartão por treino guiado e as Revisões da semana (jornada.md › Jornada).
-// É o plano: o que passou, a fase de agora e o que pode vir. Os números ficam em Progresso.
+// É o plano: o que passou, a fase de agora e o que pode vir. Os números ficam em Progresso. No caminho, os Primeiros
+// passos do tutorial viram uma entrada só, no dia em que aconteceram.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ScreenHeader, useMirrorPaths } from '@/components/shell';
@@ -12,9 +13,12 @@ import {
   formatDayMonth,
   formatDayShort,
   formatPercent,
+  firstStepsEntry,
+  tutorialOf,
   useJourney,
   useNow,
   usePillars,
+  useProfile,
   useReview,
   useReviewWindow,
   weekdayName,
@@ -30,7 +34,10 @@ import './journey.css';
 
 export default function JourneyScreen() {
   const j = useJourney();
-  const { today } = useNow();
+  const { today, clock } = useNow();
+  // "Primeiros passos com o Zeno": uma entrada só, assim que houver o primeiro gesto do tutorial
+  const profile = useProfile();
+  const firstSteps = useMemo(() => firstStepsEntry(tutorialOf(profile).firstSteps, clock), [profile, clock]);
   const win = useReviewWindow();
   const pillars = usePillars({ includeArchived: true });
   const navigate = useNavigate();
@@ -105,6 +112,7 @@ export default function JourneyScreen() {
         animate={first}
         justClosed={justClosed}
         carried={carried}
+        firstSteps={firstSteps}
         onOpenDone={(p) => void navigate(paths.pastReview(endReviewOf(p)))}
         onOpenPhase={(p) => void navigate(`/jornada/fases#fase-${p.number}`)}
       />

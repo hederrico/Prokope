@@ -122,6 +122,29 @@ O mesmo dia pode ser visto de três jeitos, e a pessoa troca quando quiser. Os t
 - O corpo do dia fica dentro de um `AnimatePresence mode="popLayout"` com a chave do jeito; o que sai ganha `data-leaving`, e a arrumação (`useFlip`) e o "levar até a linha" ignoram o que está saindo.
 - A cascata da primeira abertura vale só na primeira aparição: um jeito novo entra só com opacidade.
 
+## Primeiros passos  (durante o capítulo "O dia" do tutorial)
+
+Enquanto o tutorial pede (`useTour().practice`), o Hoje mostra o grupo "Primeiros passos" no topo da lista. São três linhas de treino com os mesmos componentes e gestos das linhas de verdade, para o treino ensinar o gesto real. Elas não entram nos números: nada vai para `marks` nem para `entries`. A especificação do capítulo está em [tutorial.md](tutorial.md).
+
+**Onde aparece:** antes de Manhã, nos três jeitos de ver (no Resumo, logo depois da faixa do dia). À noite, antes de Ainda hoje. No dia fechado, acima do anel, abaixo da área segura. No dia pausado, abaixo do cartão da semana. Em "Seu plano começa amanhã" (primeiro acesso depois das 20h), também no topo, com a lista ainda vazia embaixo. Num dia que passou, ele não aparece.
+**Título:** o `SectionLabel` "Primeiros passos", com "não entram nos seus números" à direita.
+**Entrada e saída:** o grupo entra com `fadeUp`, e o espaço dele abre com layout `calma`, para a lista de baixo descer sem pular. Ele sai com opacidade em `micro` (`--ease-exit`), e depois o espaço fecha em `calma`. Ele entra uma vez por capítulo: trocar o jeito de ver, fechar o dia ou voltar de outra aba não fazem o grupo entrar de novo. Com movimento reduzido, fica só a opacidade.
+
+| Linha | Gesto | Resposta | Animação | Dado gravado | Aviso ao tutorial |
+|---|---|---|---|---|---|
+| "Primeira marcação no app" · `CheckButton` | toque | Marca ou desmarca a linha de treino | a coreografia de marcar, com o som e a vibração do nível 1; toast "Primeira marcação feita · não entra nos seus números" com Desfazer (ou "Primeira marcação desmarcada") | `tutorial.firstSteps.markAt`, só na primeira vez | `pp-mark` e `pp-unmark`; `undo` no Desfazer |
+| "Primeiro registro · 0 de 3" · `QuickAddButton` "+ 1" | toque | Soma 1 por toque, até 3. Em 3, o + vira a pílula "pronto" | o anel de 40 px anda em `ring` e "0 de 3" rola em `fill`, como na água; toques em até 1,5 s juntam num toast só ("Primeiro registro · +3 · 3 de 3") | `addAt`, só na primeira vez | `pp-add`, com o total |
+| "Primeira nota" · `ActionPill` "Dar nota" | toque | Abre a folha de treino `?folha=primeira-nota`: as cinco opções das refeições, sem os chips do prato. "Salvar nota 4" fecha a folha e a linha vira "4 · Bom" | como a nota do almoço; toast "Nota 4 · Bom" | `rateAt` e a `rating`, só na primeira vez | `pp-rate`, com a nota |
+
+- **Desfazer:** volta só a linha de treino. O instante guardado fica, porque o gesto aconteceu.
+- **Estado:** as linhas ficam em memória (`src/stores/practice.ts`) e zeram cada vez que o grupo aparece. Rever o capítulo usa as mesmas linhas, sem gravar de novo.
+- **Nada conta:** o "x de 12", o anel e o cartão da semana, o dia fechado e a celebração, os dias sem, o Progresso e a força ficam iguais. Desmarcar o treino no dia fechado não reabre o dia.
+- **Sem hábito por trás:** tocar no nome de uma linha de treino não abre nada, e não há menu pelo toque longo.
+- **Alvos do tutorial:** `data-tour="pp-group"` no grupo; `pp-mark`, `pp-add` e `pp-rate` em volta dos controles; `pp-rate-options` e `pp-rate-save` na folha.
+- **Acessibilidade:** o grupo é uma região "Primeiros passos", com o h2. Cada linha diz o nome, a contagem e "Só para treinar, não entra nos seus números". Os controles levam o nome da linha ("Primeiro registro, 0 de 3. Somar 1").
+- **Testes e capturas:** `window.__pkPractice.show(true)` liga o grupo sem o condutor do tutorial (sempre ligado; não grava nada).
+- **Implementação:** `PracticeGroup.tsx` (o grupo e as linhas), `practiceActions.ts` (os gestos, os toasts e os avisos), `PracticeRatingSheet.tsx` (a folha) e as ações `practiceMark`, `practiceAdd` e `practiceRate` (`src/actions/practice.ts`).
+
 ## Hoje · manhã  (7h42)
 
 **Ao aparecer:** como nas regras comuns. O convite gentil não anima ao entrar: ele já está lá, parado.
